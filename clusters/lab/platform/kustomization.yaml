@@ -1,3 +1,3 @@
 resources:
   - github.com/kubernetes/ingress-nginx//deploy/static/provider/cloud?ref=controller-v1.11.1
-  - github.com/cert-manager/cert-manager//deploy/manifests?ref=v1.15.0
+  - github.com/cert-manager/cert-manager//deploy/charts/cert-manager?ref=v1.15.0
