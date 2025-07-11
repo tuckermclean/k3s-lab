@@ -6708,11 +6708,428 @@ noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ flux reconc
 ► annotating GitRepository flux-system in flux-system namespace
 ✔ GitRepository annotated
 ◎ waiting for GitRepository reconciliation
+✔ fetched revision main@sha1:af42996f9f2176d24848c5bab9b152d2183f8565
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Great! Now let me reconcile the kustomization to apply the changes:
+
+
+---
+
+```bash
+flux reconcile kustomization flux-system
+```
+
+```
+<lux reconcile kustomization flux-system
+► annotating Kustomization flux-system in flux-system namespace
+✔ Kustomization annotated
+◎ waiting for Kustomization reconciliation
+✔ applied revision main@sha1:af42996f9f2176d24848c5bab9b152d2183f8565
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Perfect! Now let's check the status to see what's happening:
+
+
+---
+
+```bash
+kubectl get kustomizations -A
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get kustomizations -A
+NAMESPACE     NAME          AGE    READY   STATUS
+flux-system   flux-system   3h3m   True    Applied revision: main@sha1:af42996f9f2176d24848c5bab9b152d2183f8
+565
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Excellent! The kustomization is now showing the new revision. Let's check what resources have been created:
+
+
+---
+
+```bash
+kubectl get certificates -A
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get certificates -A
+NAMESPACE   NAME               READY   SECRET             AGE
+media       jellyfin-ca-cert   False   jellyfin-ca-cert   17s
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+The certificate is being created but not ready yet. Let's check the status:
+
+
+---
+
+```bash
+kubectl describe certificate jellyfin-ca-cert -n media
+```
+
+```
+<ubectl describe certificate jellyfin-ca-cert -n media
+Name:         jellyfin-ca-cert
+Namespace:    media
+Labels:       app.kubernetes.io/part-of=gitops
+              kustomize.toolkit.fluxcd.io/name=flux-system
+              kustomize.toolkit.fluxcd.io/namespace=flux-system
+Annotations:  <none>
+API Version:  cert-manager.io/v1
+Kind:         Certificate
+Metadata:
+  Creation Timestamp:  2025-07-11T04:40:28Z
+  Generation:          1
+  Resource Version:    21235
+  UID:                 270f2fb9-dd9b-4161-9fe7-300accdf2995
+Spec:
+  Common Name:  id.home.dcxxiv.com
+  Dns Names:
+    id.home.dcxxiv.com
+  Issuer Ref:
+    Kind:       ClusterIssuer
+    Name:       selfsigned-issuer
+  Secret Name:  jellyfin-ca-cert
+Status:
+  Conditions:
+    Last Transition Time:        2025-07-11T04:40:28Z
+    Message:                     Issuing certificate as Secret does not exist
+    Observed Generation:         1
+    Reason:                      DoesNotExist
+    Status:                      False
+    Type:                        Ready
+    Last Transition Time:        2025-07-11T04:40:28Z
+    Message:                     Issuing certificate as Secret does not exist
+    Observed Generation:         1
+    Reason:                      DoesNotExist
+    Status:                      True
+    Type:                        Issuing
+  Next Private Key Secret Name:  jellyfin-ca-cert-8q4qd
+Events:
+  Type    Reason     Age   From                                       Message
+  ----    ------     ----  ----                                       -------
+  Normal  Issuing    22s   cert-manager-certificates-trigger          Issuing certificate as Secret does not
+ exist
+  Normal  Generated  21s   cert-manager-certificates-key-manager      Stored new private key in temporary Se
+cret resource "jellyfin-ca-cert-8q4qd"
+  Normal  Requested  21s   cert-manager-certificates-request-manager  Created new CertificateRequest resourc
+e "jellyfin-ca-cert-q6gms"
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Good! The certificate is being issued. Let's wait a moment and check again:
+
+
+---
+
+```bash
+kubectl get certificates -A
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get certificates -A
+NAMESPACE   NAME               READY   SECRET             AGE
+media       jellyfin-ca-cert   False   jellyfin-ca-cert   29s
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
 ```
 
 ---
 
 
+Here’s what you do next to apply the changes:
+
+1. **Wait for Flux to sync:**  
+   Since you’ve pushed your changes to GitHub, Flux will automatically detect and apply them. This usually happens within a few minutes.
+
+2. **Monitor resource creation:**  
+   You can watch the progress and check for errors with:
+   ```sh
+   kubectl get kustomizations -A
+   kubectl get certificates -A
+   kubectl get pods -n media
+   ```
+
+3. **Check certificate status:**  
+   The new certificate for Jellyfin will be created by cert-manager. You can check its status with:
+   ```sh
+   kubectl describe certificate jellyfin-ca-cert -n media
+   ```
+
+4. **Check for the ConfigMap and Job:**  
+   Make sure the ConfigMap and Job for copying the certificate are created and completed:
+   ```sh
+   kubectl get jobs -n media
+   kubectl get configmap -n media
+   ```
+
+5. **Jellyfin pod restart:**  
+   Once the ConfigMap is available, the Jellyfin pod should mount the new CA certificate and start normally. If it doesn’t, you may need to restart the pod:
+   ```sh
+   kubectl rollout restart deployment jellyfin -n media
+   ```
+
+**Summary:**  
+- No manual `kubectl apply` is needed—Flux handles it.
+- Just monitor the resources and logs for any issues.
+- If you see errors, let me know and I’ll help troubleshoot!
+
+Would you like to check the status of any specific resource right now?
+
+---
+
+_**User**_
+
+Cert still not ready, but kustomization is true
+
+---
+
+_**Assistant**_
+
+Let me check what's happening with the certificate. The issue might be with the ClusterIssuer not being ready or configured properly.
+
+
+---
+
+```bash
+kubectl get clusterissuers
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get clusterissuers
+No resources found
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Ah! That's the problem - there's no ClusterIssuer configured. Let me check what's in the cert-manager infrastructure directory:
+
+
+---
+
+<details>
+            <summary>Listed directory infrastructure/cert-manager • **3** results</summary>
+        
+| Name |
+|-------|
+| 📄 `kustomization.yaml` |
+| 📄 `helmrepository.yaml` |
+| 📄 `helmrelease.yaml` |
+
+</details>
+
+---
+
+Read file: infrastructure/cert-manager/helmrelease.yaml
+
+---
+
+I need to create a ClusterIssuer for self-signed certificates. Let me add that to the cert-manager infrastructure:
+
+
+---
+
+```diff
+- 
++ apiVersion: cert-manager.io/v1
++ kind: ClusterIssuer
++ metadata:
++   name: selfsigned-issuer
++ spec:
++   selfSigned: {} 
+```
+
+---
+
+Now I need to add this to the cert-manager kustomization:
+
+
+---
+
+Read file: infrastructure/cert-manager/kustomization.yaml
+
+---
+
+
+
+---
+
+Now let me commit and push these changes:
+
+
+---
+
+```bash
+git add .
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ git add .
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+```bash
+git commit -m "Add ClusterIssuer for self-signed certificates"
+```
+
+```
+<it commit -m "Add ClusterIssuer for self-signed certificates"
+[main edb9dd0] Add ClusterIssuer for self-signed certificates
+ 3 files changed, 327 insertions(+)
+ create mode 100644 infrastructure/cert-manager/clusterissuer.yaml
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+```bash
+git push
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ git push
+```
+
+---
+
+Now let me force a reconciliation to apply the changes:
+
+
+---
+
+```bash
+flux reconcile source git flux-system
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ flux reconcile source git flux-system
+► annotating GitRepository flux-system in flux-system namespace
+✔ GitRepository annotated
+◎ waiting for GitRepository reconciliation
+✔ fetched revision main@sha1:edb9dd0bd2e7da3c7d088c52512028ce6b49fb82
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+```bash
+flux reconcile kustomization flux-system
+```
+
+```
+<lux reconcile kustomization flux-system
+► annotating Kustomization flux-system in flux-system namespace
+✔ Kustomization annotated
+◎ waiting for Kustomization reconciliation
+✔ applied revision main@sha1:edb9dd0bd2e7da3c7d088c52512028ce6b49fb82
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Now let's check if the ClusterIssuer was created:
+
+
+---
+
+```bash
+kubectl get clusterissuers
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get clusterissuers
+NAME                READY   AGE
+selfsigned-issuer   True    17s
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Perfect! Now let's check the certificate status:
+
+
+---
+
+```bash
+kubectl get certificates -A
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get certificates -A
+NAMESPACE   NAME               READY   SECRET             AGE
+media       jellyfin-ca-cert   True    jellyfin-ca-cert   7m31s
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Excellent! The certificate is now ready. Let's check if the Job to copy the certificate to the ConfigMap has run:
+
+
+---
+
+```bash
+kubectl get jobs -n media
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get jobs -n media
+NAME                    STATUS    COMPLETIONS   DURATION   AGE
+jellyfin-ca-cert-copy   Running   0/1           7m39s      7m39s
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+The job is still running. Let me check the logs to see what's happening:
+
+
+---
+
+```bash
+kubectl logs job/jellyfin-ca-cert-copy -n media
+```
+
+```
+<ubectl logs job/jellyfin-ca-cert-copy -n media
+Error from server (BadRequest): container "copy-cert" in pod "jellyfin-ca-cert-copy-46vzd" is waiting to sta
+rt: ContainerCreating
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+_**User**_
+
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl logs job/jellyfin-ca-cert-copy -n media
+Found 3 pods, using pod/jellyfin-ca-cert-copy-46vzd
+sh: kubectl: not found
+sh: can't create /tmp/ca.crt: Read-only file system
+sh: kubectl: not found
+sh: kubectl: not found
+
+---
+
+_**Assistant**_
+
+
 
 ---
 
@@ -6723,6 +7140,18 @@ noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ flux reconc
 
 
 ---
+
+
+
+---
+
+_**User**_
+
+NO HARDCODED SECRETS
+
+---
+
+_**Assistant**_
 
 
 

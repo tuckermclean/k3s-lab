@@ -19,8 +19,8 @@ spec:
       enabled: false
     extraVolumes:
       - name: kube-ca
-        configMap:
-          name: jellyfin-ca-cert-configmap
+        secret:
+          secretName: jellyfin-ca-cert
       - name: media
         persistentVolumeClaim:
           claimName: media-root-pvc
