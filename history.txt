@@ -1,0 +1,1165 @@
+1996  curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key   | sudo tee /etc/apt/keyrings/kubernetes-apt-keyring.asc
+ 1997  echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] \
+  https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /"   | sudo tee /etc/apt/sources.list.d/kubernetes.list
+ 1998  sudo apt update && sudo apt install -y kubectl
+ 1999  # helm
+ 2000  curl https://baltocdn.com/helm/signing.asc | sudo tee /etc/apt/trusted.gpg.d/helm.asc
+ 2001  echo "deb https://baltocdn.com/helm/stable/debian/ all main"   | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+ 2002  sudo apt update && sudo apt install -y helm
+ 2003  # kustomize
+ 2004  curl -Lo kustomize.tar.gz https://github.com/kubernetes-sigs/kustomize/releases/latest/download/kustomize_v5.4.2_linux_amd64.tar.gz
+ 2005  sudo tar -C /usr/local/bin -xzvf kustomize.tar.gz
+ 2006  # flux
+ 2007  curl -s https://fluxcd.io/install.sh | sudo bash
+ 2008  # verify
+ 2009  kubectl version --client
+ 2010  helm version
+ 2011  flux --version
+ 2012  scp ubuntu@192.168.0.204:/etc/rancher/k3s/k3s.yaml $HOME/.kube/k3s-lab.yaml
+ 2013  mkdir -p /home/noumenon/.kube/
+ 2014  scp ubuntu@192.168.0.204:/etc/rancher/k3s/k3s.yaml $HOME/.kube/k3s-lab.yaml
+ 2015  export KUBECONFIG=$HOME/.kube/k3s-lab.yaml
+ 2016  kubectl get nodes
+ 2017  kubectl --kubeconfig $HOME/.kube/k3s-lab.yaml   config set-cluster default/server https://192.168.0.204:6443
+ 2018  # one-liner with sed  (replace with the node’s real IP/FQDN)
+ 2019  K3S_IP=192.168.0.204
+ 2020  sed -i "s#127\.0\.0\.1#$K3S_IP#"  $HOME/.kube/k3s-lab.yaml
+ 2021  kubectl get nodes
+ 2022  helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+ 2023  helm repo add jetstack      https://charts.jetstack.io
+ 2024  helm repo update
+ 2025  helm repo add nfs-csi https://kubernetes-csi.github.io/csi-driver-nfs/
+ 2026  helm repo add nfs-csi   https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+ 2027  helm install nfs nfs-csi/nfs-csi-driver --namespace kube-system
+ 2028  helm repo update
+ 2029  helm search repo nfs-csi
+ 2030  helm install nfs csi-driver-nfs/nfs-csi-driver   --namespace kube-system --create-namespace
+ 2031  helm install nfs nfs-csi/csi-driver-nfs   --namespace kube-system --create-namespace
+ 2032  kubectl -n kube-system get pods -l app.kubernetes.io/name=csi-driver-nfs
+ 2033  kubectl get sc
+ 2034  cd
+ 2035  mkdir mnt
+ 2036  mount openmediavault:/Files mnt/
+ 2037  sudo mount openmediavault:/Files mnt/
+ 2038  sudo apt-get install nfs
+ 2039  sudo apt-get install nfs-client
+ 2040  sudo mount openmediavault:/Files mnt/
+ 2041  ls mnt/
+ 2042  rmdir mnt/
+ 2043  mkdir /tmp/tmp
+ 2044  sudo mount openmediavault:/Files /tmp/mnt/
+ 2045  sudo mount openmediavault:/Files /tmp/tmp/
+ 2046  rmdir /tmp/tmp/
+ 2047  cd /mnt/c/Users/me/
+ 2048  ls
+ 2049  cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata: { name: nfs-omv }
+provisioner: nfs.csi.k8s.io
+parameters:
+
+ 2050  cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata: { name: nfs-omv }
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: openmediavault.home.dcxxiv.com
+
+ 2051  cat <<EOF | kubectl apply -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata: { name: nfs-omv }
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: openmediavault.home.dcxxiv.com
+  share: /Files
+reclaimPolicy: Retain
+mountOptions: ["nfsvers=4.1"]
+EOF
+
+ 2052  helm install ingress-nginx ingress-nginx/ingress-nginx   --namespace ingress-nginx --create-namespace   --set controller.publishService.enabled=true
+ 2053  kubectl -n ingress-nginx get svc ingress-nginx-controller
+ 2054  helm install cert-manager jetstack/cert-manager   --namespace cert-manager --create-namespace   --set installCRDs=true
+ 2055  # ClusterIssuer with a private CA
+ 2056  cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata: { name: ca-issuer }
+spec:
+  selfSigned: {}
+EOF
+
+ 2057  flux check --pre
+ 2058  export GH_USER="tucker-mclean"
+ 2059  export GH_REPO="k3s-lab"
+ 2060  flux bootstrap github   --owner=$GH_USER   --repository=$GH_REPO   --branch=main   --path=clusters/lab   --personal
+ 2061  export GH_USER="tuckermclean"
+ 2062  flux bootstrap github   --owner=$GH_USER   --repository=$GH_REPO   --branch=main   --path=clusters/lab   --personal
+ 2063  git clone https://github.com/$GH_USER/$GH_REPO
+ 2064  cd $GH_REPO
+ 2065  mkdir -p platform apps/jellyfin
+ 2066  cat <<'EOF' > platform/kustomization.yaml
+resources:
+  - github.com/kubernetes/ingress-nginx//deploy/static/provider/cloud?ref=v1.11.1
+  - github.com/cert-manager/cert-manager//deploy/manifests?ref=v1.15.0
+EOF
+
+ 2067  cat <<'EOF' > apps/jellyfin/helmrelease.yaml
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: jellyfin
+      version: 16.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: k8s-at-home
+        namespace: flux-system
+  values:
+    env: { TZ: America/Los_Angeles }
+    ingress:
+      enabled: true
+      className: nginx
+      hosts: [ { host: jelly.home.lab, paths: [ "/" ] } ]
+    persistence:
+      config: { enabled: true, size: 10Gi }
+      media:
+        enabled: true
+        existingClaim: jellyfin-nfs    # or keep empty for local-path
+EOF
+
+ 2068  git add .
+ 2069  git commit -m "platform+Jellyfin"
+ 2070  git push
+ 2071  git clone https://github.com/$GH_USER/$GH_REPO
+ 2072  git config --global credential.helper /usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret
+ 2073  git clone https://github.com/$GH_USER/$GH_REPO
+ 2074  wget -qO- https://aka.ms/gcm/linux-install | sudo bash
+ 2075  # Pick the current version number once from GitHub releases
+ 2076  GCM_VER=2.4.1
+ 2077  curl -L   -o gcm-linux_amd64.deb   "https://github.com/GitCredentialManager/git-credential-manager/releases/download/v${GCM_VER}/gcm-linux_amd64.${GCM_VER}.deb"
+ 2078  sudo apt install ./gcm-linux_amd64.deb
+ 2079  git --version                 # should mention "GCM" in the output
+ 2080  git credential-manager --version
+ 2081  git --version                 # should mention "GCM" in the output
+ 2082  git credential-manager --version
+ 2083  git clone https://github.com/$GH_USER/$GH_REPO
+ 2084  curl -L https://aka.ms/gcm/linux-install-source | sudo bash
+ 2085  git config --global --unset credential.helper              # remove libsecret line
+ 2086  git config --global credential.helper manager-core         # add GCM
+ 2087  git config --global --get credential.helper
+ 2088  git clone https://github.com/$GH_USER/$GH_REPO
+ 2089  git config --global --unset credential.helper
+ 2090  git-credential-manager configure        # installs the right helper line
+ 2091  git clone https://github.com/$GH_USER/$GH_REPO
+ 2092  git config --global credential.credentialStore cache
+ 2093  git config --global credential.cacheOptions "--timeout=36000"   # keep 10 h
+ 2094  git clone https://github.com/$GH_USER/$GH_REPO
+ 2095  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
+ 2096  kubectl get sc
+ 2097  cd $GH_REPO
+ 2098  cd ..
+ 2099  mv k3s-lab/ Documents/gitrepos
+ 2100  cd Documents/gitrepos/k3s-lab/
+ 2101  ls
+ 2102  mkdir -p platform apps/jellyfin
+ 2103  cat <<'EOF' > platform/kustomization.yaml
+resources:
+  - github.com/kubernetes/ingress-nginx//deploy/static/provider/cloud?ref=v1.11.1
+  - github.com/cert-manager/cert-manager//deploy/manifests?ref=v1.15.0
+EOF
+
+ 2104  cat <<'EOF' > apps/jellyfin/helmrelease.yaml
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: jellyfin
+      version: 16.3.0
+      sourceRef:
+        kind: HelmRepository
+        name: k8s-at-home
+        namespace: flux-system
+  values:
+    env: { TZ: America/Los_Angeles }
+    ingress:
+      enabled: true
+      className: nginx
+      hosts: [ { host: jelly.home.lab, paths: [ "/" ] } ]
+    persistence:
+      config: { enabled: true, size: 10Gi }
+      media:
+        enabled: true
+        existingClaim: jellyfin-nfs    # or keep empty for local-path
+EOF
+
+ 2105  vi apps/jellyfin/helmrelease.yaml
+ 2106  git add .
+ 2107  git commit -m "platform+Jellyfin"
+ 2108  git push
+ 2109  watch flux get all -A
+ 2110  flux get kustomization flux-system
+ 2111  mkdir -p clusters/lab
+ 2112  mv platform/ clusters/lab/             # example
+ 2113  mv apps/ clusters/lab/                 # example
+ 2114  git add clusters/lab
+ 2115  git commit -m "move manifests under clusters/lab so Flux sees them"
+ 2116  git push
+ 2117  # on your laptop/WSL, with kubeconfig set
+ 2118  flux reconcile source git flux-system
+ 2119  flux reconcile kustomization flux-system
+ 2120  sed -i 's@v1.11.1@controller-v1.11.1@' clusters/lab/platform/kustomization.yaml
+ 2121  git add clusters/lab/platform/kustomization.yaml
+ 2122  git commit -m "point Ingress chart to controller-v1.11.1 tag"
+ 2123  git push
+ 2124  flux reconcile source git flux-system
+ 2125  flux get kustomization flux-system        # READY should flip to True
+ 2126  sed -i 's@github.com/cert-manager/cert-manager//deploy/manifests?ref=v1.15.0@github.com/cert-manager/cert-manager//deploy/charts/cert-manager?ref=v1.15.0@'   clusters/lab/platform/kustomization.yaml
+ 2127  git add clusters/lab/platform/kustomization.yaml
+ 2128  git commit -m "point cert-manager kustomize ref to deploy/charts/cert-manager"
+ 2129  git push
+ 2130  flux reconcile source git flux-system
+ 2131  flux get kustomization flux-system
+ 2132  sed -i 's@github.com/cert-manager/.*@https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml@'   clusters/lab/platform/kustomization.yaml
+ 2133  git add clusters/lab/platform/kustomization.yaml
+ 2134  git commit -m "use cert-manager release YAML"
+ 2135  git push
+ 2136  git add clusters/lab/platform/kustomization.yaml
+ 2137  git commit -m "use cert-manager release YAML"
+ 2138  git push
+ 2139  flux reconcile source git flux-system
+ 2140  flux get kustomization flux-system          # READY → True
+ 2141  kubectl -n cert-manager  get pods           # 3/3 Running
+ 2142  kubectl -n ingress-nginx get pods           # 1/1 Running
+ 2143  git status
+ 2144  mkdir -p clusters/lab/platform
+ 2145  mkdir -p clusters/lab/apps/jellyfin
+ 2146  mv platform/kustomization.yaml                   clusters/lab/platform/
+ 2147  mv apps/jellyfin/helmrelease.yaml                clusters/lab/apps/jellyfin/
+ 2148  git restore apps/jellyfin/helmrelease.yaml
+ 2149  git restore platform/kustomization.yaml
+ 2150  mv platform/kustomization.yaml                   clusters/lab/platform/
+ 2151  mv apps/jellyfin/helmrelease.yaml                clusters/lab/apps/jellyfin/
+ 2152  sed -i 's@github.com/cert-manager/.*@https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml@'   clusters/lab/platform/kustomization.yaml
+ 2153  cat > clusters/lab/kustomization.yaml <<'EOF'
+resources:
+  - ./platform
+  - ./apps
+EOF
+
+ 2154  git add -A
+ 2155  git commit -m "restore manifests under clusters/lab and fix cert-manager path"
+ 2156  git push
+ 2157  flux reconcile source git flux-system
+ 2158  flux reconcile kustomization flux-system
+ 2159  sed -i 's@kubernetes/ingress-nginx.*/deploy/static/provider/cloud?ref=v1.11.1@kubernetes/ingress-nginx/deploy/static/provider/cloud?ref=controller-v1.11.1@'   clusters/lab/platform/kustomization.yaml
+ 2160  grep ingress-nginx clusters/lab/platform/kustomization.yaml
+ 2161  git add clusters/lab/platform/kustomization.yaml
+ 2162  git commit -m "fix ingress-nginx tag: controller-v1.11.1"
+ 2163  git push
+ 2164  git add clusters/lab/platform/kustomization.yaml
+ 2165  git commit -m "fix ingress-nginx tag: controller-v1.11.1"
+ 2166  git push
+ 2167  flux reconcile source git flux-system
+ 2168  flux reconcile kustomization flux-system
+ 2169  cat > clusters/lab/apps/kustomization.yaml <<'EOF'
+resources:
+  - ./jellyfin        # add more app folders here later
+EOF
+
+ 2170  git add clusters/lab/apps/kustomization.yaml
+ 2171  git commit -m "add apps kustomization pointing at jellyfin"
+ 2172  git push
+ 2173  flux reconcile source git flux-system
+ 2174  flux reconcile kustomization flux-system
+ 2175  cat > clusters/lab/apps/jellyfin/kustomization.yaml <<'EOF'
+resources:
+  - helmrelease.yaml
+EOF
+
+ 2176  git add clusters/lab/apps/jellyfin/kustomization.yaml
+ 2177  git commit -m "add jellyfin kustomization so Flux can recurse"
+ 2178  git push
+ 2179  flux reconcile source git flux-system     # pull immediately
+ 2180  flux reconcile kustomization flux-system  # apply immediately
+ 2181  cat > clusters/lab/apps/jellyfin/namespace.yaml <<'EOF'
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media
+EOF
+
+ 2182  cat > clusters/lab/apps/jellyfin/kustomization.yaml <<'EOF'
+resources:
+  - namespace.yaml
+  - helmrelease.yaml
+EOF
+
+ 2183  git add clusters/lab/apps/jellyfin/{namespace.yaml,kustomization.yaml}
+ 2184  git commit -m "create media namespace for Jellyfin"
+ 2185  git push
+ 2186  flux reconcile source git flux-system
+ 2187  flux reconcile kustomization flux-system
+ 2188  watch -n2 'flux events -A	tail -n20'
+ 2189  flux events -A
+ 2190  watch -n2 'flux events -A | tail -n20'
+ 2191  flux events -A
+ 2192  flux diff kustomization flux-system
+ 2193  flux logs helmrelease jellyfin --namespace media
+ 2194  helm ls -A
+ 2195  flux suspend kustomization flux-system
+ 2196  flux suspend source git flux-system
+ 2197  kubectl delete ns flux-system
+ 2198  scp ubuntu@192.168.0.204:/etc/rancher/k3s/k3s.yaml $HOME/.kube/k3s-lab.yaml
+ 2199  scp root@192.168.0.204:/etc/rancher/k3s/k3s.yaml $HOME/.kube/k3s-lab.yaml
+ 2200  scp ubuntu@192.168.0.204:~k3s.yaml $HOME/.kube/k3s-lab.yaml
+ 2201  scp ubuntu@192.168.0.204:~/k3s.yaml $HOME/.kube/k3s-lab.yaml
+ 2202  kubectl get nodes
+ 2203  scp ubuntu@192.168.0.204:/etc/rancher/k3s/k3s.yaml $HOME/.kube/k3s-lab.yaml
+ 2204  helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+ 2205  helm repo update
+ 2206  kubectl create namespace ingress-nginx
+ 2207  helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx   --set controller.publishService.enabled=true
+ 2208  scp ubuntu@192.168.0.204:/etc/rancher/k3s/k3s.yaml $HOME/.kube/k3s-lab.yaml
+ 2209  rm $HOME/.kube/k3s-lab.yaml
+ 2210  scp ubuntu@192.168.0.204:/etc/rancher/k3s/k3s.yaml $HOME/.kube/k3s.yaml
+ 2211  kubectl --kubeconfig ~/.kube/k3s.yaml config set-cluster default --server https://192.168.0.204:6443
+ 2212  export KUBECONFIG=$HOME/.kube/k3s.yaml
+ 2213  kubectl get nodes
+ 2214  helm repo add jetstack https://charts.jetstack.io
+ 2215  helm repo update
+ 2216  kubectl create namespace cert-manager
+ 2217  helm install cert-manager jetstack/cert-manager   --namespace cert-manager --set installCRDs=true
+ 2218  # issue self-signed ClusterIssuer
+ 2219  cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata: { name: selfsigned }
+spec:
+  selfSigned: {}
+EOF
+
+ 2220  kubectl -n cert-manager get pods.
+ 2221  helm repo add nfs-subdir https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+ 2222  helm install nfs-provisioner nfs-subdir/nfs-subdir-external-provisioner   --namespace kube-system   --set nfs.server=openmediavault.home.dcxxiv.com   --set nfs.path=/Files   --set storageClass.name=nfs
+ 2223  helm repo add k8s-at-home https://k8s-at-home.com/charts
+ 2224  helm repo update
+ 2225  kubectl create namespace media
+ 2226  helm install jellyfin k8s-at-home/jellyfin   --namespace media   --set env.TZ=America/Los_Angeles   --set ingress.enabled=true   --set ingress.ingressClassName=traefik   --set ingress.hosts[0].host=jellyfin.home.dcxxiv.com   --set ingress.hosts[0].paths[0].path=/   --set ingress.tls[0].hosts[0]=jellyfin.home.dcxxiv.com   --set ingress.tls[0].secretName=jelly-tls   --set persistence.config.size=10Gi
+ 2227  helm install jellyfin k8s-at-home/jellyfin   --namespace media --create-namespace   --set env.TZ=America/Los_Angeles   --set ingress.main.enabled=true   --set ingress.main.ingressClassName=traefik   --set ingress.main.hosts[0].host=jellyfin.home.dcxxiv.com   --set ingress.main.hosts[0].paths[0].path=/   --set ingress.main.tls[0].hosts[0]=jellyfin.home.dcxxiv.com   --set ingress.main.tls[0].secretName=jelly-tls   --set persistence.config.size=10Gi
+ 2228  echo $DOMAIN
+ 2229  cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: jelly-tls
+  namespace: media
+spec:
+  secretName: jelly-tls
+  dnsNames: [ "jellyfin.home.dcxxiv.com" ]
+  issuerRef: { name: selfsigned, kind: ClusterIssuer }
+EOF
+
+ 2230  kubectl -n media get pods
+ 2231  ping jellyfin.home.dcxxiv.com
+ 2232  DOMAIN=home.dcxxiv.com
+ 2233  helm repo add authentik https://charts.goauthentik.io
+ 2234  helm repo update
+ 2235  kubectl create namespace authentik
+ 2236  # generate random passwords
+ 2237  POSTGRES_PASS=$(openssl rand -base64 20)
+ 2238  SECRET_KEY=$(openssl rand -base64 40)
+ 2239  cat > authentik-values.yaml <<EOF
+postgresql:
+  enabled: true
+  auth:
+    password: "$POSTGRES_PASS"
+env:
+  - name: AUTHENTIK_SECRET_KEY
+    value: "$SECRET_KEY"
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  hosts:
+    - host: id.$DOMAIN
+      paths: ["/"]
+  tls:
+    - hosts: [id.$DOMAIN]
+      secretName: id-tls
+EOF
+
+ 2240  helm install authentik authentik/authentik -n authentik -f authentik-values.yaml
+ 2241  # TLS cert
+ 2242  cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata: { name: id-tls, namespace: authentik }
+spec:
+  secretName: id-tls
+  dnsNames: [ "id.$DOMAIN" ]
+  issuerRef: { name: selfsigned, kind: ClusterIssuer }
+EOF
+
+ 2243  # still in the same directory as before
+ 2244  cat > authentik-values.yaml <<'EOF'
+postgresql:
+  enabled: true
+  auth:
+    password: CHANGEME_POSTGRES           # will be filled in by --set
+
+authentik:
+  secret_key: CHANGEME_SECRET             # will be filled in by --set
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  hosts:
+    - host: id.home.dcxxiv.com            # adjust if you use another FQDN
+      paths: ["/"]
+  tls:
+    - hosts: [id.home.dcxxiv.com]
+      secretName: id-tls
+EOF
+
+ 2245  POSTGRES_PASS=$(openssl rand -base64 20)
+ 2246  SECRET_KEY=$(openssl rand -base64 40)
+ 2247  helm upgrade --install authentik authentik/authentik   --namespace authentik --create-namespace   --set postgresql.auth.password="$POSTGRES_PASS"   --set authentik.secret_key="$SECRET_KEY"   -f authentik-values.yaml
+ 2248  cat > authentik-values.yaml <<'EOF'
+postgresql:
+  enabled: true
+  auth:
+    password: CHANGEME_POSTGRES
+
+authentik:
+  secret_key: CHANGEME_SECRET
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - host: id.home.dcxxiv.com
+        paths:
+          - path: /
+    tls:
+      - hosts:
+          - id.home.dcxxiv.com
+        secretName: id-tls
+
+
+
+
+
+
+ 2249  cat > authentik-values.yaml <<'EOF'
+postgresql:
+  enabled: true
+  auth:
+    password: CHANGEME_POSTGRES
+
+authentik:
+  secret_key: CHANGEME_SECRET
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - host: id.home.dcxxiv.com
+        paths:
+          - path: /
+    tls:
+      - hosts:
+          - id.home.dcxxiv.com
+        secretName: id-tls
+EOF
+
+ 2250  POSTGRES_PASS=$(openssl rand -base64 20)
+ 2251  SECRET_KEY=$(openssl rand -base64 40)
+ 2252  helm upgrade --install authentik authentik/authentik   --namespace authentik --create-namespace   --set postgresql.auth.password="$POSTGRES_PASS"   --set authentik.secret_key="$SECRET_KEY"   -f authentik-values.yaml
+ 2253  cat > authentik-values.yaml <<'EOF'
+postgresql:
+  enabled: true
+  auth:
+    password: CHANGEME_POSTGRES
+
+authentik:
+  secret_key: CHANGEME_SECRET
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - id.home.dcxxiv.com
+    tls:
+      - hosts:
+          - id.home.dcxxiv.com
+        secretName: id-tls
+EOF
+
+ 2254  POSTGRES_PASS=$(openssl rand -base64 20)
+ 2255  SECRET_KEY=$(openssl rand -base64 40)
+ 2256  helm upgrade --install authentik authentik/authentik   --namespace authentik --create-namespace   --set postgresql.auth.password="$POSTGRES_PASS"   --set authentik.secret_key="$SECRET_KEY"   -f authentik-values.yaml
+ 2257  kubectl -n authentik get pods        # authentik-server, worker → Running
+ 2258  kubectl -n authentik get ingress     # host id.home.dcxxiv.com
+ 2259  kubectl -n authentik get pods
+ 2260  kubectl -n authentik get svc authentik-server -o wide
+ 2261  kubectl -n authentik get endpoints authentik-server
+ 2262  kubectl -n authentik get pods                        # Running?
+ 2263  kubectl -n authentik get endpoints authentik-server  # Has IP:9000
+ 2264  kubectl -n authentik get ingress authentik-server    # service port 9000
+ 2265  kubectl -n authentik logs deploy/authentik-server --tail=50
+ 2266  # 1) Grab the real password out of the StatefulSet-generated secret
+ 2267  POSTGRES_PASS=$(kubectl -n authentik get secret authentik-postgresql \
+  -o jsonpath='{.data.postgres-password}' | base64 -d)
+ 2268  # 2) Re-deploy Authentik, injecting that password so it reaches the server pods
+ 2269  helm upgrade authentik authentik/authentik   --namespace authentik   --set postgresql.auth.password="$POSTGRES_PASS"   --set authentik.secret_key="$SECRET_KEY"   --set server.ingress.enabled=true   --set server.ingress.ingressClassName=traefik   --set server.ingress.hosts[0]=id.home.dcxxiv.com   --set server.ingress.tls[0].hosts[0]=id.home.dcxxiv.com   --set server.ingress.tls[0].secretName=id-tls
+ 2270  kubectl -n authentik get pods
+ 2271  kubectl -n authentik get endpoints authentik-server
+ 2272  kubectl -n authentik get pods
+ 2273  kubectl -n authentik get endpoints authentik-server
+ 2274  kubectl -n authentik get pods
+ 2275  kubectl -n authentik exec deploy/authentik-server -- env | grep AUTHENTIK_DATABASE
+ 2276  # Grab the password that Postgres actually uses
+ 2277  POSTGRES_PASS=$(kubectl -n authentik get secret authentik-postgresql \
+  -o jsonpath='{.data.postgres-password}' | base64 -d)
+ 2278  # Patch the Secret that Helm uses for server/worker pods
+ 2279  kubectl -n authentik patch secret authentik-authentik   --type='json'   -p='[{"op":"replace","path":"/data/database-password","value":"'$(echo -n "$POSTGRES_PASS" | base64 -w0)'"}]'
+ 2280  POSTGRES_PASS=$(kubectl -n authentik get secret authentik-postgresql \
+  -o jsonpath='{.data.postgres-password}' | base64 -d)
+ 2281  kubectl -n authentik get secret | grep -i postgres
+ 2282  kubectl -n authentik logs statefulset/authentik-postgresql --tail=30
+ 2283  helm uninstall authentik -n authentik || true
+ 2284  kubectl delete ns authentik --wait=true || true
+ 2285  POSTGRES_PASS=$(openssl rand -base64 20)
+ 2286  SECRET_KEY=$(openssl rand -base64 40)
+ 2287  DOMAIN=id.home.dcxxiv.com
+ 2288  helm repo add authentik https://charts.goauthentik.io
+ 2289  helm repo update
+ 2290  helm install authentik authentik/authentik   --namespace authentik --create-namespace   --set postgresql.enabled=true   --set postgresql.auth.password="$POSTGRES_PASS"   --set authentik.secret_key="$SECRET_KEY"   --set server.ingress.enabled=true   --set server.ingress.ingressClassName=traefik   --set server.ingress.hosts[0]="$DOMAIN"   --set server.ingress.tls[0].hosts[0]="$DOMAIN"   --set server.ingress.tls[0].secretName="id-tls"
+ 2291  kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: id-tls
+  namespace: authentik
+spec:
+  secretName: id-tls
+  dnsNames:
+    - $DOMAIN
+  issuerRef:
+    name: selfsigned        # your ClusterIssuer
+    kind: ClusterIssuer
+EOF
+
+ 2292  kubectl -n authentik get pods         # wait for server & worker 1/1 Running
+ 2293  kubectl -n authentik get endpoints authentik-server   # shows IP:9000
+ 2294  kubectl -n authentik get certificate id-tls           # Ready=True
+ 2295  kubectl -n authentik get endpoints authentik-server   # shows IP:9000
+ 2296  kubectl -n authentik get pods         # wait for server & worker 1/1 Running
+ 2297  kubectl -n authentik get endpoints authentik-server   # shows IP:9000
+ 2298  kubectl -n authentik get endpoints authentik-server
+ 2299  kubectl -n authentik get pods -o wide
+ 2300  kubectl -n authentik logs deploy/authentik-server --tail=30
+ 2301  kubectl -n authentik logs deploy/authentik-worker --tail=30
+ 2302  kubectl -n authentik get secret
+ 2303  kubectl -n authentik get secret  -o json | jq '.data | keys'authentik-postgresql
+ 2304  kubectl -n authentik get secret  -o json | jq '.data | keys'
+ 2305  kubectl -n authentik get secret
+ 2306  kubectl -n authentik get secret  -o json | jq '.data | keys'
+ 2307  kubectl -n authentik get secret authentik-postgresql -o json | jq '.data | keys'
+ 2308  kubectl -n authentik get secret authentik -o json | jq '.data | keys'
+ 2309  POSTGRES_PASS=$(kubectl -n authentik get secret authentik-postgresql \
+  -o jsonpath='{.data.password}' | base64 -d)
+ 2310  echo $POSTGRES_PASS
+ 2311  kubectl -n authentik patch secret authentik   --type='json'   -p='[{"op":"replace","path":"/data/database-password","value":"'$(echo -n "$POSTGRES_PASS" | base64 -w0)'"}]'
+ 2312  kubectl -n authentik delete pod -l app.kubernetes.io/component=server
+ 2313  kubectl -n authentik delete pod -l app.kubernetes.io/component=worker
+ 2314  kubectl -n authentik get pods -w
+ 2315  # wait for 1/1 Running
+ 2316  kubectl -n authentik get endpoints authentik-server
+ 2317  # should now list <pod-IP>:9000
+ 2318  kubectl -n authentik get pods -w
+ 2319  kubectl -n authentik get endpoints authentik-server
+ 2320  kubectl -n authentik get secret authentik-postgresql -o jsonpath='{.data}' | jq 'keys'
+ 2321  kubectl -n authentik get secret authentik -o jsonpath='{.data}' | jq 'keys'
+ 2322  # 1. Read the current Postgres password into a shell variable
+ 2323  POSTGRES_PASS=$(kubectl -n authentik get secret authentik-postgresql \
+  -o jsonpath='{.data.password}' | base64 -d)
+ 2324  # 2. Overwrite the database-password key in the authentik secret
+ 2325  kubectl -n authentik patch secret authentik   --type=json   -p='[{"op":"replace","path":"/data/database-password","value":"'$(echo -n "$POSTGRES_PASS" | base64 -w0)'"}]'
+ 2326  # Restart server and worker pods
+ 2327  kubectl -n authentik delete pod -l app.kubernetes.io/component=server
+ 2328  kubectl -n authentik delete pod -l app.kubernetes.io/component=worker
+ 2329  kubectl -n authentik get pods -w
+ 2330  authentik-worker-6676b987db-847zg   0/1     Error     1 (32s ago)   65s
+ 2331  authentik-worker-6676b987db-847zg   0/1     CrashLoopBackOff   1 (6s ago)    71s
+ 2332  kubectl -n authentik logs pod/authentik-worker-6676b987db-847zg --tail=50
+ 2333  # 1) grab the real password from the Postgres secret
+ 2334  POSTGRES_PASS=$(kubectl -n authentik get secret authentik-postgresql \
+  -o jsonpath='{.data.password}' | base64 -d)
+ 2335  # 2) upgrade Authentik, injecting that password into the chart’s expected value
+ 2336  helm upgrade authentik authentik/authentik   --namespace authentik   --set authentik.postgresql.password="$POSTGRES_PASS"
+ 2337  kubectl -n authentik rollout status deploy/authentik-server
+ 2338  kubectl -n authentik rollout status deploy/authentik-worker
+ 2339  kubectl -n authentik get endpoints authentik-server     # now shows IP:9000
+ 2340  kubectl -n authentik rollout status deploy/authentik-server
+ 2341  # Get the real password again
+ 2342  POSTGRES_PASS=$(kubectl -n authentik get secret authentik-postgresql \
+  -o jsonpath='{.data.password}' | base64 -d)
+ 2343  # Patch the authentik secret with the required key name
+ 2344  kubectl -n authentik patch secret authentik   --type=json   -p='[{"op":"add","path":"/data/AUTHENTIK_POSTGRESQL__PASSWORD","value":"'$(echo -n "$POSTGRES_PASS" | base64 -w0)'"}]'
+ 2345  kubectl -n authentik get secret | grep -i postgres
+ 2346  noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl -n authentik get secret | grep -i postgres
+ 2347  noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+ 2348  helm uninstall authentik -n authentik 2>/dev/null || true
+ 2349  kubectl delete ns authentik --wait=true 2>/dev/null || true
+ 2350  ls
+ 2351  helm uninstall authentik -n authentik 2>/dev/null || true
+ 2352  kubectl delete ns authentik --wait=true 2>/dev/null || true
+ 2353  POSTGRES_PASS=$(openssl rand -base64 20)
+ 2354  SECRET_KEY=$(openssl rand -base64 40)
+ 2355  sed -i "s/CHANGEME_POSTGRES/$POSTGRES_PASS/" authentik-values.yaml
+ 2356  sed -i "s/CHANGEME_SECRET/$SECRET_KEY/"     authentik-values.yaml
+ 2357  # regenerate or reuse the same vars
+ 2358  POSTGRES_PASS=$(openssl rand -base64 20)
+ 2359  SECRET_KEY=$(openssl rand -base64 40)
+ 2360  # use | as delimiter so any / in the password is harmless
+ 2361  sed -i "s|CHANGEME_POSTGRES|$POSTGRES_PASS|" authentik-values.yaml
+ 2362  sed -i "s|CHANGEME_SECRET|$SECRET_KEY|"       authentik-values.yaml
+ 2363  # regenerate or reuse the same vars
+ 2364  POSTGRES_PASS=$(openssl rand -base64 20)
+ 2365  SECRET_KEY=$(openssl rand -base64 40)
+ 2366  # use | as delimiter so any / in the password is harmless
+ 2367  sed -i "s|CHANGEME_POSTGRES|$POSTGRES_PASS|" authentik-values.yaml
+ 2368  sed -i "s|CHANGEME_SECRET|$SECRET_KEY|"       authentik-values.yaml
+ 2369  helm install authentik authentik/authentik   --namespace authentik --create-namespace   -f authentik-values.yaml
+ 2370  kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: id-tls
+  namespace: authentik
+spec:
+  secretName: id-tls
+  dnsNames:
+    - id.home.dcxxiv.com
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+EOF
+
+ 2371  kubectl -n authentik wait deploy/authentik-server  --for=condition=Available --timeout=120s
+ 2372  kubectl -n authentik wait deploy/authentik-worker  --for=condition=Available --timeout=120s
+ 2373  kubectl -n authentik get endpoints authentik-postgresql   # should list :5432
+ 2374  kubectl -n authentik get endpoints authentik-server       # should list :9000
+ 2375  kubectl -n authentik get endpoints authentik-postgresql   # should list :5432
+ 2376  kubectl -n authentik get endpoints authentik-server       # should list :9000
+ 2377  kubectl -n authentik get endpoints authentik-postgresql   # should list :5432
+ 2378  kubectl -n authentik get endpoints authentik-server       # should list :9000
+ 2379  kubectl -n authentik get pods -o wide
+ 2380  kubectl -n authentik logs deploy/authentik-server --tail=50
+ 2381  kubectl -n authentik rollout status deploy/authentik-server
+ 2382  # get the actual DB password that Postgres is using
+ 2383  POSTGRES_PASS=$(kubectl -n authentik get secret authentik-postgresql \
+  -o jsonpath='{.data.password}' | base64 -d)
+ 2384  # inject that value where the chart expects it
+ 2385  helm upgrade authentik authentik/authentik   --namespace authentik   --set authentik.postgresql.password="$POSTGRES_PASS"   --reuse-values
+ 2386  kubectl -n authentik delete pod -l app.kubernetes.io/component=server
+ 2387  kubectl -n authentik delete pod -l app.kubernetes.io/component=worker
+ 2388  kubectl -n authentik get pods -w              # wait for 1/1 Running
+ 2389  kubectl -n authentik get endpoints authentik-server   # should now show <IP>:9000
+ 2390  kubectl -n authentik rollout status deploy/authentik-server
+ 2391  kubectl -n authentik rollout status deploy/authentik-worker
+ 2392  helm get values authentik -n authentik --output yaml | grep -A2 postgresql:
+ 2393  kubectl -n authentik exec deploy/authentik-server -- env | grep POSTGRESQL
+ 2394  helm get values authentik -n authentik --output yaml | grep -A2 postgresql:
+ 2395  kubectl -n authentik exec deploy/authentik-server -- env | grep POSTGRESQL
+ 2396  helm upgrade authentik authentik/authentik   --namespace authentik   --reuse-values   --set authentik.database.password="$(helm get values authentik -n authentik -o json | jq -r '.authentik.postgresql.password')"
+ 2397  kubectl -n authentik delete pod -l app.kubernetes.io/component=server
+ 2398  kubectl -n authentik delete pod -l app.kubernetes.io/component=worker
+ 2399  kubectl -n authentik get pods -w            # should go to 1/1 Running
+ 2400  kubectl -n authentik get endpoints authentik-server   # now shows IP:9000
+ 2401  kubectl -n authentik patch secret authentik   --type=json   -p='[{"op":"add","path":"/data/AUTHENTIK_DATABASE__PASSWORD","value":"OGVWQXBYRHhrbmY2K1dacklKcm1CRG5weEZZPQ=="}]'
+ 2402  kubectl -n authentik delete pod -l app.kubernetes.io/component=server
+ 2403  kubectl -n authentik delete pod -l app.kubernetes.io/component=worker
+ 2404  kubectl -n authentik get pods -w          # wait for 1/1 Running, 0 restarts
+ 2405  kubectl -n authentik get secret authentik -o jsonpath='{.data}' | jq 'keys'
+ 2406  kubectl -n authentik exec deploy/authentik-server -- env | grep -E 'DATABASE__PASSWORD|POSTGRESQL__PASSWORD'
+ 2407  kubectl -n authentik logs deploy/authentik-worker --tail=30
+ 2408  kubectl create namespace authentik --dry-run=client -o yaml | kubectl apply -f -
+ 2409  helm repo add bitnami https://charts.bitnami.com/bitnami
+ 2410  helm install authentik-redis bitnami/redis   --namespace authentik   --set architecture=standalone   --set auth.enabled=false  # or supply a password, then pass that into Authentik
+ 2411  # confirm the service exists:
+ 2412  kubectl -n authentik get svc authentik-redis-master
+ 2413  kubectl -n authentik delete pod -l app.kubernetes.io/component=worker
+ 2414  kubectl -n authentik get pods -w
+ 2415  kubectl -n authentik get endpoints authentik-server
+ 2416  helm repo add nfs-subdir https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+ 2417  helm repo update
+ 2418  helm install nfs-provisioner nfs-subdir/nfs-subdir-external-provisioner   --namespace kube-system   --set nfs.server=openmediavault.home.dcxxiv.com   --set nfs.path=/Media                     --set storageClass.name=nfs               --set storageClass.defaultClass=true
+ 2419  helm uninstall nfs-provisioner -n kube-system
+ 2420  helm install nfs-provisioner nfs-subdir/nfs-subdir-external-provisioner   --namespace kube-system   --create-namespace   --set nfs.server=openmediavault.home.dcxxiv.com   --set nfs.path=/Media   --set storageClass.name=nfs   --set storageClass.defaultClass=true
+ 2421  helm install nfs-provisioner nfs-subdir/nfs-subdir-external-provisioner   --namespace kube-system   --set nfs.server=openmediavault.home.dcxxiv.com   --set nfs.path=/Media                     --set storageClass.name=nfs               --set storageClass.defaultClass=true
+ 2422  helm uninstall nfs-provisioner -n kube-system
+ 2423  helm install nfs-provisioner nfs-subdir/nfs-subdir-external-provisioner   --namespace kube-system   --set nfs.server=openmediavault.home.dcxxiv.com   --set nfs.path=/Media                     --set storageClass.name=nfs               --set storageClass.defaultClass=true
+ 2424  helm upgrade jellyfin k8s-at-home/jellyfin   --namespace media   --reuse-values   --set extraVolumes[0].name=media   --set extraVolumes[0].persistentVolumeClaim.claimName=media-pvc   --set extraVolumeMounts[0].name=media   --set extraVolumeMounts[0].mountPath=/media
+ 2425  kubectl -n kube-system get pods -l app.kubernetes.io/name=nfs-subdir-external-provisioner
+ 2426  helm upgrade --install nfs-provisioner nfs-subdir/nfs-subdir-external-provisioner   --namespace kube-system   --create-namespace   --set nfs.server=openmediavault.home.dcxxiv.com   --set nfs.path=/Media   --set storageClass.name=nfs   --set storageClass.defaultClass=true
+ 2427  helm upgrade --install nfs-provisioner nfs-subdir/nfs-subdir-external-provisioner   --namespace kube-system   --create-namespace   --set nfs.server=openmediavault.home.dcxxiv.com   --set nfs.path=/Media   --set storageClass.name=nfs   --set storageClass.defaultClass=true
+ 2428  kubectl -n kube-system get pods -l app.kubernetes.io/name=nfs-subdir-external-provisioner
+ 2429  helm list -n kube-system
+ 2430  kubectl -n kube-system get pods -l app.kubernetes.io/instance=nfs-provisioner
+ 2431  kubectl -n kube-system get pods | grep -i nfs
+ 2432  kubectl -n kube-system describe pod nfs-provisioner-nfs-subdir-external-provisioner-55cbbdf7d5wvp97
+ 2433  kubectl -n kube-system delete pod -l app.kubernetes.io/instance=nfs-provisioner
+ 2434  kubectl -n kube-system get pods -l app.kubernetes.io/instance=nfs-provisioner
+ 2435  kubectl get storageclass nfs
+ 2436  kubectl -n media get pvc media-pvc
+ 2437  # STATUS: Bound
+ 2438  kubectl -n kube-system describe pod nfs-provisioner-nfs-subdir-external-provisioner-55cbbdf7d5wvp97
+ 2439  kubectl -n kube-system get pods | grep -i nfs
+ 2440  kubectl -n kube-system get pods -l app.kubernetes.io/instance=nfs-provisioner
+ 2441  helm list -n kube-system
+ 2442  kubectl -n media get pvc media-pvc  # should say Bound
+ 2443  cat | kubectl apply -f -
+ 2444  kubectl -n media get pvc media-pvc  # should say Bound
+ 2445  helm upgrade --install jellyfin k8s-at-home/jellyfin   --namespace media --reuse-values   --set extraVolumes[0].name=media   --set extraVolumes[0].persistentVolumeClaim.claimName=media-pvc   --set extraVolumeMounts[0].name=media   --set extraVolumeMounts[0].mountPath=/media
+ 2446  kubectl -n media rollout restart deployment jellyfin
+ 2447  helm list
+ 2448  helm list -n media
+ 2449  kubectl -n media exec deploy/jellyfin -- df -h | grep /media
+ 2450  helm upgrade jellyfin k8s-at-home/jellyfin   --namespace media --reuse-values   --set extraVolumes[0].name=media   --set extraVolumes[0].persistentVolumeClaim.claimName=media-pvc   --set extraVolumeMounts[0].name=media   --set extraVolumeMounts[0].mountPath=/media
+ 2451  kubectl -n media rollout status deployment/jellyfin
+ 2452  kubectl -n media exec deploy/jellyfin -- df -h | grep /media
+ 2453  kubectl -n media get deployment
+ 2454  kubectl -n media get deploy jellyfin -o jsonpath='{.spec.template.spec.volumes}' | jq
+ 2455  kubectl -n media get deploy jellyfin -o jsonpath='{.spec.template.spec.containers[0].volumeMounts}' | jq
+ 2456  helm upgrade jellyfin k8s-at-home/jellyfin   --namespace media --reuse-values   -f -
+ 2457  kubectl -n media rollout status deploy/jellyfin
+ 2458  kubectl -n media get pods -o wide
+ 2459  kubectl -n media exec deploy/jellyfin -- df -h | grep /media
+ 2460  kubectl -n media get pvc media-pvc -o yaml
+ 2461  kubectl get sc nfs -o yaml
+ 2462  kubectl apply -f -
+ 2463  kubectl -n media get pvc media-root-pvc
+ 2464  helm upgrade jellyfin k8s-at-home/jellyfin   --namespace media --reuse-values   --set extraVolumes[0].name=media   --set extraVolumes[0].persistentVolumeClaim.claimName=media-root-pvc   --set extraVolumeMounts[0].name=media   --set extraVolumeMounts[0].mountPath=/media
+ 2465  kubectl -n media rollout status deployment/jellyfin
+ 2466  kubectl -n media exec deployment/jellyfin -- df -h | grep /media
+ 2467  openmediavault.home.dcxxiv.com:/Media   4Ti   200Gi   3.8Ti   5%   /media
+ 2468  kubectl -n media exec deployment/jellyfin -- df -h | grep /media
+ 2469  kubectl -n media rollout status deployment/jellyfin
+ 2470  kubectl -n media exec deployment/jellyfin -- df -h | grep /media
+ 2471  kubectl -n media get pv media-root-pv
+ 2472  kubectl -n media get pvc media-root-pvc
+ 2473  kubectl -n media describe pvc media-root-pvc
+ 2474  # List volumes
+ 2475  kubectl -n media get deploy jellyfin   -o jsonpath='{.spec.template.spec.volumes}' | jq
+ 2476  # List mounts (first container)
+ 2477  kubectl -n media get deploy jellyfin   -o jsonpath='{.spec.template.spec.containers[0].volumeMounts}' | jq
+ 2478  kubectl -n media get deploy jellyfin   -o jsonpath='{.spec.template.spec.volumes}' | jq
+ 2479  kubectl -n media get deploy jellyfin   -o jsonpath='{.spec.template.spec.containers[0].volumeMounts}' | jq
+ 2480  POD=$(kubectl -n media get pod -l app=jellyfin -o jsonpath='{.items[0].metadata.name}')
+ 2481  kubectl -n media exec $POD -- ls -l /media
+ 2482  helm get values jellyfin -n media | grep -A3 extraVolumes
+ 2483  helm upgrade jellyfin k8s-at-home/jellyfin   --namespace media   --reuse-values   -f -
+ 2484  extraVolumes:
+ 2485  extraVolumeMounts:
+ 2486  kubectl -n media rollout status deployment/jellyfin
+ 2487  # Check volumes
+ 2488  kubectl -n media get deploy jellyfin   -o jsonpath='{.spec.template.spec.volumes}' | jq
+ 2489  # Check mounts
+ 2490  kubectl -n media get deploy jellyfin   -o jsonpath='{.spec.template.spec.containers[0].volumeMounts}' | jq
+ 2491  POD=$(kubectl -n media get pod -l app=jellyfin -o jsonpath='{.items[0].metadata.name}')
+ 2492  kubectl -n media exec $POD -- ls -l /media
+ 2493  cat > media-volume.yaml <<EOF
+extraVolumes:
+  - name: media
+    persistentVolumeClaim:
+      claimName: media-root-pvc
+
+extraVolumeMounts:
+  - name: media
+    mountPath: /media
+EOF
+
+ 2494  helm upgrade jellyfin k8s-at-home/jellyfin   --namespace media --reuse-values   -f media-volume.yaml
+ 2495  kubectl -n media rollout status deployment/jellyfin
+ 2496  kubectl -n media get deploy jellyfin   -o jsonpath='{.spec.template.spec.volumes}' | jq .
+ 2497  kubectl -n media get deploy jellyfin   -o jsonpath='{.spec.template.spec.containers[0].volumeMounts}' | jq .
+ 2498  POD=$(kubectl -n media get pod -l app=jellyfin -o jsonpath='{.items[0].metadata.name}')
+ 2499  kubectl -n media exec $POD -- ls -l /media
+ 2500  helm upgrade jellyfin k8s-at-home/jellyfin   --namespace media --reuse-values   --set persistence.media.enabled=true   --set persistence.media.existingClaim=media-root-pvc
+ 2501  kubectl -n media rollout status deployment/jellyfin
+ 2502  POD=$(kubectl -n media get pod -l app.kubernetes.io/instance=jellyfin -o jsonpath='{.items[0].metadata.name}')
+ 2503  kubectl -n media exec $POD -- ls -l /media
+ 2504  helm uninstall jellyfin -n media
+ 2505  kubectl -n media get pvc
+ 2506  kubectl -n media delete pvc jellyfin-config
+ 2507  kubectl -n media delete pvc media-pvc media-root-pvc
+ 2508  kubectl delete pv media-root-pv
+ 2509  cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: media-root-pv
+spec:
+  capacity:
+    storage: 4Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""    # only binds to PVCs that request ""
+  nfs:
+    server: openmediavault.home.dcxxiv.com
+    path: /Media
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-root-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""    # matches the PV above
+  resources:
+    requests:
+      storage: 4Ti
+EOF
+
+ 2510  # verify it bound
+ 2511  kubectl -n media get pvc media-root-pvc
+ 2512  helm install jellyfin k8s-at-home/jellyfin   --namespace media --create-namespace   --set env.TZ=America/Los_Angeles   --set ingress.main.enabled=true   --set ingress.main.ingressClassName=traefik   --set ingress.main.hosts[0].host=jellyfin.home.dcxxiv.com   --set persistence.config.size=10Gi   --set extraVolumes[0].name=media   --set extraVolumes[0].persistentVolumeClaim.claimName=media-root-pvc   --set extraVolumeMounts[0].name=media   --set extraVolumeMounts[0].mountPath=/media
+ 2513  kubectl -n media rollout status deployment/jellyfin
+ 2514  kubectl -n media exec deployment/jellyfin -- df -h | grep /media
+ 2515  helm install jellyfin k8s-at-home/jellyfin   --namespace media --create-namespace   --set env.TZ=America/Los_Angeles   --set persistence.config.size=10Gi   --set ingress.main.enabled=true   --set ingress.main.ingressClassName=traefik   --set ingress.main.hosts[0].host=jellyfin.home.dcxxiv.com   --set ingress.main.hosts[0].paths[0].path=/   --set ingress.main.tls[0].hosts[0]=jellyfin.home.dcxxiv.com   --set ingress.main.tls[0].secretName=jelly-tls   --set extraVolumes[0].name=media   --set extraVolumes[0].persistentVolumeClaim.claimName=media-root-pvc   --set extraVolumeMounts[0].name=media   --set extraVolumeMounts[0].mountPath=/media
+ 2516  kubectl -n media rollout status deployment/jellyfin
+ 2517  kubectl -n media exec deployment/jellyfin -- df -h | grep /media
+ 2518  helm uninstall jellyfin -n media || true
+ 2519  helm install jellyfin k8s-at-home/jellyfin   --namespace media --create-namespace   --set env.TZ=America/Los_Angeles   \
+ 2520  helm uninstall jellyfin -n media --timeout 30s || true && helm install jellyfin k8s-at-home/jellyfin   --namespace media --create-namespace   --set env.TZ=America/Los_Angeles   --set ingress.main.enabled=true   --set ingress.main.ingressClassName=traefik   --set ingress.main.hosts[0].host=jellyfin.home.dcxxiv.com   --set ingress.main.hosts[0].paths[0].path=/   --set ingress.main.tls[0].hosts[0]=jellyfin.home.dcxxiv.com   --set ingress.main.tls[0].secretName=jelly-tls   --set persistence.config.enabled=true   --set persistence.config.size=10Gi   --set persistence.media.enabled=true   --set persistence.media.existingClaim=media-root-pvc
+ 2521  kubectl -n media rollout status deployment/jellyfin
+ 2522  POD=$(kubectl -n media get pod -l app.kubernetes.io/instance=jellyfin -o jsonpath='{.items[0].metadata.name}')
+ 2523  kubectl -n media exec $POD -- df -h | grep /media
+ 2524  kubectl get pods -n media
+ 2525  kubectl exec -n media -it jellyfin-64c6fd47f-nrgsg -- ls -lah /media
+ 2526  kubectl delete pod -n media jellyfin
+ 2527  kubectl get pods -n media
+ 2528  kubectl delete pod -n media jellyfin-64c6fd47f-nrgsg
+ 2529  kubectl get pods -n media
+ 2530  helm search repo k8s-at-home/jellyfin --versions
+ 2531  helm search repo k8s-at-home/jellyfin --versions | head -n 10
+ 2532  helm repo add jellyfin https://jellyfin.github.io/helm/
+ 2533  helm repo update
+ 2534  helm repo add jellyfin https://jellyfin.github.io/helm/
+ 2535  helm repo add utkuozdemir https://utkuozdemir.org/helm-charts
+ 2536  helm repo update
+ 2537  helm search repo utkuozdemir/jellyfin --versions | head -n 10
+ 2538  helm repo add jellyfin https://jellyfin.github.io/jellyfin-helm
+ 2539  helm repo update
+ 2540  helm search repo jellyfin/jellyfin --versions | head -n 10
+ 2541  helm uninstall jellyfin -n media
+ 2542  helm install jellyfin jellyfin/jellyfin   --namespace media --create-namespace     --set env.TZ=America/Los_Angeles   --set ingress.main.enabled=true   --set ingress.main.ingressClassName=traefik   --set ingress.main.hosts[0].host=jellyfin.home.dcxxiv.com   --set ingress.main.hosts[0].paths[0].path=/   --set ingress.main.tls[0].hosts[0]=jellyfin.home.dcxxiv.com   --set ingress.main.tls[0].secretName=jelly-tls   --set persistence.config.enabled=true   --set persistence.config.size=10Gi   --set persistence.media.enabled=true   --set persistence.media.existingClaim=media-root-pvc
+ 2543  kubectl get pods -n media
+ 2544  watch kubectl get pods -n media
+ 2545  kubectl get pods -n media
+ 2546  kubectl port-forward -n media svc/jellyfin 8096:8096
+ 2547  kubectl get ingress -n media jellyfin -o yaml
+ 2548  kubectl get pods -n media
+ 2549  kubectl get ingress -n media jellyfin -o yaml
+ 2550  helm upgrade jellyfin jellyfin/jellyfin   --namespace media   --set ingress.enabled=true   --set ingress.className=traefik   --set ingress.hosts[0].host=jellyfin.home.dcxxiv.com   --set ingress.hosts[0].paths[0].path="/"   --set ingress.hosts[0].paths[0].pathType=Prefix   --set ingress.tls[0].hosts[0]=jellyfin.home.dcxxiv.com   --set ingress.tls[0].secretName=jelly-tls
+ 2551  helm upgrade jellyfin jellyfin/jellyfin   --namespace media   --set ingress.enabled=true   --set ingress.className=traefik   --set ingress.hosts[0].host=jellyfin.home.dcxxiv.com   --set ingress.hosts[0].paths[0].path="/"   --set ingress.hosts[0].paths[0].pathType=Prefix   --set ingress.tls[0].hosts[0]=jellyfin.home.dcxxiv.com   --set ingress.tls[0].secretName=jelly-tls   --set persistence.config.enabled=true   --set persistence.config.existingClaim=jellyfin-config   --set persistence.media.enabled=true   --set persistence.media.existingClaim=media-root-pvc
+ 2552  kubectl get ingress -n media
+ 2553  kubectl get pvc -n media
+ 2554  kubectl get pvc jellyfin-config -n media -o json | jq '.metadata.finalizers'
+ 2555  kubectl patch pvc jellyfin-config -n media -p '{"metadata":{"finalizers":null}}'
+ 2556  kubectl get pvc -n media
+ 2557  kubectl get pv
+ 2558  kubectl apply -f -
+ 2559  kubectl delete pod jellyfin-helper -n media
+ 2560  helm upgrade jellyfin jellyfin/jellyfin   --namespace media   --set ingress.enabled=true   --set ingress.className=traefik   --set ingress.hosts[0].host=jellyfin.home.dcxxiv.com   --set ingress.hosts[0].paths[0].path="/"   --set ingress.hosts[0].paths[0].pathType=Prefix   --set ingress.tls[0].hosts[0]=jellyfin.home.dcxxiv.com   --set ingress.tls[0].secretName=jelly-tls   --set persistence.config.enabled=true   --set persistence.config.existingClaim=jellyfin-config   --set persistence.media.enabled=true   --set persistence.media.existingClaim=media-root-pvc
+ 2561  kubectl delete pod jellyfin -n media
+ 2562  kubectl get pods -n media
+ 2563  kubectl delete pod jellyfin-68fcdcd9-xhvp2
+ 2564  kubectl delete pod jellyfin-68fcdcd9-xhvp2 -n media
+ 2565  kubectl get pods -n media
+ 2566  kubectl exec -it -n media jellyfin-68fcdcd9-5ptn4 -- sh
+ 2567  kubectl exec -it -n media jellyfin-68fcdcd9-5ptn4 -- bash
+ 2568  kubectl get pod -n media -o yaml jellyfin-68fcdcd9-5ptn4
+ 2569  kubectl get claim -n media -o yaml jellyfin-config
+ 2570  kubectl get volume -n media -o yaml jellyfin-config
+ 2571  kubectl get 
+ 2572  kubectl get help
+ 2573  kubectl get -h
+ 2574  kubectl get pvc -n media jellyfin-config -o yaml
+ 2575  kubectl get pv pvc-65c1ad69-bc62-43f7-abc4-c808c0f81150 -o yaml
+ 2576  kubectl delete pvc jellyfin-config -n media
+ 2577  kubectl delete pv pvc-65c1ad69-bc62-43f7-abc4-c808c0f81150
+ 2578  kubectl apply -f -
+ 2579  kubectl delete pvc jellyfin-config -n media
+ 2580  kubectl get pvc -n media
+ 2581  kubectl get pvc jellyfin-config -n media -o json | jq .metadata.finalizers
+ 2582  kubectl patch pvc jellyfin-config -n media -p '{"metadata":{"finalizers":null}}'
+ 2583  kubectl get pvc -n media
+ 2584  kubectl apply -f -
+ 2585  kubectl get pods -n media
+ 2586  kubectl delete pod jellyfin-68fcdcd9-5ptn4 -n media
+ 2587  kubectl get pods -n media
+ 2588  kubectl exec -n media jellyfin-68fcdcd9-pz2hw -- ls /config/plugins/SSO-Auth
+ 2589  scp ../../../Downloads/sso-authentication_3.5.2.4.zip root@openmediavault:~/
+ 2590  kubectl exec -n media jellyfin-68fcdcd9-pz2hw -- rm /config/plugin-data/pluginRepositories.json
+ 2591  kubectl delete pod jellyfin-68fcdcd9-pz2hw -n media
+ 2592  kubectl get pods -n media
+ 2593  kubectl logs -n media deployment/jellyfin | grep -i sso
+ 2594  kubectl delete pod jellyfin-68fcdcd9-pz2hw -n media
+ 2595  kubectl get pods -n media
+ 2596  kubectl delete pod jellyfin-68fcdcd9-7djhl -n media
+ 2597  kubectl get pods -n media
+ 2598  kubectl rollout restart deployment jellyfin -n media
+ 2599  kubectl get pods -n media
+ 2600  kubectl logs -n media deployment/jellyfin | tail -n 100
+ 2601  kubectl rollout restart deployment/jellyfin -n media
+ 2602  kubectl get pods -n media
+ 2603  kubectl logs -n media deployment/jellyfin | tail -n 100
+ 2604  kubectl exec -it -n media deploy/jellyfin --   curl -v https://id.home.dcxxiv.com/application/o/jellyfin/.well-known/openid-configuration
+ 2605  kubectl rollout restart deployment/jellyfin -n media
+ 2606  kubectl get pods -n media
+ 2607  kubectl exec -n media deploy/jellyfin --   cat /config/plugins/configurations/Jellyfin.Plugin.SSO_Auth.Configuration.SSOConfiguration.json | jq .
+ 2608  kubectl get pods -n media
+ 2609  kubectl exec -n media deploy/jellyfin --   cat /config/plugins/configurations/Jellyfin.Plugin.SSO_Auth.Configuration.SSOConfiguration.json | jq .
+ 2610  kubectl rollout restart deployment/jellyfin -n media
+ 2611  kubectl get pods -n media
+ 2612  echo | openssl s_client -connect id.home.dcxxiv.com:443 -showcerts |   awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 }' > authentik-chain.pem
+ 2613  less authentik-chain.pem 
+ 2614  csplit -sz authentik-chain.pem '/-----BEGIN CERTIFICATE-----/' '{*}'
+ 2615  mv xx02 root-ca.crt  # typically the last one is the root
+ 2616  csplit -sz authentik-chain.pem '/-----BEGIN CERTIFICATE-----/' '{*}'
+ 2617  less authentik-chain.pem 
+ 2618  openssl x509 -in authentik-chain.pem -noout -subject -issuer
+ 2619  JELLYFIN_POD=$(kubectl get pod -n media -l app=jellyfin -o jsonpath='{.items[0].metadata.name}')
+ 2620  kubectl get pods -n media
+ 2621  JELLYFIN_POD=jellyfin-7dd8bb54cd-rlj6r
+ 2622  kubectl cp root-ca.crt media/$JELLYFIN_POD:/usr/local/share/ca-certificates/root-ca.crt
+ 2623  kubectl cp authentik-chain.pem media/$JELLYFIN_POD:/usr/local/share/ca-certificates/root-ca.crt
+ 2624  kubectl exec -n media $JELLYFIN_POD -- update-ca-certificates
+ 2625  kubectl rollout restart deployment/jellyfin -n media
+ 2626  kubectl get pods -n media
+ 2627  kubectl get pods -n media -l app.kubernetes.io/name=jellyfin
+ 2628  kubectl get pod $JELLYFIN_POD -n media --show-labels
+ 2629  kubectl get pod jellyfin-6c5584c958-gcz67 -n media --show-labels
+ 2630  JELLYFIN_POD=$(kubectl get pod -n media -l app.kubernetes.io/name=jellyfin -o jsonpath='{.items[0].metadata.name}')
+ 2631  echo $JELLYFIN_POD
+ 2632  kubectl cp authentik-chain.pem media/$JELLYFIN_POD:/usr/local/share/ca-certificates/root-ca.crt
+ 2633  kubectl exec -n media $JELLYFIN_POD -- update-ca-certificates
+ 2634  cat authentik-chain.pem
+ 2635  kubectl rollout restart deployment/jellyfin -n media
+ 2636  kubectl get pods -n media
+ 2637  kubectl exec -n media deploy/jellyfin --  bash
+ 2638  kubectl exec -n media deploy/jellyfin -- bash
+ 2639  kubectl exec -n media deployment/jellyfin -- bash
+ 2640  kubectl get pods -n media
+ 2641  kubectl exec -n media jellyfin-55d85cd586-l65nr -- bash
+ 2642  kubectl exec -n media jellyfin-55d85cd586-l65nr -- echo doink
+ 2643  kubectl exec -n media jellyfin-55d85cd586-l65nr -- sudo -s
+ 2644  kubectl exec -n media jellyfin-55d85cd586-l65nr -- su -
+ 2645  kubectl exec -n media jellyfin-55d85cd586-l65nr -- su
+ 2646  kubectl exec -n media jellyfin-55d85cd586-l65nr -- sh
+ 2647  kubectl get pods -n media
+ 2648  kubectl exec -n media jellyfin-55d85cd586-l65nr -- bash
+ 2649  kubectl exec -n media jellyfin-55d85cd586-l65nr -- sh
+ 2650  kubectl get pod jellyfin-55d85cd586-l65nr -n media -o jsonpath='{.spec.containers[0].image}'
+ 2651  kubectl exec -n media jellyfin-55d85cd586-l65nr -- ls /usr/bin
+ 2652  kubectl exec -n media jellyfin-55d85cd586-l65nr -- ls /bin
+ 2653  kubectl exec -n media jellyfin-55d85cd586-l65nr -- ls /bin/bash
+ 2654  kubectl exec -n media -it jellyfin-55d85cd586-l65nr -- bash
+ 2655  kubectl get pods -n media
+ 2656* 
+ 2657  cat > certificate.yaml
+ 2658  vi certificate.yaml 
+ 2659  kubectl apply -f -
+ 2660  kubectl apply -f certificate.yaml 
+ 2661  kubectl apply -f -
+ 2662  kubectl apply --validate=false -f -
+ 2663  cat certificate.yaml 
+ 2664  kubectl apply -f -
+ 2665  vi authentik-values.yaml 
+ 2666  cat > authentik-ca.yaml
+ 2667  kubectl apply --validate=false -f authentik-ca.yaml 
+ 2668  kubectl -n media patch deployment jellyfin --type='json' -p='[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/volumes/-",
+    "value": {
+      "name": "authentik-ca-vol",
+      "configMap": {
+        "name": "authentik-ca"
+      }
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value": {
+      "name": "authentik-ca-vol",
+      "mountPath": "/usr/local/share/ca-certificates/authentik.crt",
+      "subPath": "authentik.crt"
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/command",
+    "value": ["/bin/bash", "-c"]
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/args",
+    "value": ["update-ca-certificates && exec jellyfin"]
+  }
+]'
+ 2669  kubectl get pods -n media
+ 2670  kubectl logs -n media deployment/jellyfin | tail -n 100
+ 2671  kubectl logs -n media deployment/jellyfin
+ 2672  kubectl get pods -n media
+ 2673  kubectl describe pod jellyfin-64d758d994-h5967 -n media
+ 2674  cat authentik-ca.yaml
+ 2675* kubectl describe 
+ 2676  kubectl apply -f authentik-ca.yaml 
+ 2677  kubectl apply -f authentik-ca.yaml -n media
+ 2678  kubectl describe pod jellyfin-64d758d994-h5967 -n media
+ 2679  kubectl get pods -n media
+ 2680  kubectl rollout restart deployment/jellyfin -n media
+ 2681  kubectl get pods -n media
+ 2682  kubectl logs -n media deployment/jellyfin
+ 2683  kubectl get pods -n media
+ 2684  kubectl logs -n media jellyfin-69f56d7d7d-p8tnk
+ 2685  kubectl get pods -n media
+ 2686  kubectl exec -n media -it jellyfin-69f56d7d7d-p8tnk -- bash
+ 2687  kubectl get pods -n media
+ 2688  kubectl exec -n media -it jellyfin-69f56d7d7d-p8tnk -- bash
+ 2689  kubectl describe pod jellyfin-69f56d7d7d-p8tnk -n media
+ 2690  kubectl logs jellyfin-69f56d7d7d-p8tnk -n media
+ 2691  cat authentik-ca.yaml
+ 2692  cat certificate.yaml 
+ 2693  kubectl -n media patch deployment jellyfin --type='json' -p='[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/volumes/-",
+    "value": {
+      "name": "authentik-ca-vol",
+      "configMap": {
+        "name": "authentik-ca"
+      }
+    }
+  },
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value": {
+      "name": "authentik-ca-vol",
+      "mountPath": "/usr/local/share/ca-certificates/authentik.crt",
+      "subPath": "authentik.crt"
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/command",
+    "value": ["/bin/bash", "-c"]
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/args",
+    "value": ["update-ca-certificates && exec /jellyfin/jellyfin"]
+  }
+]'
+ 2694  kubectl -n media patch deployment jellyfin --type='json' -p='[
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/volumes/-",
+    "value": {
+      "name": "authentik-ca-vol",
+      "configMap": {
+        "name": "authentik-ca"
+      }
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value": {
+      "name": "authentik-ca-vol",
+      "mountPath": "/usr/local/share/ca-certificates/authentik.crt",
+      "subPath": "authentik.crt"
+    }
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/command",
+    "value": ["/bin/bash", "-c"]
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/args",
+    "value": ["update-ca-certificates && exec /jellyfin/jellyfin"]
+  }
+]'
+ 2695  kubectl -n media patch deployment jellyfin --type='json' -p='[
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/command",
+    "value": ["/bin/bash", "-c"]
+  },
+  {
+    "op": "replace",
+    "path": "/spec/template/spec/containers/0/args",
+    "value": ["update-ca-certificates && exec /jellyfin/jellyfin"]
+  }
+]'
+ 2696  kubectl get pods -n media
+ 2697  ls
+ 2698  vi k8s-snarf-clean.sh
+ 2699  ./k8s-snarf-clean.sh 
+ 2700  apt install yq
+ 2701  sudo apt install yq
+ 2702  snap install yq
+ 2703  sudo snap install yq
+ 2704  yq
+ 2705  ./k8s-snarf-clean.sh 
+ 2706  code .
+ 2707  ./k8s-snarf-minimal.sh 
+ 2708  helm get values authentik -n media -o yaml > base/authentik/helm-values.yaml
+ 2709  helm list --all-namespaces
+ 2710  cat export-helm-state.sh
+ 2711  cat > export-helm-state.sh
+ 2712  ./export-helm-state.sh 
+ 2713  cat > export-helm-state.sh
+ 2714  ./export-helm-state.sh 
+ 2715  cat > export-helm-state.sh
+ 2716  ./export-helm-state.sh 
+ 2717  kubectl get all --all-namespaces
+ 2718  helm --list
+ 2719  helm list
+ 2720  helm
+ 2721  helm list --all-namespaces
+ 2722  kubectl get all --all-namespaces
+ 2723  kubectl get all,secrets,cm,pv,pvc,sa,role,rb,crb,clusterrole,clusterrolebinding,clusterissuer,issuer,certificate -A -o yaml
+ 2724  kubectl get all,secrets,cm,pv,pvc,sa,role,crb,clusterrole,clusterrolebinding,clusterissuer,issuer,certificate -A -o yaml
+ 2725  kubectl get all,secrets,cm,pv,pvc,sa,role,clusterrole,clusterrolebinding,clusterissuer,issuer,certificate -A -o yaml
+ 2726  kubectl get all,secrets,cm,pv,pvc,sa,role,clusterrole,clusterrolebinding,clusterissuer,issuer,certificate -A -o yaml > all.yaml
+ 2727  less ~/.bash_history 
+ 2728  history | less
+ 2729  history > history.txt 1730  dig -t ns alijamaluddin.com @ns-1911.awsdns-46.co.uk
+

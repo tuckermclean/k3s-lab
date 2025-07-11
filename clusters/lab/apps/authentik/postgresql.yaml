@@ -1,0 +1,135 @@
+# apps/authentik/postgresql.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authentik-postgresql-secret
+  namespace: authentik
+type: Opaque
+data:
+  password: 8eVApXFxknf6+WZrYJrmBDnpxFY=
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-postgresql-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: openmediavault.home.dcxxiv.com
+    path: /Media/postgresql
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-pvc
+  namespace: authentik
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pg
+  template:
+    metadata:
+      labels:
+        app: pg
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:13-alpine
+        env:
+        - name: POSTGRES_DB
+          value: authentik
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: authentik-postgresql-secret
+              key: password
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: postgresql-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-postgresql
+  namespace: authentik
+spec:
+  clusterIP: None
+  selector:
+    app: pg
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+
+# ---
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: authentik-postgresql
+#   namespace: authentik
+# spec:
+#   serviceName: authentik-postgresql
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: authentik-postgresql
+#   template:
+#     metadata:
+#       labels:
+#         app: authentik-postgresql
+#     spec:
+#       containers:
+#         - name: postgresql
+#           image: postgres:13-alpine
+#           ports:
+#             - containerPort: 5432
+#           env:
+#             - name: POSTGRES_DB
+#               value: authentik
+#             - name: POSTGRES_USER
+#               value: postgres
+#             - name: POSTGRES_PASSWORD
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: authentik-postgresql-secret
+#                   key: password
+#           volumeMounts:
+#             - name: data
+#               mountPath: /var/lib/postgresql/data
+#   volumeClaimTemplates:
+#     - metadata:
+#         name: data
+#       spec:
+#         accessModes: ["ReadWriteOnce"]
+#         resources:
+#           requests:
+#             storage: 10Gi
+# 

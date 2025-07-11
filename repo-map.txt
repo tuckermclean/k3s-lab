@@ -1,0 +1,20 @@
+.
+├── README-snarf-scripts.md
+├── all.yaml
+├── authentik-ca.yaml
+├── authentik-chain.pem
+├── authentik-values.yaml
+├── certificate.yaml
+├── clusters
+│   └── lab
+├── export-helm-state.sh
+├── history.txt
+├── k8s-snarf-balanced.sh
+├── k8s-snarf-clean.sh
+├── k8s-snarf-minimal.sh
+├── media-volume.yaml
+├── repo-map.txt
+├── smoke-tests.sh
+└── xx00
+
+2 directories, 15 files

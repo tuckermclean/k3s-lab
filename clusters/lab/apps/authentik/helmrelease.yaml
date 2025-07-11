@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: authentik-secret
+  namespace: authentik
+stringData:
+  secretKey: "XyZ3your-generated-keyabc"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: authentik
+  namespace: authentik
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: authentik
+      sourceRef:
+        kind: HelmRepository
+        name: authentik
+      version: "2025.6.3"
+  valuesFrom:
+    - kind: Secret
+      name: authentik-secret
+      valuesKey: secretKey
+      targetPath: authentik.secret_key
+    - kind: Secret
+      name: authentik-postgresql-secret
+      valuesKey: password    # the key in your Secret
+      targetPath: externalDatabase.password
+  values:
+    # disable the built-in Postgres (we’re managing it ourselves)
+    postgresql:
+      enabled: false
+    # disable the built-in Redis (you already have your own)
+    redis:
+      enabled: false
+
+    secretKeySecret:
+      name: authentik-secret
+      key: secretKey
+    externalDatabase:
+      host: authentik-postgresql
+      port: 5432
+      user: postgres
+      database: authentik
+    externalRedis:
+      host: authentik-redis
+      port: 6379
+
+    worker:
+      tolerations:
+        - key: "node.kubernetes.io/disk-pressure"
+          operator: "Exists"
+          effect: "NoExecute"
+      resources:
+        requests:
+          ephemeral-storage: "50Mi"

@@ -1,0 +1,18 @@
+postgresql:
+  enabled: true
+  auth:
+    password: 8eVApXFxknf6+WZrYJrmBDnpxFY=
+
+authentik:
+  secret_key: 1KzZ3OIe102yLe93kdE19Rw/vlJK+aM2jfOJJTlzPY98OERJiL5B8Q==
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - id.home.dcxxiv.com
+    tls:
+      - hosts:
+          - id.home.dcxxiv.com
+        secretName: id-tls

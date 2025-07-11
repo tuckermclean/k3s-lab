@@ -1,3 +1,0 @@
-resources:
-  - github.com/kubernetes/ingress-nginx/deploy/static/provider/cloud?ref=controller-v1.11.1
-  - https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml
