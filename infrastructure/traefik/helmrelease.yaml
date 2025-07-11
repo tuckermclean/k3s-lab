@@ -11,7 +11,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: traefik
-      version: "36.3.0"        # updated to latest valid version
+      version: "36.3.0"
   values:
     rbac:
       enabled: true
@@ -20,13 +20,6 @@ spec:
       isDefaultClass: true
     service:
       type: LoadBalancer
-    ports:
-      # expose the “traefik” (dashboard) port in the Service
-      traefik:
-        expose: true
-        port: 9000
-        targetPort: 9000
-    api:
-      # turn on the dashboard and allow insecure (HTTP) access
-      dashboard: true
-      insecure: true
+    dashboard:
+      enabled: true
+      domain: ""
