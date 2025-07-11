@@ -1,11 +1,11 @@
 # dashboard-public.yaml
 
 # 1) Namespace
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: kubernetes-dashboard
----
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   name: kubernetes-dashboard
+# ---
 # 2) ServiceAccount
 apiVersion: v1
 kind: ServiceAccount
