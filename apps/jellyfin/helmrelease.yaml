@@ -20,7 +20,7 @@ spec:
     extraVolumes:
       - name: kube-ca
         configMap:
-          name: kube-root-ca.crt
+          name: jellyfin-ca-cert-configmap
       - name: media
         persistentVolumeClaim:
           claimName: media-root-pvc

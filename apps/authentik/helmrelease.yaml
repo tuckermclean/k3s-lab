@@ -25,6 +25,10 @@ spec:
       name: authentik-postgresql-secret
       valuesKey: password    # the key in your Secret
       targetPath: externalDatabase.password
+    - kind: Secret
+      name: authentik-secret
+      valuesKey: secretKey    # the key in your Secret
+      targetPath: authentik.secret_key
   values:
     # disable the built-in Postgres (we’re managing it ourselves)
     postgresql:
@@ -34,7 +38,7 @@ spec:
       enabled: false
 
     authentik:
-      secret_key: "/VV2aqqBNzYxRQ0HxXLns8B2M58RvW8ycFnnpSGAARgvDC22DZ1YiA=="
+      # secret_key will be set from secret management via valuesFrom
     externalDatabase:
       host: authentik-postgresql
       port: 5432

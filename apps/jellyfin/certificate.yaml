@@ -1,0 +1,71 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: jellyfin-ca-cert
+  namespace: media
+spec:
+  secretName: jellyfin-ca-cert
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+  commonName: id.home.dcxxiv.com
+  dnsNames:
+    - id.home.dcxxiv.com
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: jellyfin-ca-cert-copy
+  namespace: media
+spec:
+  template:
+    spec:
+      serviceAccountName: jellyfin-ca-cert-copy
+      containers:
+      - name: copy-cert
+        image: busybox
+        command:
+        - sh
+        - -c
+        - |
+          kubectl get secret jellyfin-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/ca.crt
+          kubectl create configmap jellyfin-ca-cert-configmap --from-file=ca.crt=/tmp/ca.crt --dry-run=client -o yaml | kubectl apply -f -
+        volumeMounts:
+        - name: ca-cert
+          mountPath: /tmp
+      volumes:
+      - name: ca-cert
+        secret:
+          secretName: jellyfin-ca-cert
+      restartPolicy: Never
+  backoffLimit: 3
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jellyfin-ca-cert-copy
+  namespace: media
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jellyfin-ca-cert-copy
+  namespace: media
+rules:
+- apiGroups: [""]
+  resources: ["secrets", "configmaps"]
+  verbs: ["get", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jellyfin-ca-cert-copy
+  namespace: media
+subjects:
+- kind: ServiceAccount
+  name: jellyfin-ca-cert-copy
+  namespace: media
+roleRef:
+  kind: Role
+  name: jellyfin-ca-cert-copy
+  apiGroup: rbac.authorization.k8s.io 
