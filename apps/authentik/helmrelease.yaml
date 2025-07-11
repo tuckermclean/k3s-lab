@@ -49,6 +49,17 @@ spec:
       host: authentik-redis
       port: 6379
 
+    server:
+      ingress:
+        enabled: true
+        ingressClassName: traefik
+        hosts:
+          - id.home.dcxxiv.com
+        tls:
+          - hosts:
+              - id.home.dcxxiv.com
+            secretName: id-tls
+
     worker:
       tolerations:
         - key: "node.kubernetes.io/disk-pressure"
