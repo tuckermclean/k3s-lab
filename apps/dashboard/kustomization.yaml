@@ -4,4 +4,6 @@ namespace: kubernetes-dashboard
 commonLabels:
   app.kubernetes.io/part-of: gitops
 resources:
+  - namespace.yaml
+  - helmrelease.yaml
   - dashboard-public.yaml

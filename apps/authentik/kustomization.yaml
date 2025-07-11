@@ -4,8 +4,10 @@ namespace: authentik
 commonLabels:
   app.kubernetes.io/part-of: gitops
 resources:
+  - namespace.yaml
   - helmrepository.yaml
+  - helmrelease.yaml
   - postgresql.yaml
   - redis.yaml
-  - helmrelease.yaml
   - ingress.yaml
+  - values.yaml
