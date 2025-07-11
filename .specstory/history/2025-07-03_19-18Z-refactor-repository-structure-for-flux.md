@@ -15964,17 +15964,417 @@ Nothing is working yet. Go All Helm
 
 _**Assistant**_
 
+```diff
+- 
++ apiVersion: helm.toolkit.fluxcd.io/v2
++ kind: HelmRelease
++ metadata:
++   name: kubernetes-dashboard
++   namespace: kubernetes-dashboard
++ spec:
++   interval: 5m
++   chart:
++     spec:
++       chart: kubernetes-dashboard
++       sourceRef:
++         kind: HelmRepository
++         name: kubernetes-dashboard
++       version: "6.0.8" # Use latest stable version or adjust as needed
++   values: {}
+  
+```
+
+---
+
+```diff
+  resources:
+    - helmrelease.yaml
+-   - dashboard-public.yaml
+  
+```
+
+---
+
+Remove all raw YAML for the dashboard to avoid duplication and ensure all resources are managed by Helm.
+
+---
+
+```diff
+- 
++ apiVersion: source.toolkit.fluxcd.io/v1
++ kind: HelmRepository
++ metadata:
++   name: kubernetes-dashboard
++   namespace: flux-system
++ spec:
++   interval: 1h
++   url: https://kubernetes.github.io/dashboard/ 
+```
+
+---
+
+Your setup is now fully "All Helm" for the Kubernetes Dashboard:
+
+1. **HelmRelease created:**  
+   - `apps/dashboard/helmrelease.yaml` now manages the dashboard using the official chart.
+2. **HelmRepository created:**  
+   - `apps/dashboard/helmrepository.yaml` points to the official dashboard chart repo.
+3. **Raw YAML deleted:**  
+   - `apps/dashboard/dashboard-public.yaml` has been removed to avoid duplication.
+4. **Kustomization updated:**  
+   - `apps/dashboard/kustomization.yaml` now references only `helmrelease.yaml`.
+
+---
+
+## **What to do next**
+
+1. **Commit and push these changes.**
+2. **Reconcile the apps Kustomization:**
+   ```sh
+   flux reconcile kustomization apps -n flux-system
+   ```
+3. **Monitor the rollout:**
+   ```sh
+   flux get helmreleases -A
+   kubectl get pods -n kubernetes-dashboard
+   ```
+
+---
+
+**Result:**  
+- All dashboard resources will be managed by Helm via Flux.
+- No more manual YAML for the dashboard.
+- No duplication, no Kustomize errors, and easy upgrades in the future.
+
+If you want to go "All Helm" for other apps (like Authentik or Jellyfin), let me know and I’ll do the same for them!  
+If you hit any issues, just paste the error and I’ll fix it directly.
+
+---
+
+_**User**_
+
+From authentik-server:
+
+
+{"event": "PostgreSQL connection failed, retrying... (connection failed: connection to server at \"10.42.0.24\", port 5432 failed: fe_sendauth: no password supplied)", "level": "info", "logger": "authentik.lib.config", "timestamp": 1752264712.3879957}
+{"event": "PostgreSQL connection failed, retrying... (connection failed: connection to server at \"10.42.0.24\", port 5432 failed: fe_sendauth: no password supplied)", "level": "info", "logger": "authentik.lib.config", "timestamp": 1752264713.3953085}
+{"event": "PostgreSQL connection failed, retrying... (connection failed: connection to server at \"10.42.0.24\", port 5432 failed: fe_sendauth: no password supplied)", "level": "info", "logger": "authentik.lib.config", "timestamp": 1752264714.4037008}
+{"event": "PostgreSQL connection failed, retrying... (connection failed: connection to server at \"10.42.0.24\", port 5432 failed: fe_sendauth: no password supplied)", "level": "info", "logger": "authentik.lib.config", "timestamp": 1752264715.4139402}
+{"event": "PostgreSQL connection failed, retrying... (connection failed: connection to server at \"10.42.0.24\", port 5432 failed: fe_sendauth: no password supplied)", "level": "info", "logger": "authentik.lib.config", "timestamp": 1752264716.4243085}
+{"event": "PostgreSQL connection failed, retrying... (connection failed: connection to server at \"10.42.0.24\", port 5432 failed: fe_sendauth: no password supplied)", "level": "info", "logger": "authentik.lib.config", "timestamp": 1752264717.430651}
+{"event": "PostgreSQL connection failed, retrying... (connection failed: connection to server at \"10.42.0.24\", port 5432 failed: fe_sendauth: no password supplied)", "level": "info", "logger": "authentik.lib.config", "timestamp": 1752264718.440548}
+
+---
+
+_**Assistant**_
+
+The error from `authentik-server`:
+```
+PostgreSQL connection failed, retrying... (connection failed: connection to server at "10.42.0.24", port 5432 failed: fe_sendauth: no password supplied)
+```
+means that **Authentik is trying to connect to Postgres, but no password is being supplied**.
+
+---
+
+## **Why is this happening?**
+
+- The Authentik HelmRelease is configured to get the Postgres password from a Kubernetes Secret.
+- The Secret either:
+  - Does not exist,
+  - Exists but is empty,
+  - Or the key is not set correctly.
+
+---
+
+## **How to Fix**
+
+### 1. **Check the Secret in the authentik namespace**
+```sh
+kubectl get secret authentik-postgresql-secret -n authentik -o yaml
+```
+- Look for the `password` key under `data:`.  
+- It should be a non-empty base64 string.
+
+### 2. **Check the HelmRelease valuesFrom**
+Your `apps/authentik/helmrelease.yaml` should have:
+```yaml
+valuesFrom:
+  - kind: Secret
+    name: authentik-postgresql-secret
+    valuesKey: password
+    targetPath: externalDatabase.password
+```
+- This tells Flux/Helm to set `externalDatabase.password` from the secret.
+
+### 3. **Check the Secret-Init Job**
+- If you are using a Job to generate the secret, make sure it is running and has created the secret with a non-empty password.
+
+### 4. **If the Secret is missing or empty:**
+- Re-run or fix the secret-init Job.
+- Or, manually create the secret for a quick fix:
+  ```sh
+  kubectl create secret generic authentik-postgresql-secret \
+    --from-literal=password='yourpassword' \
+    -n authentik --dry-run=client -o yaml | kubectl apply -f -
+  ```
+
+---
+
+## **Summary Table**
+
+| Step                | What to Check/Do                                      |
+|---------------------|------------------------------------------------------|
+| Check Secret        | `kubectl get secret authentik-postgresql-secret -n authentik -o yaml` |
+| Check HelmRelease   | Ensure `valuesFrom` is set as above                  |
+| Check Secret-Init   | Ensure it runs and sets a non-empty password         |
+| Manual Fix          | Create the secret with a password if needed          |
+
+---
+
+**If you paste the output of the secret and the relevant part of your HelmRelease, I can tell you exactly what’s wrong and how to fix it!**  
+Let me know if you want to automate secret generation or just want a quick manual fix.
+
+---
+
+_**User**_
+
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get secret authentik-postgresql-secret -n authentik -o yaml
+apiVersion: v1
+data:
+  password: ""
+kind: Secret
+metadata:
+  creationTimestamp: "2025-07-11T19:44:17Z"
+  labels:
+    app.kubernetes.io/part-of: gitops
+    kustomize.toolkit.fluxcd.io/name: apps
+    kustomize.toolkit.fluxcd.io/namespace: flux-system
+  name: authentik-postgresql-secret
+  namespace: authentik
+  resourceVersion: "14360"
+  uid: 7cec0ee8-15f5-4b43-92a1-c469bb296881
+type: Opaque
+
+---
+
+_**Assistant**_
+
+Your secret `authentik-postgresql-secret` exists, **but the `password` field is empty**:
+```yaml
+data:
+  password: ""
+```
+This is why Authentik cannot connect to Postgres—**no password is being supplied**.
+
+---
+
+## **How to Fix**
+
+### **Option 1: Quick Manual Fix**
+Set a password manually (replace `yourpassword` with a strong password):
+```sh
+kubectl create secret generic authentik-postgresql-secret \
+  --from-literal=password='yourpassword' \
+  -n authentik --dry-run=client -o yaml | kubectl apply -f -
+```
+This will overwrite the empty secret with a new one containing the password.
+
+---
+
+### **Option 2: Fix Your Secret-Init Job**
+If you want this to be automated (recommended for GitOps):
+
+- Your secret-init Job should generate a random password and set it in the secret if it is empty.
+- **Check your secret-init Job logic** to ensure it does not create an empty password.
+- If you want, I can review and fix your secret-init Job so it always generates a password if missing.
+
+---
+
+## **Summary Table**
+
+| Problem         | Solution                                      |
+|-----------------|-----------------------------------------------|
+| Secret is empty | Manually create it with a password, or fix secret-init Job |
+
+---
+
+**Would you like to fix this manually right now, or do you want me to review and fix your secret-init Job for full automation?**  
+Let me know your preference!
+
+---
+
+_**User**_
+
+@secret-init-job.yaml Look at it
+
+---
+
+_**Assistant**_
+
+Here’s your current `secrets/secret-init-job.yaml` logic (summarized):
+
+- **Waits for the `authentik` namespace to exist.**
+- **Checks if the `authentik-secret` exists and has a `secretKey` value.**
+- **If not, it creates/patches the `authentik-secret` with a random `secretKey`.**
+- **It does NOT handle the `authentik-postgresql-secret` at all.**
+
+---
+
+## **What’s Missing?**
+
+- **You need to also check for and create/patch the `authentik-postgresql-secret` with a random password** if it is missing or empty.
+
+---
+
+## **How to Fix**
+
+Add logic to your Job so it also ensures the `authentik-postgresql-secret` exists and has a non-empty `password` field.
+
+---
+
+### **Here’s the improved script section:**
+
+```sh
+set -e
+# Wait for authentik namespace to exist
+for i in $(seq 1 30); do
+  kubectl get ns authentik && break || sleep 2
+done
+
+# Create or patch authentik-secret (for secretKey)
+if ! kubectl get secret authentik-secret -n authentik >/dev/null 2>&1 || [ -z "$(kubectl get secret authentik-secret -n authentik -o jsonpath='{.data.secretKey}')" ]; then
+  echo "Creating or patching authentik-secret..."
+  kubectl create secret generic authentik-secret --from-literal=secretKey=$(head -c 32 /dev/urandom | base64) -n authentik --dry-run=client -o yaml | kubectl apply -f -
+else
+  echo "authentik-secret already set, skipping"
+fi
+
+# Create or patch authentik-postgresql-secret (for password)
+if ! kubectl get secret authentik-postgresql-secret -n authentik >/dev/null 2>&1 || [ -z "$(kubectl get secret authentik-postgresql-secret -n authentik -o jsonpath='{.data.password}')" ]; then
+  echo "Creating or patching authentik-postgresql-secret..."
+  kubectl create secret generic authentik-postgresql-secret --from-literal=password=$(head -c 32 /dev/urandom | base64) -n authentik --dry-run=client -o yaml | kubectl apply -f -
+else
+  echo "authentik-postgresql-secret already set, skipping"
+fi
+```
+
+---
+
+## **What to Do Next**
+
+- Update your `secret-init-job.yaml` to include the above logic.
+- Commit and push.
+- Delete the empty secret so the Job can recreate it:
+  ```sh
+  kubectl delete secret authentik-postgresql-secret -n authentik
+  ```
+- Let Flux reconcile and the Job will generate a new, random password.
+
+---
+
+Would you like me to update your `secret-init-job.yaml` for you?
+
+---
+
+_**User**_
+
+Doesn't postgres have a root password and stuff? Where is that coming from? I thought this job took care of that
+
+---
+
+_**Assistant**_
+
+Great question! Let’s clarify how Postgres authentication works in your setup and what your secret-init Job is (and isn’t) doing.
+
+---
+
+## **How Postgres Passwords Work in Kubernetes Deployments**
+
+- **Postgres needs a password for the `postgres` user** (the “root” user for Postgres).
+- This password is usually provided to the Postgres container via an environment variable (`POSTGRES_PASSWORD`) or a Kubernetes Secret.
+- **Your Authentik app needs to know this password** to connect to the database.
+
+---
+
+## **Where Should the Password Come From?**
+
+- **Best practice:**  
+  Generate a random password and store it in a Kubernetes Secret (e.g., `authentik-postgresql-secret`).
+- The Postgres Deployment/StatefulSet should reference this secret for the `POSTGRES_PASSWORD` env var.
+- The Authentik HelmRelease should reference the same secret for its `externalDatabase.password` value.
+
+---
+
+## **What Your Job Is (and Isn’t) Doing**
+
+- **Currently:**  
+  Your `secret-init` Job only creates the `authentik-secret` (for the app’s secret key).
+- **It does NOT create the `authentik-postgresql-secret`** (for the Postgres password), which is why the password is empty and Authentik cannot connect.
+
+---
+
+## **What Needs to Happen**
+
+1. **The Job should create `authentik-postgresql-secret` with a random password** if it doesn’t exist or is empty.
+2. **Your Postgres Deployment/StatefulSet should use this secret for the `POSTGRES_PASSWORD` env var.**
+3. **Your Authentik HelmRelease should use this secret for the database password.**
+
+---
+
+## **Where Is the Postgres Password Used?**
+
+- **In your Postgres Deployment/StatefulSet:**
+  ```yaml
+  env:
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-postgresql-secret
+          key: password
+  ```
+- **In your Authentik HelmRelease:**
+  ```yaml
+  valuesFrom:
+    - kind: Secret
+      name: authentik-postgresql-secret
+      valuesKey: password
+      targetPath: externalDatabase.password
+  ```
+
+---
+
+## **What to Do Next**
+
+- Update your `secret-init-job.yaml` to generate the Postgres password secret as described in my previous message.
+- Delete the empty secret so the Job can recreate it.
+- Confirm that both your Postgres Deployment and Authentik HelmRelease reference the same secret.
+
+---
+
+**Would you like me to update your Job and double-check your Postgres Deployment and HelmRelease for you?**  
+This will ensure everything is automated and works as expected!
+
+---
+
+_**User**_
+
+I don't think postgres is something that is only for authentik. Shouldn't it exist in its own namespace?
+
+---
+
+_**Assistant**_
+
 
 
 ---
 
+_**User**_
 
-
----
-
-
+Not now, just fix the secret. We'll come back to it eventually
 
 ---
+
+_**Assistant**_
 
 
 
