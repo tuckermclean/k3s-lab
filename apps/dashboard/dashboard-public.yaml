@@ -1,19 +1,9 @@
-# dashboard-public.yaml
-
-# 1) Namespace
-# apiVersion: v1
-# kind: Namespace
-# metadata:
-#   name: kubernetes-dashboard
-# ---
-# 2) ServiceAccount
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: kubernetes-dashboard
   namespace: kubernetes-dashboard
 ---
-# 3) ClusterRoleBinding (cluster-admin for dashboard SA)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -27,7 +17,6 @@ subjects:
   name: kubernetes-dashboard
   namespace: kubernetes-dashboard
 ---
-# 4) Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -54,7 +43,6 @@ spec:
         args:
         - --auto-generate-certificates
 ---
-# 5) Service (exposed publicly as NodePort)
 apiVersion: v1
 kind: Service
 metadata:
