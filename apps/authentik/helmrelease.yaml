@@ -18,23 +18,20 @@ spec:
       valuesKey: secretKey
       targetPath: authentik.secret_key
   values:
-    # disable the built-in Postgres (we’re managing it ourselves)
+    authentik:
+      postgresql:
+        host: authentik-postgresql
+        port: 5432
+        user: postgres
+        name: authentik
+        password: "zQUy5X0o6ESHOkHqQmc9rnlXdq8BjLB44GuVliUeC4o="
     postgresql:
       enabled: false
-    # disable the built-in Redis (you already have your own)
     redis:
       enabled: false
-
-    externalDatabase:
-      host: authentik-postgresql
-      port: 5432
-      user: postgres
-      database: authentik
-      password: "zQUy5X0o6ESHOkHqQmc9rnlXdq8BjLB44GuVliUeC4o="
     externalRedis:
       host: authentik-redis
       port: 6379
-
     server:
       ingress:
         enabled: true
@@ -45,19 +42,7 @@ spec:
           - hosts:
               - id.home.dcxxiv.com
             secretName: id-tls
-
     worker:
-      env:
-        - name: AUTHENTIK_POSTGRESQL__PASSWORD
-          value: "zQUy5X0o6ESHOkHqQmc9rnlXdq8BjLB44GuVliUeC4o="
-        - name: AUTHENTIK_POSTGRESQL__HOST
-          value: "authentik-postgresql"
-        - name: AUTHENTIK_POSTGRESQL__PORT
-          value: "5432"
-        - name: AUTHENTIK_POSTGRESQL__USER
-          value: "postgres"
-        - name: AUTHENTIK_POSTGRESQL__NAME
-          value: "authentik"
       tolerations:
         - key: "node.kubernetes.io/disk-pressure"
           operator: "Exists"
