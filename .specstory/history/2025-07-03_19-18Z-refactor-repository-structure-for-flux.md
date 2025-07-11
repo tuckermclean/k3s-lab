@@ -10263,6 +10263,130 @@ Next steps:
 
 _**Assistant**_
 
+You are **almost there**—the new structure is working, and your setup is now fully automated and idempotent!  
+The only remaining issue is a **timing/dependency problem with the cert-manager HelmRelease**:
+
+```
+kustomization/infra: False   HelmRelease/cert-manager/cert-manager not found: namespaces "cert-manager" not found
+kustomization/apps:  False   dependency 'flux-system/infra' is not ready
+kustomization/secrets: False dependency 'flux-system/infra' is not ready
+```
+
+---
+
+## **What’s Happening?**
+
+- The `infra` Kustomization is trying to apply the cert-manager HelmRelease before the `cert-manager` namespace exists.
+- This is a classic Flux/Helm ordering issue: HelmRelease resources must have their target namespace created **before** they are applied.
+
+---
+
+## **How to Fix**
+
+**You need to ensure that the `cert-manager` namespace is created before the HelmRelease for cert-manager is applied.**
+
+### **Best Practice:**
+- In your `infrastructure/cert-manager/kustomization.yaml`, add a `namespace.yaml` that creates the namespace.
+- Reference `namespace.yaml` as the first resource in the kustomization.
+
+---
+
+### **Example: `infrastructure/cert-manager/namespace.yaml`**
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+```
+
+### **Example: `infrastructure/cert-manager/kustomization.yaml`**
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - helmrepository.yaml
+  - helmrelease.yaml
+```
+
+- This ensures the namespace is created before the HelmRelease is applied.
+
+---
+
+## **What to Do Next**
+
+1. **Add a `namespace.yaml` to each infra component that needs a dedicated namespace (e.g., cert-manager, traefik, nfs-provisioner).**
+2. **Reference the namespace file first in each component’s kustomization.yaml.**
+3. **Commit and push.**
+4. **Flux will reconcile and everything will come up in the correct order.**
+
+---
+
+## **Summary Table**
+
+| Component      | Needs namespace.yaml? | Reference in kustomization.yaml? |
+|----------------|----------------------|----------------------------------|
+| cert-manager   | Yes                  | First                            |
+| traefik        | Yes                  | First                            |
+| nfs-provisioner| Yes                  | First                            |
+
+---
+
+**Would you like me to generate and add these namespace.yaml files and update the kustomization.yaml files for you?**  
+This will make your setup 100% hands-off and reliable, even for HelmReleases!
+
+---
+
+_**User**_
+
+Do it
+
+---
+
+_**Assistant**_
+
+```diff
+- 
++ apiVersion: v1
++ kind: Namespace
++ metadata:
++   name: cert-manager 
+```
+
+---
+
+```diff
+    app.kubernetes.io/part-of: gitops
+  resources:
++   - namespace.yaml
+    - helmrepository.yaml
+    - helmrelease.yaml
+```
+
+---
+
+```diff
+- 
++ apiVersion: v1
++ kind: Namespace
++ metadata:
++   name: traefik 
+```
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
 
 
 ---

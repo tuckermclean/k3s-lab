@@ -4,5 +4,6 @@ namespace: cert-manager
 commonLabels:
   app.kubernetes.io/part-of: gitops
 resources:
+  - namespace.yaml
   - helmrepository.yaml
   - helmrelease.yaml
