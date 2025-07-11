@@ -4,7 +4,7 @@ metadata:
   name: authentik-secret
   namespace: authentik
 stringData:
-  secretKey: "XyZ3your-generated-keyabc"
+  secretKey: ""  # Will be generated and set by secret management
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease

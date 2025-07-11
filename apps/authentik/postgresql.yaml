@@ -7,7 +7,7 @@ metadata:
   namespace: authentik
 type: Opaque
 data:
-  password: 8eVApXFxknf6+WZrYJrmBDnpxFY=
+  password: ""  # Will be generated and set by secret management
 ---
 apiVersion: v1
 kind: PersistentVolume

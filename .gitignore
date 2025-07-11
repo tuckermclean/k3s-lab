@@ -1,0 +1,54 @@
+# Secrets and sensitive files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets-backup.yaml
+secrets-backup.yaml.gpg
+/tmp/secrets-backup.yaml*
+
+# Kubernetes secrets
+*-secret.yaml
+*-secrets.yaml
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node modules (if any)
+node_modules/
+
+# Helm charts (if downloaded)
+charts/
+*.tgz 

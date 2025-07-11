@@ -1,10 +1,10 @@
 postgresql:
   enabled: true
   auth:
-    password: 8eVApXFxknf6+WZrYJrmBDnpxFY=
+    password: ""  # Will be set from secret
 
 authentik:
-  secret_key: 1KzZ3OIe102yLe93kdE19Rw/vlJK+aM2jfOJJTlzPY98OERJiL5B8Q==
+  secret_key: ""  # Will be set from secret
 
 server:
   ingress:

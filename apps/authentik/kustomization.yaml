@@ -9,4 +9,3 @@ resources:
   - redis.yaml
   - helmrelease.yaml
   - ingress.yaml
-  - authentik-ca.yaml

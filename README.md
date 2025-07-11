@@ -26,18 +26,48 @@ This repository follows the Flux GitOps pattern for managing a single-cluster Ku
 
 - K3s cluster running
 - Flux CLI installed
-- GitHub repository with this content
+- kubectl configured to access your cluster
 
-### Bootstrap Flux
+### Automated Setup (Recommended)
 
 ```bash
-# Bootstrap Flux pointing to this repository
-flux bootstrap github \
-  --owner=your-github-username \
-  --repository=k3s-lab \
-  --branch=main \
-  --path=./clusters/k3s-lab \
-  --personal
+# Run the complete setup script
+./scripts/setup.sh
+```
+
+This script will:
+- Generate random secrets and store them securely in Kubernetes
+- Install Flux controllers
+- Set up GitRepository and Kustomization
+- Deploy all applications and infrastructure
+
+### Manual Setup
+
+If you prefer manual setup:
+
+```bash
+# 1. Generate secrets
+./scripts/generate-secrets.sh
+
+# 2. Install Flux
+kubectl apply -f https://github.com/fluxcd/flux2/releases/latest/download/install.yaml
+
+# 3. Create GitRepository
+kubectl apply -f - <<EOF
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: file://$(pwd)
+  ref:
+    branch: main
+EOF
+
+# 4. Create Kustomization
+kubectl apply -f clusters/k3s-lab/flux-kustomization.yaml
 ```
 
 ### Verify Deployment
@@ -92,9 +122,11 @@ flux get helmreleases -n authentik
 
 ## Security Notes
 
-- Secrets are managed via Flux's secret management
-- Certificates are automatically renewed by cert-manager
-- All resources are labeled with `app.kubernetes.io/part-of: gitops`
+- **Secrets are generated randomly** and stored securely in Kubernetes
+- **No secrets are stored in Git** - they're generated fresh each time
+- **Certificates are automatically renewed** by cert-manager
+- **All resources are labeled** with `app.kubernetes.io/part-of: gitops`
+- **Backup encryption** is available with GPG (optional)
 
 ## Troubleshooting
 
