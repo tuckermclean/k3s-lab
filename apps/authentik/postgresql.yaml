@@ -1,15 +1,6 @@
 # apps/authentik/postgresql.yaml
 ---
 apiVersion: v1
-kind: Secret
-metadata:
-  name: authentik-postgresql-secret
-  namespace: authentik
-type: Opaque
-data:
-  password: ""  # Will be generated and set by secret management
----
-apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: nfs-postgresql-pv
