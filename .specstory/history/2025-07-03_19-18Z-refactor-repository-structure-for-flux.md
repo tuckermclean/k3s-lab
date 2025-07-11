@@ -15060,6 +15060,76 @@ flux-system     apps                                    False           False   
 
 _**Assistant**_
 
+This error is caused by a **duplicate Namespace resource** in your `apps/dashboard` directory.  
+Here’s the key part of the error:
+
+```
+accumulating resources: accumulation err='merging resources from 'dashboard-public.yaml': may not add resource with an already registered id: Namespace.v1.[noGrp]/kubernetes-dashboard.[noNs]'
+```
+
+**Translation:**  
+- You are trying to add a `Namespace` named `kubernetes-dashboard` that is already registered (likely from another file or from infra).
+- This usually happens when you have a `Namespace` resource in both `dashboard-public.yaml` and elsewhere (like `infrastructure/namespaces.yaml`).
+
+---
+
+## **How to Fix**
+
+1. **Remove the Namespace definition from `apps/dashboard/dashboard-public.yaml`.**
+   - The `kubernetes-dashboard` namespace should only be created by your infra (in `infrastructure/namespaces.yaml`).
+   - All app-level manifests should assume the namespace already exists.
+
+2. **Keep only one source of truth for each Namespace.**
+   - In your current setup, that’s `infrastructure/namespaces.yaml`.
+
+---
+
+### **What to Do**
+
+- Edit `apps/dashboard/dashboard-public.yaml`.
+- Remove the section:
+  ```yaml
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: kubernetes-dashboard
+  ```
+- Save, commit, and push.
+
+---
+
+**After this, run:**
+```sh
+flux reconcile kustomization apps -n flux-system
+```
+and the error should be resolved.
+
+---
+
+Would you like me to make this edit for you?
+
+---
+
+_**User**_
+
+flux-system     apps                                    False           False   kustomize build failed: accumulating resources: accumulation err='accumulating resources from 'dashboard/': read /tmp/kustomization-2787674611/apps/dashboard: is a directory': recursed accumulation of path '/tmp/kustomization-2787674611/apps/dashboard': accumulating resources: accumulation err='merging resources from 'dashboard-public.yaml': may not add resource with an already registered id: Namespace.v1.[noGrp]/kubernetes-dashboard.[noNs]': must build at directory: '/tmp/kustomization-2787674611/apps/dashboard/dashboard-public.yaml': file is not directory
+
+---
+
+_**Assistant**_
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
 
 
 ---
