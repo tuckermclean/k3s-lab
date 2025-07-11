@@ -9,4 +9,3 @@ resources:
   - postgresql.yaml
   - redis.yaml
   - ingress.yaml
-  - values.yaml
