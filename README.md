@@ -28,7 +28,26 @@ This repository follows the Flux GitOps pattern for managing a single-cluster Ku
 - Flux CLI installed
 - kubectl configured to access your cluster
 
-### Automated Setup (Recommended)
+### Option 1: Let Flux Handle Everything (Recommended)
+
+Flux will automatically:
+- Generate random secrets via a Kubernetes Job
+- Install all infrastructure components
+- Deploy all applications
+
+```bash
+# Bootstrap Flux (on your VM)
+flux bootstrap github \
+  --owner=yourusername \
+  --repository=k3s-lab \
+  --branch=main \
+  --path=./clusters/k3s-lab \
+  --personal
+```
+
+### Option 2: Manual Setup First
+
+If you prefer to set up secrets manually before Flux:
 
 ```bash
 # Run the complete setup script
