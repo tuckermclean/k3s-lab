@@ -3953,6 +3953,226 @@ Namespace/kubernetes-dashboard created
 
 _**Assistant**_
 
+The issue is that Flux is trying to create resources in the `authentik` namespace before the namespace exists. The secret initialization job needs to run first to create the namespaces and secrets.
+
+Let me check the order in the kustomization and fix this:
+
+
+---
+
+Read file: clusters/k3s-lab/kustomization.yaml
+
+---
+
+The issue is that Kustomize doesn't guarantee execution order - it just applies all resources. We need to create the namespaces explicitly first. Let me create a namespaces file:
+
+
+---
+
+```diff
+- 
++ apiVersion: v1
++ kind: Namespace
++ metadata:
++   name: authentik
++   labels:
++     app.kubernetes.io/part-of: gitops
++ ---
++ apiVersion: v1
++ kind: Namespace
++ metadata:
++   name: media
++   labels:
++     app.kubernetes.io/part-of: gitops
++ ---
++ apiVersion: v1
++ kind: Namespace
++ metadata:
++   name: cert-manager
++   labels:
++     app.kubernetes.io/part-of: gitops 
+```
+
+---
+
+Now let's update the kustomization to include namespaces first:
+
+
+---
+
+
+
+---
+
+Now let's test the kustomization again:
+
+
+---
+
+```bash
+kubectl kustomize clusters/k3s-lab | head -20
+```
+
+```
+<ubectl kustomize clusters/k3s-lab | head -20
+# Warning: 'patchesStrategicMerge' is deprecated. Please use 'patches' instead. Run 'kustomize edit fix' to 
+update your Kustomization automatically.
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/part-of: gitops
+  name: authentik
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/part-of: gitops
+  name: cert-manager
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/part-of: gitops
+  name: kubernetes-dashboard
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Perfect! Now the namespaces are created first. Let's commit and push these changes:
+
+```bash
+git add .
+git commit -m "Add explicit namespace creation to fix deployment order"
+git push origin main
+```
+
+Then try the Flux bootstrap again:
+
+```bash
+flux bootstrap github --owner=tuckermclean --repository=k3s-lab --branch=main --path=./clusters/k3s-lab --personal
+```
+
+This should now work because:
+1. ✅ Namespaces are created first
+2. ✅ Secret initialization job can run in existing namespaces
+3. ✅ All other resources can be created in their respective namespaces
+
+The bootstrap should complete successfully this time!
+
+---
+
+_**User**_
+
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ flux bootstrap github --owner=tuckermclean --repository=k3s-lab --branch=main --path=./clusters/k3s-lab --personal
+Please enter your GitHub personal access token (PAT):
+► connecting to github.com
+► cloning branch "main" from Git repository "https://github.com/tuckermclean/k3s-lab.git"
+✔ cloned repository
+► generating component manifests
+✔ generated component manifests
+✔ component manifests are up to date
+► installing components in "flux-system" namespace
+✔ installed components
+✔ reconciled components
+► determining if source secret "flux-system/flux-system" exists
+✔ source secret up to date
+► generating sync manifests
+✔ generated sync manifests
+✔ sync manifests are up to date
+► applying sync manifests
+✔ reconciled sync configuration
+◎ waiting for GitRepository "flux-system/flux-system" to be reconciled
+✔ GitRepository reconciled successfully
+◎ waiting for Kustomization "flux-system/flux-system" to be reconciled
+✗ kustomization 'flux-system/flux-system' not ready: 'ClusterIssuer/cert-manager/selfsigned dry-run failed: no matches for kind "ClusterIssuer" in version "cert-manager.io/v1"
+Namespace/authentik created
+Namespace/cert-manager created
+Namespace/media created
+'
+► confirming components are healthy
+✔ helm-controller: deployment ready
+✔ kustomize-controller: deployment ready
+✔ notification-controller: deployment ready
+✔ source-controller: deployment ready
+✔ all components are healthy
+✗ bootstrap failed with 1 health check failure(s): error while waiting for Kustomization to be ready: 'kustomization 'flux-system/flux-system' not ready: 'ClusterIssuer/cert-manager/selfsigned dry-run failed: no matches for kind "ClusterIssuer" in version "cert-manager.io/v1"
+Namespace/authentik created
+Namespace/cert-manager created
+Namespace/media created
+''
+
+---
+
+_**Assistant**_
+
+Great progress! The namespaces are now being created successfully. The issue now is that the `ClusterIssuer` resource is trying to be created before cert-manager is installed. The `ClusterIssuer` is a custom resource that cert-manager provides, so it needs to be installed first.
+
+Let me fix this by moving the ClusterIssuer to be applied after cert-manager is installed:
+
+
+---
+
+Read file: infrastructure/cert-manager/clusterissuer.yaml
+
+---
+
+The issue is that the ClusterIssuer is being applied before cert-manager installs its CRDs. Let me create a separate kustomization for cert-manager that handles this dependency properly:
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
+
+
+---
+
 
 
 ---

@@ -6,4 +6,3 @@ commonLabels:
 resources:
   - helmrepository.yaml
   - helmrelease.yaml
-  - clusterissuer.yaml
