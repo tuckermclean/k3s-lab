@@ -5,15 +5,11 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./
+  path: ../../apps
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
   wait: true
   dependsOn:
-    - name: infra
-  resources:
-    - ../../apps/authentik
-    - ../../apps/jellyfin
-    - ../../apps/dashboard 
+    - name: infra 

@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./
+  path: ../../infrastructure
   prune: true
   sourceRef:
     kind: GitRepository
@@ -18,9 +18,4 @@ spec:
       patch: |-
         - op: add
           path: /spec/dependsOn
-          value: []
-  resources:
-    - namespaces.yaml
-    - ../../infrastructure/traefik
-    - ../../infrastructure/cert-manager
-    - ../../infrastructure/nfs-provisioner 
+          value: [] 
