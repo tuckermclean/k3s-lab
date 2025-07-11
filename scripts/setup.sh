@@ -111,10 +111,6 @@ else
     echo -e "${GREEN}✅ Flux is already installed${NC}"
 fi
 
-# Create Kustomization
-echo -e "${GREEN}🔧 Setting up Kustomization...${NC}"
-kubectl apply -f clusters/k3s-lab/flux-kustomization.yaml
-
 # Wait for reconciliation
 echo -e "${GREEN}⏳ Waiting for initial reconciliation...${NC}"
 sleep 30
