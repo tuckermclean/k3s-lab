@@ -1,8 +1,27 @@
-extraVolumes:
-  - name: media
-    persistentVolumeClaim:
-      claimName: media-root-pvc
-
-extraVolumeMounts:
-  - name: media
-    mountPath: /media
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-root-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: nfs-provisioner
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-media-pv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-provisioner
+  nfs:
+    server: openmediavault.home.dcxxiv.com
+    path: /Media/jellyfin

@@ -21,10 +21,15 @@ spec:
       - name: kube-ca
         configMap:
           name: kube-root-ca.crt
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-root-pvc
     extraVolumeMounts:
       - name: kube-ca
         mountPath: /usr/local/share/ca-certificates/selfsigned.crt
         subPath: ca.crt
+      - name: media
+        mountPath: /media
     initContainers:
       - name: update-ca
         image: busybox
