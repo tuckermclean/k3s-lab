@@ -7612,16 +7612,7 @@ The HelmRepository is still using the old URL. Let me force a reconciliation to 
 
 ---
 
-```bash
-flux reconcile source helm jellyfin -n media
-```
-
-```
-<lux reconcile source helm jellyfin -n media
-► annotating HelmRepository jellyfin in media namespace
-✔ HelmRepository annotated
-◎ waiting for HelmRepository reconciliation
-```
+Cancelled
 
 ---
 
@@ -7632,6 +7623,77 @@ Delete it and try again
 ---
 
 _**Assistant**_
+
+Good idea! Let me delete the existing HelmRepository and let Flux recreate it with the correct URL.
+
+
+---
+
+```bash
+kubectl delete helmrepository jellyfin -n media
+```
+
+```
+<ubectl delete helmrepository jellyfin -n media
+helmrepository.source.toolkit.fluxcd.io "jellyfin" deleted
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Now let me force a reconciliation to recreate it:
+
+
+---
+
+```bash
+flux reconcile kustomization flux-system
+```
+
+```
+<lux reconcile kustomization flux-system
+► annotating Kustomization flux-system in flux-system namespace
+✔ Kustomization annotated
+◎ waiting for Kustomization reconciliation
+✔ applied revision main@sha1:77a8ce21b41468698b00a0b92344482dee74f94a
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Now let's check if the HelmRepository was recreated with the correct URL:
+
+
+---
+
+```bash
+kubectl get helmrepositories -A
+```
+
+```
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get helmrepositories -A
+NAMESPACE      NAME              URL                                                                 AGE   R
+EADY   STATUS
+authentik      authentik         https://charts.goauthentik.io                                       54m   T
+rue    stored artifact: revision 'sha256:bedf22cabf0aa30f48384b829a7e0f2a14e5c044279897ca088b88a3e88282c8'
+cert-manager   jetstack          https://charts.jetstack.io                                          54m   T
+rue    stored artifact: revision 'sha256:a7ae375e210882f48ee5e799c0ff09713260af5aaf717fcb16903527036a32e5'
+flux-system    nfs-provisioner   https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner   54m   T
+rue    stored artifact: revision 'sha256:ab79e97b541fe18f4d19aa12c6fbfce4d892cb16d4feca1d92f006d8e0adbef1'
+flux-system    traefik           https://helm.traefik.io/traefik                                     54m   T
+rue    stored artifact: revision 'sha256:3a0e650f17c61fe0670c5cf4a596fa40323b645e01c7fa68ecfdccdacd195da0'
+media          jellyfin          https://jellyfin.github.io/helm-charts/                             6s    F
+alse   failed to fetch Helm repository index: failed to cache index to temporary file: failed to fetch https
+://jellyfin.github.io/helm-charts/index.yaml : 404 Not Found
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+```
+
+---
+
+Good! Now it's using the correct URL (`https://jellyfin.github.io/helm-charts/`) but getting a 404. Let me check what the actual correct URL should be. Let me try a different approach - let me check if there's a different official Jellyfin chart repository:
+
+
+---
 
 
 
