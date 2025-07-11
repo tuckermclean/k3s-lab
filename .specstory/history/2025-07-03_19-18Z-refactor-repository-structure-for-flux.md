@@ -14439,9 +14439,240 @@ _**Assistant**_
 
 ---
 
-
+```diff
+    template:
+      spec:
++       serviceAccountName: secret-init
+        restartPolicy: OnFailure
+        containers:
+```
 
 ---
+
+I've implemented a secure, best-practice RBAC setup for your `secret-init` Job:
+
+1. **Created a dedicated ServiceAccount** (`secret-init`) in the `flux-system` namespace.
+2. **Created a Role** in the `authentik` namespace allowing:
+   - `get`, `list` on namespaces
+   - `get`, `create`, `patch` on secrets
+3. **Created a RoleBinding** in the `authentik` namespace binding the ServiceAccount to the Role.
+4. **Updated the Job** to use the new ServiceAccount.
+
+---
+
+**What to do next:**
+1. Commit and push these changes.
+2. Wait for Flux to reconcile (or force it with `flux reconcile kustomization secrets -n flux-system`).
+3. Monitor the Job and Kustomization status:
+   ```sh
+   kubectl get jobs -n flux-system
+   kubectl get pods -n flux-system
+   flux get kustomizations -A
+   ```
+4. If the Job fails again, check logs:
+   ```sh
+   kubectl logs -n flux-system job/secret-init
+   ```
+
+---
+
+This setup grants only the minimum permissions needed for your secret-init Job, following Kubernetes security best practices.  
+Let me know if you need help monitoring the rollout or if you hit any further issues!
+
+---
+
+_**User**_
+
+Still not working
+
+---
+
+_**Assistant**_
+
+Let’s quickly diagnose what’s still wrong. Here’s what to check and what info to provide so I can help you fix it fast:
+
+---
+
+## 1. **Check Job and Pod Status**
+Run:
+```sh
+kubectl get jobs -n flux-system
+kubectl get pods -n flux-system
+```
+Look for the `secret-init` Job and its pod(s). Note their status (Running, Failed, Completed, etc).
+
+---
+
+## 2. **Get Pod Logs**
+If the Job pod is present (Running or Failed), get its logs:
+```sh
+kubectl logs -n flux-system job/secret-init
+```
+
+---
+
+## 3. **Describe the Job and Pod**
+Get detailed info (including events and error messages):
+```sh
+kubectl describe job secret-init -n flux-system
+kubectl get pods -n flux-system -l job-name=secret-init
+kubectl describe pod <pod-name> -n flux-system
+```
+(Replace `<pod-name>` with the actual pod name from the previous command.)
+
+---
+
+## 4. **Check Kustomization Status**
+```sh
+flux get kustomizations -A
+```
+
+---
+
+### **Please copy and paste:**
+- The output of the above commands (especially logs and describe output).
+- Any error messages you see.
+
+---
+
+**With this info, I’ll be able to pinpoint the issue and give you the exact fix.**  
+(If you want, you can also check if the Role/RoleBinding/ServiceAccount are present in the cluster.)
+
+Let’s get this over the finish line!
+
+---
+
+_**User**_
+
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get namespaces
+NAME                   STATUS   AGE
+authentik              Active   120m
+default                Active   139m
+flux-system            Active   137m
+kube-node-lease        Active   139m
+kube-public            Active   139m
+kube-system            Active   139m
+kubernetes-dashboard   Active   120m
+media                  Active   120m
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get pods -A
+NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE
+flux-system   helm-controller-5c898f4887-gwnxc           1/1     Running   0          137m
+flux-system   kustomize-controller-57c6bbfc4b-8ndfm      1/1     Running   0          137m
+flux-system   notification-controller-5f66f99d4d-cv6zr   1/1     Running   0          137m
+flux-system   source-controller-54bc45dc6-wnk9n          1/1     Running   0          137m
+kube-system   coredns-5688667fd4-b4hvx                   1/1     Running   0          139m
+kube-system   local-path-provisioner-774c6665dc-gf48r    1/1     Running   0          139m
+kube-system   metrics-server-6f4c6675d5-wlqlc            1/1     Running   0          139m
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get jobs -A
+NAMESPACE     NAME          STATUS    COMPLETIONS   DURATION   AGE
+flux-system   secret-init   Running   0/1           40m        40m
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl logs -n flux-system job/secret-init
+^C
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl describe job secret-init -n flux-system
+Name:             secret-init
+Namespace:        flux-system
+Selector:         batch.kubernetes.io/controller-uid=a8925ae2-f2fd-4602-ab6d-7025467ac33b
+Labels:           kustomize.toolkit.fluxcd.io/name=secrets
+                  kustomize.toolkit.fluxcd.io/namespace=flux-system
+Annotations:      <none>
+Parallelism:      1
+Completions:      1
+Completion Mode:  NonIndexed
+Suspend:          false
+Backoff Limit:    6
+Start Time:       Fri, 11 Jul 2025 11:36:21 -0700
+Pods Statuses:    0 Active (0 Ready) / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:           batch.kubernetes.io/controller-uid=a8925ae2-f2fd-4602-ab6d-7025467ac33b
+                    batch.kubernetes.io/job-name=secret-init
+                    controller-uid=a8925ae2-f2fd-4602-ab6d-7025467ac33b
+                    job-name=secret-init
+  Service Account:  secret-init
+  Containers:
+   secret-init:
+    Image:           bitnami/kubectl:latest
+    Port:            <none>
+    Host Port:       <none>
+    SeccompProfile:  RuntimeDefault
+    Command:
+      sh
+      -c
+      set -e
+      # Wait for authentik namespace to exist
+      for i in $(seq 1 30); do
+        kubectl get ns authentik && break || sleep 2
+      done
+      # Now create the secret
+      if ! kubectl get secret authentik-secret -n authentik >/dev/null 2>&1 || [ -z "$(kubectl get secret authentik-secret -n authentik -o jsonpath='{.data.secretKey}')" ]; then
+        echo "Creating or patching authentik-secret..."
+        kubectl create secret generic authentik-secret --from-literal=secretKey=$(head -c 32 /dev/urandom | base64) -n authentik --dry-run=client -o yaml | kubectl apply -f -
+      else
+        echo "authentik-secret already set, skipping"
+      fi
+    Environment:   <none>
+    Mounts:        <none>
+  Volumes:         <none>
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Events:
+  Type     Reason        Age                 From            Message
+  ----     ------        ----                ----            -------
+  Warning  FailedCreate  38s (x46 over 40m)  job-controller  Error creating: pods "secret-init-" is forbidden: error looking up service account flux-system/secret-init: serviceaccount "secret-init" not found
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$ kubectl get serviceaccounts -A
+NAMESPACE              NAME                                          SECRETS   AGE
+authentik              default                                       0         121m
+default                default                                       0         140m
+flux-system            default                                       0         138m
+flux-system            helm-controller                               0         138m
+flux-system            kustomize-controller                          0         138m
+flux-system            notification-controller                       0         138m
+flux-system            source-controller                             0         138m
+kube-node-lease        default                                       0         140m
+kube-public            default                                       0         140m
+kube-system            attachdetach-controller                       0         140m
+kube-system            certificate-controller                        0         140m
+kube-system            clusterrole-aggregation-controller            0         140m
+kube-system            coredns                                       0         140m
+kube-system            cronjob-controller                            0         140m
+kube-system            daemon-set-controller                         0         140m
+kube-system            default                                       0         140m
+kube-system            deployment-controller                         0         140m
+kube-system            disruption-controller                         0         140m
+kube-system            endpoint-controller                           0         140m
+kube-system            endpointslice-controller                      0         140m
+kube-system            endpointslicemirroring-controller             0         140m
+kube-system            ephemeral-volume-controller                   0         140m
+kube-system            expand-controller                             0         140m
+kube-system            generic-garbage-collector                     0         140m
+kube-system            horizontal-pod-autoscaler                     0         140m
+kube-system            job-controller                                0         140m
+kube-system            legacy-service-account-token-cleaner          0         140m
+kube-system            local-path-provisioner-service-account        0         140m
+kube-system            metrics-server                                0         140m
+kube-system            namespace-controller                          0         140m
+kube-system            node-controller                               0         140m
+kube-system            persistent-volume-binder                      0         140m
+kube-system            pod-garbage-collector                         0         140m
+kube-system            pv-protection-controller                      0         140m
+kube-system            pvc-protection-controller                     0         140m
+kube-system            replicaset-controller                         0         140m
+kube-system            replication-controller                        0         140m
+kube-system            resourcequota-controller                      0         140m
+kube-system            root-ca-cert-publisher                        0         140m
+kube-system            service-account-controller                    0         140m
+kube-system            statefulset-controller                        0         140m
+kube-system            svclb                                         0         140m
+kube-system            token-cleaner                                 0         140m
+kube-system            ttl-after-finished-controller                 0         140m
+kube-system            ttl-controller                                0         140m
+kube-system            validatingadmissionpolicy-status-controller   0         140m
+kubernetes-dashboard   default                                       0         121m
+media                  default                                       0         121m
+noumenon@DESKTOP-V0DGQ40:/mnt/c/Users/me/Documents/gitrepos/k3s-lab$
+
+---
+
+_**Assistant**_
 
 
 
