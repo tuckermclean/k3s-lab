@@ -12,4 +12,5 @@ spec:
     name: flux-system
   wait: true
   dependsOn:
-    - name: infra 
+    - name: infra
+    - name: secrets 
