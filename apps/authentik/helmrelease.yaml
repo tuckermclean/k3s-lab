@@ -47,6 +47,17 @@ spec:
             secretName: id-tls
 
     worker:
+      env:
+        - name: AUTHENTIK_POSTGRESQL__PASSWORD
+          value: "zQUy5X0o6ESHOkHqQmc9rnlXdq8BjLB44GuVliUeC4o="
+        - name: AUTHENTIK_POSTGRESQL__HOST
+          value: "authentik-postgresql"
+        - name: AUTHENTIK_POSTGRESQL__PORT
+          value: "5432"
+        - name: AUTHENTIK_POSTGRESQL__USER
+          value: "postgres"
+        - name: AUTHENTIK_POSTGRESQL__NAME
+          value: "authentik"
       tolerations:
         - key: "node.kubernetes.io/disk-pressure"
           operator: "Exists"
