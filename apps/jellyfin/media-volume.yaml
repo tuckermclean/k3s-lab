@@ -24,4 +24,4 @@ spec:
   storageClassName: nfs-provisioner
   nfs:
     server: openmediavault.home.dcxxiv.com
-    path: /export/Media/jellyfin
+    path: /Media/jellyfin

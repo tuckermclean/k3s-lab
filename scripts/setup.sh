@@ -45,9 +45,56 @@ fi
 
 echo -e "${GREEN}✅ Cluster connectivity confirmed${NC}"
 
-# Generate secrets
+# Generate secrets (robust, idempotent, no overwrites)
 echo -e "${GREEN}🔐 Generating secrets...${NC}"
-./scripts/generate-secrets.sh
+
+# Function to generate random password
+generate_password() {
+    openssl rand -base64 32
+}
+
+# Function to generate random secret key
+generate_secret_key() {
+    openssl rand -base64 40
+}
+
+# Function to create or patch a secret key only if missing or empty
+create_or_patch_secret() {
+    local namespace=$1
+    local secret_name=$2
+    local key=$3
+    local value=$4
+
+    # Check if secret exists
+    if kubectl get secret "$secret_name" -n "$namespace" >/dev/null 2>&1; then
+        # Check if key exists and is non-empty
+        current=$(kubectl get secret "$secret_name" -n "$namespace" -o jsonpath="{.data.$key}" 2>/dev/null || echo "")
+        if [[ -z "$current" || "$current" == "IiIi" ]]; then
+            echo -e "${YELLOW}Patching $secret_name/$key with new value${NC}"
+            kubectl patch secret "$secret_name" -n "$namespace" --type='merge' -p "{\"data\": {\"$key\": \"$(echo -n "$value" | base64)\"}}"
+        else
+            echo -e "${YELLOW}$secret_name/$key already set, skipping${NC}"
+        fi
+    else
+        echo -e "${YELLOW}Creating $secret_name with $key${NC}"
+        kubectl create secret generic "$secret_name" -n "$namespace" --from-literal="$key=$value"
+    fi
+}
+
+# Create namespaces if they don't exist
+kubectl create namespace authentik --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace media --dry-run=client -o yaml | kubectl apply -f -
+
+# Generate secrets
+POSTGRES_PASSWORD=$(generate_password)
+AUTHENTIK_SECRET_KEY=$(generate_secret_key)
+
+# Create or patch secrets
+create_or_patch_secret "authentik" "authentik-postgresql-secret" "password" "$POSTGRES_PASSWORD"
+create_or_patch_secret "authentik" "authentik-secret" "secretKey" "$AUTHENTIK_SECRET_KEY"
+
+echo -e "${GREEN}✅ Secrets generated and stored successfully!${NC}"
+echo -e "${YELLOW}Note: These secrets are now stored in Kubernetes and will persist across cluster restarts.${NC}"
 
 # Install Flux (if not already installed)
 echo -e "${GREEN}📦 Installing Flux...${NC}"
@@ -63,21 +110,6 @@ if ! kubectl get namespace flux-system >/dev/null 2>&1; then
 else
     echo -e "${GREEN}✅ Flux is already installed${NC}"
 fi
-
-# Create GitRepository
-echo -e "${GREEN}📁 Setting up GitRepository...${NC}"
-kubectl apply -f - <<EOF
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: flux-system
-  namespace: flux-system
-spec:
-  interval: 1m
-  url: file://$(pwd)
-  ref:
-    branch: main
-EOF
 
 # Create Kustomization
 echo -e "${GREEN}🔧 Setting up Kustomization...${NC}"

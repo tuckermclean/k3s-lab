@@ -5,4 +5,4 @@ metadata:
   namespace: flux-system
 spec:
   interval: 1h
-  url: https://jellyfin.github.io/jellyfin-helm
+  url: https://charts.jellyfin.org

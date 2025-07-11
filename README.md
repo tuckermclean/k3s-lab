@@ -28,15 +28,11 @@ This repository follows the Flux GitOps pattern for managing a single-cluster Ku
 - Flux CLI installed
 - kubectl configured to access your cluster
 
-### Option 1: Let Flux Handle Everything (Recommended)
+### Recommended Workflow
 
-Flux will automatically:
-- Generate random secrets via a Kubernetes Job
-- Install all infrastructure components
-- Deploy all applications
+1. **Bootstrap Flux** (connects your cluster to your Git repository):
 
 ```bash
-# Bootstrap Flux (on your VM)
 flux bootstrap github \
   --owner=yourusername \
   --repository=k3s-lab \
@@ -45,49 +41,18 @@ flux bootstrap github \
   --personal
 ```
 
-### Option 2: Manual Setup First
-
-If you prefer to set up secrets manually before Flux:
+2. **Run the complete setup script** (for secrets and cluster prep):
 
 ```bash
-# Run the complete setup script
 ./scripts/setup.sh
 ```
 
 This script will:
-- Generate random secrets and store them securely in Kubernetes
-- Install Flux controllers
-- Set up GitRepository and Kustomization
-- Deploy all applications and infrastructure
+- Generate random secrets and store them securely in Kubernetes (idempotent, never overwrites non-empty values)
+- Install Flux controllers (if not already present)
+- Prepare namespaces and check prerequisites
 
-### Manual Setup
-
-If you prefer manual setup:
-
-```bash
-# 1. Generate secrets
-./scripts/generate-secrets.sh
-
-# 2. Install Flux
-kubectl apply -f https://github.com/fluxcd/flux2/releases/latest/download/install.yaml
-
-# 3. Create GitRepository
-kubectl apply -f - <<EOF
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: flux-system
-  namespace: flux-system
-spec:
-  interval: 1m
-  url: file://$(pwd)
-  ref:
-    branch: main
-EOF
-
-# 4. Create Kustomization
-kubectl apply -f clusters/k3s-lab/flux-kustomization.yaml
-```
+> **Note:** You do not need to manually create a GitRepository or Kustomization. This is handled by `flux bootstrap` and your GitOps manifests.
 
 ### Verify Deployment
 
@@ -145,7 +110,7 @@ flux get helmreleases -n authentik
 - **No secrets are stored in Git** - they're generated fresh each time
 - **Certificates are automatically renewed** by cert-manager
 - **All resources are labeled** with `app.kubernetes.io/part-of: gitops`
-- **Backup encryption** is available with GPG (optional)
+- **Backup encryption** is available with GPG (optional, not enabled by default)
 
 ## Troubleshooting
 
