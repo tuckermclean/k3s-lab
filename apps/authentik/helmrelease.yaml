@@ -37,9 +37,6 @@ spec:
     redis:
       enabled: false
 
-    secretKeySecret:
-      name: authentik-secret
-      key: secretKey
     externalDatabase:
       host: authentik-postgresql
       port: 5432
