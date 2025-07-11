@@ -22,10 +22,6 @@ spec:
       version: "2025.6.3"
   valuesFrom:
     - kind: Secret
-      name: authentik-secret
-      valuesKey: secretKey
-      targetPath: authentik.secret_key
-    - kind: Secret
       name: authentik-postgresql-secret
       valuesKey: password    # the key in your Secret
       targetPath: externalDatabase.password
@@ -37,9 +33,8 @@ spec:
     redis:
       enabled: false
 
-    secretKeySecret:
-      name: authentik-secret
-      key: secretKey
+    authentik:
+      secret_key: "/VV2aqqBNzYxRQ0HxXLns8B2M58RvW8ycFnnpSGAARgvDC22DZ1YiA=="
     externalDatabase:
       host: authentik-postgresql
       port: 5432
