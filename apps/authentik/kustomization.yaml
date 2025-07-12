@@ -8,5 +8,4 @@ resources:
   - helmrelease.yaml
   - postgresql.yaml
   - redis.yaml
-  - ingress.yaml
   - certificate.yaml
