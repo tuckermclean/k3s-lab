@@ -32,3 +32,16 @@ spec:
         resources:
           requests:
             storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-redis
+  namespace: authentik
+spec:
+  clusterIP: None
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: authentik-redis
