@@ -33,7 +33,7 @@ spec:
     redis:
       enabled: false
     externalRedis:
-      host: authentik-redis
+      host: authentik-redis-master
       port: 6379
     server:
       ingress:
