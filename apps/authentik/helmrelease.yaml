@@ -41,6 +41,8 @@ spec:
         ingressClassName: traefik
         hosts:
           - id.home.dcxxiv.com
+        annotations:
+          cert-manager.io/cluster-issuer: "letsencrypt-prod"
         tls:
           - hosts:
               - id.home.dcxxiv.com
