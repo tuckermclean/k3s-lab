@@ -5,4 +5,4 @@ metadata:
   namespace: media
 spec:
   interval: 1h
-  url: https://charts.jellyfin.org
+  url: https://jellyfin.github.io/helm-charts
