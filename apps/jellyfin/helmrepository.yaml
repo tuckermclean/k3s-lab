@@ -5,4 +5,4 @@ metadata:
   namespace: media
 spec:
   interval: 1h
-  url: https://codeberg.org/wrenix/helm-charts/raw/branch/main
+  url: https://jellyfin.github.io/jellyfin-helm
