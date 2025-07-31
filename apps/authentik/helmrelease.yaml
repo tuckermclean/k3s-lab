@@ -40,15 +40,15 @@ spec:
             secretName: id-tls
       env:
         - name: AUTHENTIK_POSTGRESQL__PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: authentik-postgresql-secret
-            key: password
+          valueFrom:
+            secretKeyRef:
+              name: authentik-postgresql-secret
+              key: password
         - name: AUTHENTIK_SECRET_KEY
-        valueFrom:
-          secretKeyRef:
-            name: authentik-secret
-            key: secretKey
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: secretKey
 
     worker:
       tolerations:
