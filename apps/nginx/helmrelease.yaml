@@ -10,9 +10,9 @@ spec:
       chart: nginx
       sourceRef:
         kind: HelmRepository
-        name: bitnami
+        name: kubesphere
         namespace: flux-system
-      version: "18.x"
+      version: "1.3.x"
   values:
     service:
       type: ClusterIP
