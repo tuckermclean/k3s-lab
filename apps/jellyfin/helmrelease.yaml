@@ -12,7 +12,7 @@ spec:
         kind: HelmRepository
         name: jellyfin
         namespace: flux-system
-      version: "12.x"
+      version: "2.x"
   values:
     service:
       type: ClusterIP
