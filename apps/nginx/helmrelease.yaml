@@ -17,4 +17,6 @@ spec:
     service:
       type: ClusterIP
     ingress:
-      enabled: false
+      enabled: true
+      ingressClassName: traefik
+      hostname: nginx.local
