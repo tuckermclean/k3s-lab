@@ -3,5 +3,6 @@ kind: Kustomization
 resources:
   - flux-system/
   - ../../infrastructure/traefik/
+  - ../../infrastructure/cert-manager/
   - ../../apps/nginx/
   - ../../apps/jellyfin/
