@@ -4,6 +4,3 @@ commonLabels:
   app.kubernetes.io/part-of: gitops
 resources:
   - clusterissuer.yaml
-dependsOn:
-  - name: cert-manager
-    namespace: cert-manager

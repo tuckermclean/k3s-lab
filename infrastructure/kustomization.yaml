@@ -1,6 +1,5 @@
 resources:
   - namespaces.yaml
   - cert-manager/
-  - cert-manager-issuers/
   - traefik/
-  - nfs-provisioner/   
+  - nfs-provisioner/      
