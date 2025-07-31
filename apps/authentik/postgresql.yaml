@@ -50,7 +50,7 @@ spec:
         - name: POSTGRES_DB
           value: authentik
         - name: POSTGRES_USER
-          value: postgres
+          value: authentik
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
