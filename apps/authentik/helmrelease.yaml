@@ -20,13 +20,14 @@ spec:
     - kind: Secret
       name: authentik-postgresql-secret
       valuesKey: password
-      targetPath: externalDatabase.password
+      targetPath: authentik.postgresql.password
   values:
-    externalDatabase:
-      host: authentik-postgresql
-      port: 5432
-      user: postgres
-      name: authentik
+    authentik:
+      postgresql:
+        host: authentik-postgresql
+        port: 5432
+        user: postgres
+        name: authentik
     postgresql:
       enabled: false
     redis:
