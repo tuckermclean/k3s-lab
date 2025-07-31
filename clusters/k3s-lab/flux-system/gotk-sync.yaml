@@ -8,7 +8,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    branch: main
+    branch: devin/1753819434-fix-pod-startup-issues
   secretRef:
     name: flux-system
   url: ssh://git@github.com/tuckermclean/k3s-lab
