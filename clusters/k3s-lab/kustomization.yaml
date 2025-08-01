@@ -5,5 +5,4 @@ resources:
   - traefik-kustomization.yaml
   - cert-manager-kustomization.yaml
   - cert-manager-config-kustomization.yaml
-  - nginx-kustomization.yaml
   - jellyfin-kustomization.yaml
