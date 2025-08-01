@@ -22,13 +22,13 @@ spec:
       annotations:
         cert-manager.io/cluster-issuer: "letsencrypt-staging"
       hosts:
-        - host: jellyfin.local
+        - host: jellyfin.home.dcxxiv.com
           paths:
             - path: /
               pathType: Prefix
       tls:
         - hosts:
-            - jellyfin.local
+            - jellyfin.home.dcxxiv.com
           secretName: jellyfin-tls
     persistence:
       config:
