@@ -11,9 +11,12 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nfs-provisioner
+  mountOptions:
+    - vers=3
+    - proto=tcp
   nfs:
     server: openmediavault.home.dcxxiv.com
-    path: /export
+    path: /export/Media
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
