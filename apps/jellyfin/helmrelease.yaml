@@ -34,8 +34,7 @@ spec:
       config:
         enabled: true
         existingClaim: media-root-pvc
-        subPath: Media/jellyfin-config
+        subPath: jellyfin-config
       media:
         enabled: true
         existingClaim: media-root-pvc
-        subPath: Media
