@@ -33,9 +33,7 @@ spec:
     persistence:
       config:
         enabled: true
-        existingClaim: media-root-pvc
-        subPath: Media/jellyfin-config
+        existingClaim: config-root-pvc
       media:
         enabled: true
         existingClaim: media-root-pvc
-        subPath: Media/
