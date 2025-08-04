@@ -8,7 +8,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    branch: devin/1754016358-mount-nfs-media-for-jellyfin
+    branch: main
   secretRef:
     name: flux-system
   url: ssh://git@github.com/tuckermclean/k3s-lab
