@@ -35,4 +35,5 @@ spec:
         enabled: true
         size: 1Gi
       media:
-        enabled: false
+        enabled: true
+        existingClaim: media-root-pvc
