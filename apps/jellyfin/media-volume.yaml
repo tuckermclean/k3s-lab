@@ -16,7 +16,7 @@ spec:
     - proto=tcp
   nfs:
     server: openmediavault.home.dcxxiv.com
-    path: /export/Media
+    path: /export
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
