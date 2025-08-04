@@ -13,7 +13,7 @@ spec:
   storageClassName: nfs-provisioner
   nfs:
     server: openmediavault.home.dcxxiv.com
-    path: /Media
+    path: /export
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
