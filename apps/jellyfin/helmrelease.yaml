@@ -34,6 +34,8 @@ spec:
       config:
         enabled: true
         size: 1Gi
+        existingClaim: media-root-pvc
+        subPath: jellyfin-config
       media:
         enabled: true
         existingClaim: media-root-pvc
