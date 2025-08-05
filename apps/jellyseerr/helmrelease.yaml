@@ -1,0 +1,37 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyseerr
+  namespace: media
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: jellyseerr
+      sourceRef:
+        kind: HelmRepository
+        name: jellyseerr
+        namespace: flux-system
+      version: "2.x"
+  values:
+    service:
+      type: ClusterIP
+    config:
+      persistence:
+        accessModes:
+          - ReadWriteOnce
+        name: jellyseerr-config-root-pvc
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt-staging"
+      hosts:
+        - host: jellyseerr.home.dcxxiv.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - jellyseerr.home.dcxxiv.com
+          secretName: jellyseerr-tls
