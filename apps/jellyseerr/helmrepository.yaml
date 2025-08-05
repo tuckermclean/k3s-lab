@@ -4,5 +4,6 @@ metadata:
   name: jellyseerr
   namespace: flux-system
 spec:
+  type: oci
   interval: 1h
-  url: https://ghcr.io/fallenbagel/jellyseerr
+  url: oci://ghcr.io/fallenbagel/jellyseerr
