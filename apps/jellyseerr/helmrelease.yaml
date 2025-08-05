@@ -7,18 +7,18 @@ spec:
   postRenderers:
     - kustomize:
         patches:
-          - |
-            apiVersion: apps/v1
-            kind: Deployment
-            metadata:
-              name: jellyseerr-jellyseerr-chart
-            spec:
-              template:
-                spec:
-                  dnsConfig:
-                    options:
-                      - name: ndots
-                        value: "1"
+          - patch: |-
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: jellyseerr-jellyseerr-chart
+              spec:
+                template:
+                  spec:
+                    dnsConfig:
+                      options:
+                        - name: ndots
+                          value: "1"
   interval: 5m
   chart:
     spec:
