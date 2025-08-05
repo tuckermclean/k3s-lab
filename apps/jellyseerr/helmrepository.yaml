@@ -7,4 +7,3 @@ spec:
   type: oci
   interval: 1h
   url: oci://ghcr.io/fallenbagel/jellyseerr
-  version: 2.6.1
