@@ -13,11 +13,11 @@ spec:
         name: jellyseerr
         namespace: flux-system
       version: 2.6.1
-    dnsConfig:
+  values:
+    podDnsConfig:
       options:
         - name: ndots
           value: 1
-  values:
     service:
       type: ClusterIP
     config:
