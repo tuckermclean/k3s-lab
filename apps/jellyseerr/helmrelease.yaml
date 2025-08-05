@@ -4,6 +4,19 @@ metadata:
   name: jellyseerr
   namespace: media
 spec:
+  postRenderers:
+    - kustomize:
+        patchesStrategicMerge:
+          - |
+            apiVersion: apps/v1
+            kind: Deployment
+            spec:
+              template:
+                spec:
+                  dnsConfig:
+                    options:
+                      - name: ndots
+                        value: "1"
   interval: 5m
   chart:
     spec:
@@ -14,10 +27,6 @@ spec:
         namespace: flux-system
       version: 2.6.1
   values:
-    dnsConfig:
-      options:
-        - name: ndots
-          value: "1"
     service:
       type: ClusterIP
     config:
