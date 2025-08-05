@@ -6,4 +6,5 @@ metadata:
 spec:
   type: oci
   interval: 1h
-  url: oci://ghcr.io/fallenbagel/jellyseerr
+  url: oci://ghcr.io/fallenbagel/jellyseerr/jellyseerr-chart
+  version: 2.6.1
