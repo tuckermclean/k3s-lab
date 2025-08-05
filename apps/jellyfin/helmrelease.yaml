@@ -16,20 +16,6 @@ spec:
   values:
     service:
       type: ClusterIP
-    ingress:
-      enabled: true
-      ingressClassName: traefik
-      annotations:
-        cert-manager.io/cluster-issuer: "letsencrypt-staging"
-      hosts:
-        - host: jellyfin.home.dcxxiv.com
-          paths:
-            - path: /
-              pathType: Prefix
-      tls:
-        - hosts:
-            - jellyfin.home.dcxxiv.com
-          secretName: jellyfin-tls
     persistence:
       config:
         enabled: true
