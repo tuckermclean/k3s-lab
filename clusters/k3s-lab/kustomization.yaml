@@ -7,3 +7,4 @@ resources:
   - cert-manager-config-kustomization.yaml
   - nfs-provisioner-kustomization.yaml
   - jellyfin-kustomization.yaml
+  - jellyseerr-kustomization.yaml
