@@ -34,3 +34,6 @@ spec:
         - hosts:
             - jellyseerr.home.dcxxiv.com
           secretName: jellyseerr-tls
+    env:
+      - name: NODE_OPTIONS
+        value: "--dns-result-order=ipv4first"
