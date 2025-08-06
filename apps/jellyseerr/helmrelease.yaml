@@ -34,7 +34,7 @@ spec:
     config:
       persistence:
         enabled: true
-        volumeName: jellyseerr-config-root-pvc
+        claimName: jellyseerr-config-root-pvc
     ingress:
       enabled: true
       ingressClassName: traefik
