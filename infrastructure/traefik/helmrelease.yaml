@@ -21,7 +21,7 @@ spec:
       enabled: true
       type: LoadBalancer
       spec:
-        externalTrafficPolicy: Local
+        externalTrafficPolicy: Cluster
 
     ingressClass:
       enabled: true
