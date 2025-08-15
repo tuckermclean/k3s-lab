@@ -14,35 +14,49 @@ spec:
         namespace: flux-system
       version: "30.x"
   values:
+    # Run as a plain pod (no host networking)
     hostNetwork: false
     dnsPolicy: ClusterFirst
 
+    # Use a Deployment again (not a DaemonSet)
     deployment:
-      kind: DaemonSet
-      # If you added rollingUpdate knobs for hostNetwork, you can drop them now
+      kind: Deployment
 
+    # Expose Traefik through a Service (k3s ServiceLB will bind 80/443)
+    service:
+      enabled: true
+      type: LoadBalancer
+      spec:
+        externalTrafficPolicy: Local
+
+    # Traefik entrypoints inside the pod; Service exposes 80/443
     ports:
       web:
-        port: 8000        # container port (unprivileged)
-        hostPort: 80      # host port to expose
+        port: 8000
         expose: true
         exposedPort: 80
       websecure:
         port: 8443
-        hostPort: 443
         expose: true
         exposedPort: 443
 
-    service:
-      enabled: false      # we’re not using a Service LB
+    # Make sure Traefik advertises its Service address (useful for ACME & discovery)
+    providers:
+      kubernetesCRD:
+        enabled: true
+      kubernetesIngress:
+        enabled: true
+        publishedService:
+          enabled: true
 
-    # You can also drop the capability now; it’s not needed
+    # Stay compliant with restricted policies (non-root, no extra caps)
     securityContext:
       runAsNonRoot: true
       runAsUser: 65532
       runAsGroup: 65532
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
-      seccompProfile: { type: RuntimeDefault }
+      seccompProfile:
+        type: RuntimeDefault
       capabilities:
         drop: ["ALL"]
