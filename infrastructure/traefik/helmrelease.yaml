@@ -47,3 +47,31 @@ spec:
       enabled: true
       isDefaultClass: false
       name: traefik
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-lb
+  namespace: traefik
+  labels:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/instance: traefik
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/instance: traefik
+  ports:
+    - name: web
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+    - name: websecure
+      port: 443
+      targetPort: 8443
+      protocol: TCP
+    - name: traefik
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
