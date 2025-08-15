@@ -17,8 +17,9 @@ spec:
     # One pod per node; bind host 80/443
     deployment:
       kind: DaemonSet
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
+
+    hostNetwork: true
+    dnsPolicy: ClusterFirstWithHostNet
 
     ports:
       web:
@@ -73,7 +74,3 @@ spec:
         level: INFO
       access:
         enabled: true
-
-    additionalArguments:
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
