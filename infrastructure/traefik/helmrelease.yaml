@@ -24,6 +24,7 @@ spec:
       type: RollingUpdate
       rollingUpdate:
         maxUnavailable: 2   # must be > 1 when hostNetwork=true
+        maxSurge: 0
     ports:
       web:
         port: 80
