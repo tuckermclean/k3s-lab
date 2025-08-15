@@ -22,10 +22,3 @@ spec:
                 name: jellyfin
                 port:
                   number: 8096
-          - path: /download/
-            pathType: Prefix
-            backend:
-              service:
-                name: jellyseerr
-                port:
-                  number: 80
