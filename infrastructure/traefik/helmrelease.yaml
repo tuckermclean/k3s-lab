@@ -17,7 +17,6 @@ spec:
     deployment:
       kind: DaemonSet
 
-    # entrypoints use unprivileged container ports
     ports:
       web:
         port: 8000
@@ -32,18 +31,13 @@ spec:
         expose: true
         exposedPort: 9000
 
-    # Let the chart create the Service (LB) and publish endpoints immediately
     service:
       enabled: true
       type: LoadBalancer
-      publishNotReadyAddresses: true
       spec:
         externalTrafficPolicy: Local
 
-    # Create the IngressClass object that your Ingresses reference
     ingressClass:
       enabled: true
       name: traefik
       isDefaultClass: false
-
-    # Keep defaults for providers; the chart enables both CRD & Ingress
