@@ -20,7 +20,10 @@ spec:
 
     hostNetwork: true
     dnsPolicy: ClusterFirstWithHostNet
-
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 2   # must be > 1 when hostNetwork=true
     ports:
       web:
         port: 80
