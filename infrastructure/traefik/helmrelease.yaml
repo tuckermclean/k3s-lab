@@ -12,19 +12,13 @@ spec:
         kind: HelmRepository
         name: traefik
         namespace: flux-system
-      # Pin to v29 to avoid the v30 service templating change
-      version: "29.x"
+      version: "30.x"
   values:
-    # Keep DaemonSet if you want one pod per node
     deployment:
       kind: DaemonSet
 
-    # Standard container ports (chart defaults)
+    # entrypoints use unprivileged container ports
     ports:
-      traefik:
-        port: 9000
-        expose: true
-        exposedPort: 9000
       web:
         port: 8000
         expose: true
@@ -33,45 +27,23 @@ spec:
         port: 8443
         expose: true
         exposedPort: 443
+      traefik:
+        port: 9000
+        expose: true
+        exposedPort: 9000
 
-    # Create a single Service named "traefik" exposing all ports (k3s will use Klipper LB)
+    # Let the chart create the Service (LB) and publish endpoints immediately
     service:
       enabled: true
       type: LoadBalancer
-      # optional but good with multiple nodes:
+      publishNotReadyAddresses: true
       spec:
         externalTrafficPolicy: Local
 
-    # Ensure the IngressClass matches your Ingresses
+    # Create the IngressClass object that your Ingresses reference
     ingressClass:
       enabled: true
-      isDefaultClass: false
       name: traefik
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: traefik-lb
-  namespace: traefik
-  labels:
-    app.kubernetes.io/name: traefik
-    app.kubernetes.io/instance: traefik
-spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Local
-  selector:
-    app.kubernetes.io/name: traefik
-    app.kubernetes.io/instance: traefik
-  ports:
-    - name: web
-      port: 80
-      targetPort: 8000
-      protocol: TCP
-    - name: websecure
-      port: 443
-      targetPort: 8443
-      protocol: TCP
-    - name: traefik
-      port: 9000
-      targetPort: 9000
-      protocol: TCP
+      isDefaultClass: false
+
+    # Keep defaults for providers; the chart enables both CRD & Ingress
