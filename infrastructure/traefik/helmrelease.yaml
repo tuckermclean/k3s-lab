@@ -14,23 +14,18 @@ spec:
         namespace: flux-system
       version: "30.x"
   values:
-    # Run as a plain pod (no host networking)
     hostNetwork: false
     dnsPolicy: ClusterFirst
 
-    # Use a Deployment again (not a DaemonSet)
     deployment:
-      kind: Deployment
+      kind: DaemonSet
 
-    # Expose Traefik through a Service (k3s ServiceLB will bind 80/443)
-    service:
-      enabled: true
-      type: LoadBalancer
-      spec:
-        externalTrafficPolicy: Local
-
-    # Traefik entrypoints inside the pod; Service exposes 80/443
+    # EntryPoints/ports inside the pod (same as the chart defaults)
     ports:
+      traefik:
+        port: 9000
+        expose: true
+        exposedPort: 9000
       web:
         port: 8000
         expose: true
@@ -40,23 +35,21 @@ spec:
         expose: true
         exposedPort: 443
 
-    # Make sure Traefik advertises its Service address (useful for ACME & discovery)
-    providers:
-      kubernetesCRD:
-        enabled: true
-      kubernetesIngress:
-        enabled: true
-        publishedService:
-          enabled: true
+    # Single Service named "traefik" exposing all the above ports
+    service:
+      enabled: true
+      single: true
+      spec:
+        externalTrafficPolicy: Local
 
-    # Stay compliant with restricted policies (non-root, no extra caps)
-    securityContext:
-      runAsNonRoot: true
-      runAsUser: 65532
-      runAsGroup: 65532
-      allowPrivilegeEscalation: false
-      readOnlyRootFilesystem: true
-      seccompProfile:
-        type: RuntimeDefault
-      capabilities:
-        drop: ["ALL"]
+    # Dashboard/API already enabled by the chart defaults; keep explicit for clarity
+    additionalArguments:
+      - "--api.dashboard=true"
+      - "--metrics.prometheus=true"
+      - "--entryPoints.websecure.http.tls=true"
+
+    # Make sure the chart owns the IngressClass named "traefik" (matches your Ingresses)
+    ingressClass:
+      enabled: true
+      isDefaultClass: false
+      name: traefik
