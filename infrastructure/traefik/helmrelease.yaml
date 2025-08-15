@@ -14,67 +14,35 @@ spec:
         namespace: flux-system
       version: "30.x"
   values:
-    # One pod per node; bind host 80/443
+    hostNetwork: false
+    dnsPolicy: ClusterFirst
+
     deployment:
       kind: DaemonSet
+      # If you added rollingUpdate knobs for hostNetwork, you can drop them now
 
-    hostNetwork: true
-    dnsPolicy: ClusterFirstWithHostNet
-    updateStrategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 2   # must be > 1 when hostNetwork=true
-        maxSurge: 0
     ports:
       web:
-        port: 80
+        port: 8000        # container port (unprivileged)
+        hostPort: 80      # host port to expose
         expose: true
         exposedPort: 80
       websecure:
-        port: 443
+        port: 8443
+        hostPort: 443
         expose: true
         exposedPort: 443
 
-    # Compliant with "non-root" policies
-    podSecurityContext:
-      runAsNonRoot: true
-      runAsUser: 65532
-      runAsGroup: 65532
-      fsGroup: 65532
+    service:
+      enabled: false      # we’re not using a Service LB
+
+    # You can also drop the capability now; it’s not needed
     securityContext:
       runAsNonRoot: true
       runAsUser: 65532
       runAsGroup: 65532
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
-      seccompProfile:
-        type: RuntimeDefault
+      seccompProfile: { type: RuntimeDefault }
       capabilities:
         drop: ["ALL"]
-        add: ["NET_BIND_SERVICE"]
-
-    ingressClass:
-      enabled: true
-      isDefaultClass: true
-      name: traefik
-
-    # No Service (we're using hostNetwork)
-    service:
-      enabled: false
-
-    providers:
-      kubernetesCRD:
-        enabled: true
-      kubernetesIngress:
-        enabled: true
-        publishedService:
-          enabled: false
-
-    tolerations:
-      - operator: "Exists"
-
-    logs:
-      general:
-        level: INFO
-      access:
-        enabled: true
