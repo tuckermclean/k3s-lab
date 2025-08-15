@@ -37,13 +37,16 @@ spec:
       runAsGroup: 65532
       fsGroup: 65532
     securityContext:
+      runAsNonRoot: true
+      runAsUser: 65532
+      runAsGroup: 65532
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
       capabilities:
-        drop:
-          - ALL
-        add:
-          - NET_BIND_SERVICE
+        drop: ["ALL"]
+        add: ["NET_BIND_SERVICE"]
 
     ingressClass:
       enabled: true
