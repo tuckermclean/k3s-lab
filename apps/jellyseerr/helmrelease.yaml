@@ -19,10 +19,6 @@ spec:
                       options:
                         - name: ndots
                           value: "1"
-  volumes:
-    - name: config
-      persistentVolumeClaim:
-        claimName: jellyseerr-config-root-pvc
   interval: 5m
   chart:
     spec:
@@ -35,6 +31,13 @@ spec:
   values:
     service:
       type: ClusterIP
+    config:
+      persistence:
+        name: jellyseerr-config-root-pvc
+        volumeName: jellyseerr-nfs-config-pv
+        accessModes:
+          - ReadWriteMany
+        size: "100Gi"
     ingress:
       enabled: true
       ingressClassName: traefik

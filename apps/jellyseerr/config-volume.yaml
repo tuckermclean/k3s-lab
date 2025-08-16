@@ -17,19 +17,3 @@ spec:
   nfs:
     server: openmediavault.home.dcxxiv.com
     path: /export/Media/jellyseerr-config
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: jellyseerr-config-root-pvc
-  namespace: media
-  labels:
-    app.kubernetes.io/part-of: gitops
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 100Gi
-  volumeName: jellyseerr-nfs-config-pv
-  storageClassName: nfs-provisioner
