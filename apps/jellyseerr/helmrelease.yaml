@@ -31,10 +31,10 @@ spec:
   values:
     service:
       type: ClusterIP
-    persistence:
-      config:
+    config:
+      persistence:
         enabled: true
-        existingClaim: jellyseerr-config-root-pvc
+        volumeName: jellyseerr-config-root-pvc
     ingress:
       enabled: true
       ingressClassName: traefik
