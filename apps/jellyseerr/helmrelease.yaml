@@ -35,6 +35,7 @@ spec:
       persistence:
         name: jellyseerr-config-root-pvc
         volumeName: jellyseerr-nfs-config-pv
+        storageClass: nfs-provisioner
         accessModes:
           - ReadWriteMany
         size: "100Gi"
