@@ -14,6 +14,16 @@ spec:
         namespace: flux-system
       version: "2.x"
   values:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: ["k3s01"]
+    tolerations: []        # leave empty unless you’ve tainted k3s01
+    nodeSelector: {}       # don’t rely on labels; hostname affinity is enough
     service:
       type: ClusterIP
     persistence:
