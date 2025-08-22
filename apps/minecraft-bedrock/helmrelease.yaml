@@ -22,7 +22,8 @@ spec:
       # you can set these here OR via existingSecret below
       existingSecret: "bedrock-env"
       eula: true      # Helm value also respected by chart README
-
+      serverPort: 19132
+      serviceType: ClusterIP
     resources:
       requests:
         cpu: "200m"
@@ -30,17 +31,10 @@ spec:
       limits:
         memory: "2Gi"
 
-    # Bedrock is UDP 19132. The chart exposes both TCP/UDP by default;
-    # we’ll explicitly ensure UDP is present and use ClusterIP internally.
-    service:
-      type: ClusterIP
-      port: 19132
-      annotations: {}
-
     # Persistent world data on your NFS dynamic class (RWX)
     persistence:
       storageClassName: "nfs-provisioner"
       dataDir:
         enabled: true
-        size: 20Gi
+        Size: 20Gi              # NOTE the capital S
         accessModes: ["ReadWriteMany"]
