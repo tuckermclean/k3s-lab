@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minecraft-bedrock
+  namespace: minecraft
+  labels:
+    app.kubernetes.io/name: minecraft-bedrock
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: minecraft-bedrock
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: minecraft-bedrock
+    spec:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: server
+          image: itzg/minecraft-bedrock-server:latest
+          imagePullPolicy: IfNotPresent
+          # No probes (first boot can take several minutes)
+          env:
+            - name: EULA
+              value: "TRUE"
+            - name: SERVER_PORT
+              value: "19132"
+            - name: VERSION
+              value: "1.21.101.1"
+          envFrom:
+            - secretRef:
+                name: bedrock-env   # optional; define keys like SERVER_NAME, etc.
+          ports:
+            - name: minecraft-bedrock
+              containerPort: 19132
+              protocol: UDP
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "2Gi"
+            limits:
+              memory: "4Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: minecraft-bedrock-data
