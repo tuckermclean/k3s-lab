@@ -8,3 +8,4 @@ resources:
   - nfs-provisioner-kustomization.yaml
   - jellyfin-kustomization.yaml
   - jellyseerr-kustomization.yaml
+  - minecraft-bedrock.yaml

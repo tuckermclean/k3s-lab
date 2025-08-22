@@ -1,0 +1,46 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: minecraft-bedrock
+  namespace: minecraft
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: minecraft-bedrock
+      sourceRef:
+        kind: HelmRepository
+        name: itzg
+        namespace: flux-system
+      # version: ">=2.0.0"   # optional pin; see repo/releases
+  values:
+    image:
+      repository: itzg/minecraft-bedrock-server
+      pullPolicy: IfNotPresent
+
+    minecraftServer:
+      # you can set these here OR via existingSecret below
+      existingSecret: "bedrock-env"
+      eula: true      # Helm value also respected by chart README
+
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "1.5Gi"
+      limits:
+        memory: "2Gi"
+
+    # Bedrock is UDP 19132. The chart exposes both TCP/UDP by default;
+    # we’ll explicitly ensure UDP is present and use ClusterIP internally.
+    service:
+      type: ClusterIP
+      port: 19132
+      annotations: {}
+
+    # Persistent world data on your NFS dynamic class (RWX)
+    persistence:
+      dataDir:
+        enabled: true
+        size: 20Gi
+        storageClass: "nfs-provisioner"
+        accessModes: ["ReadWriteMany"]
