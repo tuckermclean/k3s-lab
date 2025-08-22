@@ -43,3 +43,7 @@ spec:
         enabled: true
         Size: 20Gi              # NOTE the capital S
         accessModes: ["ReadWriteMany"]
+
+    livenessProbe: null
+    readinessProbe: null
+    startupProbe: null  # harmless if the chart ignores it
