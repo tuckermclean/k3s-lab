@@ -44,6 +44,35 @@ spec:
         Size: 20Gi              # NOTE the capital S
         accessModes: ["ReadWriteMany"]
 
-    livenessProbe: null
-    readinessProbe: null
-    startupProbe: null  # harmless if the chart ignores it
+    livenessProbe:
+      exec:
+        command: ["mc-monitor","status-bedrock","--host","127.0.0.1","--port","19132"]
+      initialDelaySeconds: 1200
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 120
+
+    readinessProbe:
+      exec:
+        command: ["mc-monitor","status-bedrock","--host","127.0.0.1","--port","19132"]
+      initialDelaySeconds: 1200
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 120
+
+  # 2) Strip probes AFTER render so they never hit the Deployment
+  postRenderers:
+    - kustomize:
+        patchesJson6902:
+          - target:
+              version: apps/v1
+              kind: Deployment
+              name: minecraft-bedrock-minecraft-bedrock
+              namespace: minecraft
+            patch:
+              - op: remove
+                path: /spec/template/spec/containers/0/livenessProbe
+              - op: remove
+                path: /spec/template/spec/containers/0/readinessProbe
+              - op: remove
+                path: /spec/template/spec/containers/0/startupProbe
