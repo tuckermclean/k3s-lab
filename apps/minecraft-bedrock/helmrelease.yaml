@@ -22,7 +22,7 @@ spec:
       # you can set these here OR via existingSecret below
       existingSecret: "bedrock-env"
       eula: true      # Helm value also respected by chart README
-      version: "1.21.101"
+      version: "1.21.101.1"
       serverPort: 19132
       serviceType: ClusterIP
     resources:
