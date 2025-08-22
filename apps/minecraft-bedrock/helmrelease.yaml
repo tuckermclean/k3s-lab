@@ -32,33 +32,6 @@ spec:
       limits:
         memory: "4Gi"
 
-    # Give the container time to finish first-boot init
-    startupProbe:
-      exec:
-        command: ["mc-monitor", "status-bedrock", "--host", "127.0.0.1", "--port", "19132"]
-      # 10 min max: 10s * 60 failures
-      periodSeconds: 10
-      failureThreshold: 60
-      timeoutSeconds: 3
-
-    # Liveness/readiness can be stricter; they won’t run until startupProbe succeeds
-    livenessProbe:
-      exec:
-        command: ["mc-monitor", "status-bedrock", "--host", "127.0.0.1", "--port", "19132"]
-      periodSeconds: 10
-      timeoutSeconds: 3
-      failureThreshold: 3
-      initialDelaySeconds: 0  # ignored while startupProbe active
-
-    readinessProbe:
-      exec:
-        command: ["mc-monitor", "status-bedrock", "--host", "127.0.0.1", "--port", "19132"]
-      periodSeconds: 10
-      timeoutSeconds: 3
-      failureThreshold: 6
-      initialDelaySeconds: 0  # ignored while startupProbe active
-
-
     # Bedrock sometimes needs writable paths outside /data during init.
     # If you left the chart defaults at readOnlyRootFilesystem: true, flip it:
     securityContext:
