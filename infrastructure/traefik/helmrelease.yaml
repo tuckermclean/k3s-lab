@@ -20,7 +20,6 @@ spec:
     service:
       enabled: true
       type: LoadBalancer
-      single: false
       spec:
         externalTrafficPolicy: Cluster
 
@@ -32,6 +31,7 @@ spec:
     ports:
       bedrock:
         port: 19132           # Traefik's internal listening port
-        expose: true
+        expose:
+          default: true
         exposedPort: 19132    # LB/Node port that clients hit
         protocol: UDP
