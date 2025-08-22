@@ -20,6 +20,7 @@ spec:
     service:
       enabled: true
       type: LoadBalancer
+      single: false
       spec:
         externalTrafficPolicy: Cluster
 
