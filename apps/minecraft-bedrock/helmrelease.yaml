@@ -44,35 +44,19 @@ spec:
         Size: 20Gi              # NOTE the capital S
         accessModes: ["ReadWriteMany"]
 
+    # --- Probes as no-ops (idempotent, chart-safe) ---
     livenessProbe:
       exec:
-        command: ["mc-monitor","status-bedrock","--host","127.0.0.1","--port","19132"]
-      initialDelaySeconds: 1200
-      periodSeconds: 10
+        command: ["sh", "-lc", "true"]
+      initialDelaySeconds: 0
+      periodSeconds: 30
       timeoutSeconds: 5
-      failureThreshold: 120
+      failureThreshold: 1
 
     readinessProbe:
       exec:
-        command: ["mc-monitor","status-bedrock","--host","127.0.0.1","--port","19132"]
-      initialDelaySeconds: 1200
-      periodSeconds: 10
+        command: ["sh", "-lc", "true"]
+      initialDelaySeconds: 0
+      periodSeconds: 30
       timeoutSeconds: 5
-      failureThreshold: 120
-
-  # 2) Strip probes AFTER render so they never hit the Deployment
-  postRenderers:
-    - kustomize:
-        patchesJson6902:
-          - target:
-              version: apps/v1
-              kind: Deployment
-              name: minecraft-bedrock-minecraft-bedrock
-              namespace: minecraft
-            patch:
-              - op: remove
-                path: /spec/template/spec/containers/0/livenessProbe
-              - op: remove
-                path: /spec/template/spec/containers/0/readinessProbe
-              - op: remove
-                path: /spec/template/spec/containers/0/startupProbe
+      failureThreshold: 1
