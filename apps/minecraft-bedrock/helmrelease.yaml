@@ -27,9 +27,25 @@ spec:
     resources:
       requests:
         cpu: "200m"
-        memory: "1.5Gi"
-      limits:
         memory: "2Gi"
+      limits:
+        memory: "4Gi"
+    # Probes: give it time to come up before killing it
+    livenessProbe:
+      initialDelaySeconds: 120 # was 30
+      timeoutSeconds: 3
+      periodSeconds: 10
+      failureThreshold: 12
+    readinessProbe:
+      initialDelaySeconds: 120 # was 30
+      timeoutSeconds: 3
+      periodSeconds: 10
+      failureThreshold: 12
+
+    # Bedrock sometimes needs writable paths outside /data during init.
+    # If you left the chart defaults at readOnlyRootFilesystem: true, flip it:
+    securityContext:
+      readOnlyRootFilesystem: false
 
     # Persistent world data on your NFS dynamic class (RWX)
     persistence:
