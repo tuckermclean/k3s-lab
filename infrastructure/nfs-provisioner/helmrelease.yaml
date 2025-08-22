@@ -19,5 +19,5 @@ spec:
       path: /export/Media
     storageClass:
       name: nfs-provisioner
-      defaultClass: false
+      defaultClass: true
       reclaimPolicy: Retain

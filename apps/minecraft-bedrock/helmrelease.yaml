@@ -33,7 +33,6 @@ spec:
 
     # Persistent world data on your NFS dynamic class (RWX)
     persistence:
-      storageClassName: "nfs-provisioner"
       dataDir:
         enabled: true
         Size: 20Gi              # NOTE the capital S
