@@ -8,5 +8,5 @@ spec:
     - bedrock   # define in Traefik as address: ":19132/udp"
   routes:
     - services:
-        - name: minecraft-bedrock
+        - name: bedrock
           port: 19132

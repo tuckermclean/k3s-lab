@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: minecraft-bedrock
+  name: bedrock
   namespace: minecraft
   labels:
-    app.kubernetes.io/name: minecraft-bedrock
+    app.kubernetes.io/name: bedrock
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: minecraft-bedrock
+      app.kubernetes.io/name: bedrock
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: minecraft-bedrock
+        app.kubernetes.io/name: bedrock
     spec:
       terminationGracePeriodSeconds: 120
       securityContext:
@@ -40,7 +40,7 @@ spec:
             - secretRef:
                 name: bedrock-env   # optional; define keys like SERVER_NAME, etc.
           ports:
-            - name: minecraft-bedrock
+            - name: bedrock
               containerPort: 19132
               protocol: UDP
           resources:
@@ -60,4 +60,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: minecraft-bedrock-data
+            claimName: bedrock-data

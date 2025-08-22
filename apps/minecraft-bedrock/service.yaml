@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: minecraft-bedrock
+  name: bedrock
   namespace: minecraft
   labels:
-    app.kubernetes.io/name: minecraft-bedrock
+    app.kubernetes.io/name: bedrock
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: minecraft-bedrock
+    app.kubernetes.io/name: bedrock
   ports:
-    - name: minecraft-bedrock
+    - name: bedrock
       port: 19132
-      targetPort: minecraft-bedrock
+      targetPort: bedrock
       protocol: UDP
