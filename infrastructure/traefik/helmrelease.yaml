@@ -27,3 +27,10 @@ spec:
       enabled: true
       name: traefik
       isDefaultClass: false
+
+    ports:
+      bedrock:
+        port: 19132           # Traefik's internal listening port
+        expose: true
+        exposedPort: 19132    # LB/Node port that clients hit
+        protocol: UDP
