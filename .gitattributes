@@ -1,0 +1,28 @@
+# Repository line ending settings
+# Enforce LF for all text files to keep consistent line endings across platforms.
+# See `git help attributes` for details.
+
+# Treat all files detected as text and normalize to LF on checkout
+* text=auto eol=lf
+
+# Explicit rules for common text file types
+*.sh     text eol=lf
+*.ps1    text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.json   text eol=lf
+*.md     text eol=lf
+*.env    text eol=lf
+*.txt    text eol=lf
+
+# Treat common binary file types as binary to avoid normalization
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.gz     binary
+*.zip    binary
+*.tar    binary
+
+# End of file
