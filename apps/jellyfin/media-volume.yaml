@@ -19,6 +19,23 @@ spec:
     path: /export/Media
 ---
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-jellyfin-config-pv
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-path
+  hostPath:
+    path: /var/lib/jellyfin/config
+    type: DirectoryOrCreate
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: media-root-pvc
@@ -67,5 +84,5 @@ spec:
   resources:
     requests:
       storage: 100Gi
-  volumeName: nfs-config-pv
-  storageClassName: nfs-provisioner
+  volumeName: local-jellyfin-config-pv
+  storageClassName: local-path
