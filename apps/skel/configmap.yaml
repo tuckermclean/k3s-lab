@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: <app-name>-config
+  namespace: <namespace>
+  labels:
+    app.kubernetes.io/part-of: gitops
+data:
+  # Example key/values. Prefer ConfigMap for non-secret configuration.
+  EXAMPLE_SETTING: "value"

@@ -9,3 +9,7 @@ resources:
   - jellyfin-kustomization.yaml
   - jellyseerr-kustomization.yaml
   - minecraft-bedrock.yaml
+  # To add a new app, add its cluster kustomization file here (pattern used in this repo).
+  # For example, create `clusters/k3s-lab/<app>-kustomization.yaml` and then add:
+  # - <app>-kustomization.yaml
+  # Example: skel-kustomization.yaml
