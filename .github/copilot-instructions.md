@@ -37,19 +37,43 @@ This repository manages a single-cluster Kubernetes lab using Flux v2 (GitOps). 
 - Check Flux controllers and kustomization status:
   - `kubectl get pods -n flux-system`
   - `flux get kustomizations -n flux-system`
-  - `flux logs --follow`
-- Inspect kustomization reconciliation and events:
-  - `kubectl describe kustomization <name> -n flux-system`
-  - `flux events`
-- Common repo-specific pitfalls:
-  - README references `./scripts/setup.sh`, but `scripts/` is empty—do not rely on that script.
-  - Several manifests (e.g. `apps/jellyfin/media-volume.yaml`, `infrastructure/nfs-provisioner/helmrelease.yaml`) reference `openmediavault.home.dcxxiv.com`. Ensure any target environment has an appropriate NFS server or update these manifests.
-  - Cert-manager ClusterIssuers use a personal email and ACME staging/prod endpoints in `infrastructure/cert-manager-config/clusterissuer.yaml` — replace with your own email when bootstrapping.
+  # Copilot instructions — k3s-lab (Flux GitOps)
 
-## Practical examples (paths)
-- Add an app: create `apps/<name>/kustomization.yaml`, include `namespace.yaml` and either `helmrelease.yaml` or raw manifests, then add a Kustomization in `clusters/k3s-lab/` or update `clusters/k3s-lab/kustomization.yaml` to include it.
-- Update Traefik: edit `infrastructure/traefik/helmrelease.yaml` and the corresponding kustomization `clusters/k3s-lab/traefik-kustomization.yaml` will pick it up.
-- Inspect Jellyfin example: `apps/jellyfin/helmrelease.yaml`, `apps/jellyfin/media-ingress.yaml`, `apps/jellyfin/media-volume.yaml` show hostname affinity, traefik ingress TLS, and NFS-backed PVs.
+  This repo manages a single k3s cluster using Flux v2 (GitOps). The file below is a concise, actionable cheat-sheet for AI agents to be productive quickly.
 
----
-If anything in these instructions is unclear or you want more detail about a specific area (e.g. how HelmRelease values are structured in this repo, or how to change the NFS backend), tell me which area and I'll expand with examples and automated checks.
+  Key ideas
+  - Repo = desired cluster state. Flux reconciles changes from `clusters/k3s-lab/` -> `apps/`, `infrastructure/`.
+  - Manifests are YAML + Kustomize overlays and HelmRelease objects. No runtime secrets are checked into Git.
+
+  Essential locations (refer to these files when changing behavior)
+  - `apps/` — per-app folders. Examples: `apps/jellyfin/helmrelease.yaml`, `apps/minecraft-bedrock/deployment.yaml`.
+  - `infrastructure/` — cluster infra HelmReleases (Traefik, cert-manager, NFS). Example: `infrastructure/traefik/helmrelease.yaml`.
+  - `clusters/k3s-lab/` — Kustomizations that glue Git -> cluster. Bootstrap artifacts: `clusters/k3s-lab/flux-system/gotk-components.yaml`, `gotk-sync.yaml`.
+
+  Quick workflows (commands you will use)
+  - Bootstrap cluster: flux bootstrap github ... --path=./clusters/k3s-lab (see `README.md` for exact example).
+  - Preview changes: flux diff kustomization <name> -n flux-system or `flux diff kustomization clusters/k3s-lab`.
+  - Force reconcile: flux reconcile kustomization <name> -n flux-system (e.g. `jellyfin`, `traefik`).
+  - Inspect status: flux get all -n flux-system; kubectl get all -l app.kubernetes.io/part-of=gitops
+  - Debug: kubectl describe kustomization <name> -n flux-system; flux events; flux logs --follow
+
+  Project-specific conventions
+  - Do NOT commit plaintext secrets. There are no SOPS-encrypted secrets in this repo.
+  - Resources are labeled with `app.kubernetes.io/part-of: gitops` — use this for filtering and queries.
+  - Apps use HelmRelease manifests inside `apps/<name>/`. Kustomize overlays live in `clusters/k3s-lab/`.
+  - There is no `scripts/setup.sh` (README mentions it) — bootstrapping is manual via Flux commands.
+
+  Integration notes / gotchas
+  - Traefik ingressClass: `traefik`. See `apps/*/media-ingress.yaml` (e.g. `apps/jellyfin/media-ingress.yaml`) for TLS/host examples.
+  - Cert-manager ClusterIssuer: `infrastructure/cert-manager-config/clusterissuer.yaml` uses HTTP-01 via Traefik — update ACME email/DNS when bootstrapping.
+  - NFS: `infrastructure/nfs-provisioner/helmrelease.yaml` and some PVs reference `openmediavault.home.dcxxiv.com`. This is environment-specific — replace or provide equivalent NFS backend.
+
+  Common tasks with file examples
+  - Add an app: create `apps/<name>/kustomization.yaml`, `apps/<name>/namespace.yaml`, and `apps/<name>/helmrelease.yaml` or manifests; then add or update `clusters/k3s-lab/kustomization.yaml` to include the app.
+  - Change Traefik config: edit `infrastructure/traefik/helmrelease.yaml` and then `flux reconcile kustomization traefik -n flux-system`.
+
+  If something is unclear or you need additional examples (e.g., HelmRelease value patterns, PV/StorageClass conventions), tell me which area and I will expand with targeted file references and quick verification steps.
+
+  ---
+  Files worth inspecting first: `README.md`, `clusters/k3s-lab/flux-system/*`, `apps/jellyfin/*`, `infrastructure/traefik/helmrelease.yaml`, `infrastructure/nfs-provisioner/helmrelease.yaml`.
+
