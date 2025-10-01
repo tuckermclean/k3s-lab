@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openhands
+  namespace: openhands
+  labels:
+    app.kubernetes.io/name: openhands
+    app.kubernetes.io/part-of: gitops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openhands
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openhands
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: openhands
+          image: docker.all-hands.dev/all-hands-ai/openhands:0.57
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: SANDBOX_RUNTIME_CONTAINER_IMAGE
+              value: docker.all-hands.dev/all-hands-ai/runtime:0.57-nikolaik
+            - name: LOG_ALL_EVENTS
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: openhands-env
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              memory: "512Mi"
+          volumeMounts:
+            - name: state
+              mountPath: /.openhands
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: openhands-pvc
