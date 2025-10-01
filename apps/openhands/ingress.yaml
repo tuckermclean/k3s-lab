@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openhands-ingress
+  namespace: openhands
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  tls:
+    - hosts:
+        - openhands.home.dcxxiv.com
+      secretName: openhands-tls
+  rules:
+    - host: openhands.home.dcxxiv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: openhands
+                port:
+                  number: 3000
