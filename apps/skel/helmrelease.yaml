@@ -1,0 +1,22 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: <app-name>
+  namespace: <namespace>
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: <chart-name>          # e.g. ingress-nginx, jellyfin
+      sourceRef:
+        kind: HelmRepository
+        name: <helm-repo-name>
+        namespace: flux-system
+      version: "<chart-version>"
+  values: {}
+
+# Notes:
+# - Replace placeholders (<...>) before committing.
+# - If this app doesn't use Helm, remove this file and use a plain Deployment manifest.

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: <app-name>-pvc
+  namespace: <namespace>
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # If your cluster uses the NFS provisioner used in this repo, explicitly
+  # set storageClassName: nfs-subdir-external-provisioner
+  # storageClassName: nfs-subdir-external-provisioner
