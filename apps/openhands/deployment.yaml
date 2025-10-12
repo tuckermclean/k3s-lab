@@ -17,10 +17,6 @@ spec:
         app.kubernetes.io/name: openhands
     spec:
       terminationGracePeriodSeconds: 30
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 1000
       containers:
         - name: openhands
           image: docker.all-hands.dev/all-hands-ai/openhands:0.59
