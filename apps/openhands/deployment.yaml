@@ -47,7 +47,7 @@ spec:
             - name: LLM_DROP_PARAMS
               value: "true"
             - name: LLM_MODEL
-              value: "openai/codex-mini-latest"
+              value: "openai/gpt-5-2025-08-07"
             - name: OPENHANDS_ENABLE_PIPELINE_CONDENSER
               value: "false"
             - name: ENABLE_PIPELINE_CONDENSER
