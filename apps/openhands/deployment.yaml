@@ -17,6 +17,10 @@ spec:
         app.kubernetes.io/name: openhands
     spec:
       terminationGracePeriodSeconds: 30
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "host.docker.internal"
       containers:
         - name: dind
           image: docker:25-dind
@@ -40,6 +44,8 @@ spec:
               value: "true"
             - name: SANDBOX_USE_HOST_NETWORK
               value: "true"
+            - name: DOCKER_HOST_ADDR
+              value: "127.0.0.1"
           envFrom:
             - secretRef:
                 name: openhands-env
