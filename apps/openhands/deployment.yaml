@@ -53,12 +53,6 @@ spec:
           envFrom:
             - secretRef:
                 name: openhands-env
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              memory: "512Mi"
           volumeMounts:
             - name: state
               mountPath: /.openhands
