@@ -22,7 +22,9 @@ spec:
           image: docker:25-dind
           securityContext:
             privileged: true
-          args: ["--host=unix:///var/run/docker.sock"]
+          args:
+            - --host=unix:///var/run/docker.sock
+            - --network=host
           volumeMounts:
             - { name: docker-run, mountPath: /var/run }
             - { name: docker-lib, mountPath: /var/lib/docker }
