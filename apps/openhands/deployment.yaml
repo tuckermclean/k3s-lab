@@ -42,8 +42,6 @@ spec:
               value: docker.all-hands.dev/all-hands-ai/runtime:0.59-nikolaik
             - name: LOG_ALL_EVENTS
               value: "true"
-            - name: SANDBOX_USE_HOST_NETWORK
-              value: "true"
             - name: DOCKER_HOST_ADDR
               value: "127.0.0.1"
           envFrom:
