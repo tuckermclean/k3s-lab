@@ -44,10 +44,14 @@ spec:
               value: "true"
             - name: DOCKER_HOST_ADDR
               value: "127.0.0.1"
-            - name: LITELLM_DROP_PARAMS
-              value: "temperature"
+            - name: LLM_DROP_PARAMS
+              value: '["temperature","top_p"]'
             - name: LLM_MODEL
               value: "openai/codex-mini-latest"
+            - name: OPENHANDS_ENABLE_PIPELINE_CONDENSER
+              value: "false"
+            - name: ENABLE_PIPELINE_CONDENSER
+              value: "false"
           envFrom:
             - secretRef:
                 name: openhands-env
