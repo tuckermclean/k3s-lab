@@ -26,12 +26,6 @@ spec:
           volumeMounts:
             - { name: docker-run, mountPath: /var/run }
             - { name: docker-lib, mountPath: /var/lib/docker }
-          readinessProbe:
-            exec:
-              command: ["/bin/sh","-lc","wget -qO- --header='Host:' --unix-socket /var/run/docker.sock http://localhost/_ping | grep -q OK"]
-            initialDelaySeconds: 2
-            periodSeconds: 2
-            failureThreshold: 60
         - name: openhands
           image: docker.all-hands.dev/all-hands-ai/openhands:0.59
           imagePullPolicy: IfNotPresent
@@ -51,11 +45,6 @@ spec:
               mountPath: /.openhands
             - name: docker-run
               mountPath: /var/run
-          startupProbe:
-            exec:
-              command: ["/bin/sh","-lc","for i in $(seq 1 120); do wget -qO- --header='Host:' --unix-socket /var/run/docker.sock http://localhost/_ping 2>/dev/null | grep -q OK && exit 0; sleep 1; done; exit 1"]
-            periodSeconds: 1
-            failureThreshold: 120
       volumes:
         - name: docker-run
           emptyDir: {}
