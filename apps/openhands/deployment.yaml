@@ -23,7 +23,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: openhands
-          image: docker.all-hands.dev/all-hands-ai/openhands:0.59-nikolaik
+          image: docker.all-hands.dev/all-hands-ai/openhands:0.59
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
