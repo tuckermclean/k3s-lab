@@ -45,7 +45,7 @@ spec:
             - name: DOCKER_HOST_ADDR
               value: "127.0.0.1"
             - name: LLM_DROP_PARAMS
-              value: '["temperature","top_p"]'
+              value: "true"
             - name: LLM_MODEL
               value: "openai/codex-mini-latest"
             - name: OPENHANDS_ENABLE_PIPELINE_CONDENSER
