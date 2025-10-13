@@ -26,38 +26,30 @@ This document outlines the security approach for the k3s-lab GitOps repository.
 
 ### Secret Generation
 
-```bash
-# Generate all secrets
-./scripts/generate-secrets.sh
+Use strong randomness for any secret material you create out-of-band:
 
-# Generate specific secret types
-openssl rand -base64 32  # Database password
-openssl rand -base64 40  # Application secret key
+```bash
+openssl rand -base64 32  # example: application password
+openssl rand -base64 40  # example: application secret key
 ```
 
 ### Secret Storage
 
-Secrets are stored in Kubernetes with the following structure:
+Create Kubernetes Secret objects in-cluster; do not commit plaintext secrets. Example for the OpenHands app expected by `apps/openhands/deployment.yaml`:
 
 ```yaml
-# PostgreSQL Secret
 apiVersion: v1
 kind: Secret
 metadata:
-  name: authentik-postgresql-secret
-  namespace: authentik
-data:
-  password: <base64-encoded-random-password>
-
-# Authentik Secret
-apiVersion: v1
-kind: Secret
-metadata:
-  name: authentik-secret
-  namespace: authentik
-data:
-  secretKey: <base64-encoded-random-key>
+  name: openhands-env
+  namespace: openhands
+stringData:
+  # Populate with your environment-specific values, e.g. API keys
+  OPENAI_API_KEY: "<your-key>"
+  # Add any other variables referenced by the Deployment
 ```
+
+For other applications, follow a similar pattern: create a namespaced Secret with the keys your manifests expect, and reference it via `envFrom.secretRef`.
 
 ## Security Best Practices
 
@@ -88,33 +80,27 @@ data:
 
 ## Backup Strategy
 
-### Automatic Backup
-```bash
-# Set GPG key for encrypted backup
-export GPG_KEY="your-gpg-key-id"
+Example commands to export and later restore Secrets for a namespace:
 
-# Run setup with encrypted backup
-./scripts/generate-secrets.sh
-```
-
-### Manual Backup
 ```bash
-# Export secrets (for emergency recovery)
-kubectl get secret authentik-postgresql-secret -n authentik -o yaml > backup-postgresql-secret.yaml
-kubectl get secret authentik-secret -n authentik -o yaml > backup-authentik-secret.yaml
+# Export all secrets from a namespace (careful with handling of the file)
+kubectl get secrets -n openhands -o yaml > backup-secrets-openhands.yaml
+
+# Restore (only into a trusted environment)
+kubectl apply -f backup-secrets-openhands.yaml
 ```
 
 ## Disaster Recovery
 
 ### Secret Recovery
-1. **Regenerate secrets**: Run `./scripts/generate-secrets.sh`
-2. **Restore from backup**: Apply backup YAML files
-3. **Update applications**: Restart affected pods
+1. Rotate or regenerate affected secrets
+2. Restore from backups only if rotation is not possible
+3. Restart affected workloads to pick up new values
 
 ### Full Cluster Recovery
-1. **Restore cluster**: Reinstall K3s if needed
-2. **Run setup script**: `./scripts/setup.sh`
-3. **Verify deployment**: Check all services are running
+1. Restore the cluster (e.g., reinstall K3s if needed)
+2. Re-bootstrap Flux to this repository if required
+3. Verify deployment: ensure controllers and apps are healthy
 
 ## Compliance
 
@@ -135,10 +121,10 @@ kubectl get secret authentik-secret -n authentik -o yaml > backup-authentik-secr
 ### Secret Health Checks
 ```bash
 # Check secret status
-kubectl get secrets -n authentik
+kubectl get secrets -n openhands
 
 # Verify secret values are set
-kubectl describe secret authentik-postgresql-secret -n authentik
+kubectl describe secret openhands-env -n openhands
 ```
 
 ### Application Health
