@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: <namespace>
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: gitops
+resources:
+  # Include only the files you need for your app
+  - namespace.yaml         # optional
+  - configmap.yaml         # optional
+  - pvc.yaml               # optional
+  - deployment.yaml        # optional
+  - service.yaml           # optional
+  - ingress.yaml           # optional
+  - helmrelease.yaml       # optional (if using Helm)
+
+# patches:
+#   - path: patch.yaml
+#     target:
+#       kind: Deployment

@@ -6,18 +6,30 @@ This repository follows the Flux v2 GitOps pattern for managing a single-cluster
 
 ```
 .
-├── apps/                    # Application HelmReleases & values
-│   ├── authentik/          # Identity provider
-│   ├── jellyfin/           # Media server
-│   └── dashboard/          # Kubernetes dashboard
-├── infrastructure/         # Cluster infrastructure components
-│   ├── traefik/           # Ingress controller
-│   ├── cert-manager/      # Certificate management
-│   └── nfs-provisioner/   # Storage provisioner
+├── apps/                    # Application HelmReleases & manifests
+│   ├── jellyfin/            # Media server
+│   ├── jellyseerr/          # Media request manager
+│   ├── minecraft-bedrock/   # Game server (UDP via Traefik)
+│   ├── openhands/           # OpenHands app
+│   └── skel/                # App skeleton templates
+├── infrastructure/          # Cluster infrastructure components
+│   ├── traefik/             # Ingress controller (DaemonSet + LoadBalancer)
+│   ├── cert-manager/        # Certificate management
+│   ├── cert-manager-config/ # ClusterIssuers and related config
+│   └── nfs-provisioner/     # Storage provisioner
 └── clusters/
-    └── k3s-lab/           # Cluster-specific configuration
+    └── k3s-lab/             # Cluster-specific configuration
         ├── kustomization.yaml
-        └── flux-kustomization.yaml
+        ├── flux-system/     # Flux bootstrap artifacts (gotk-*.yaml)
+        ├── traefik-kustomization.yaml
+        ├── cert-manager-kustomization.yaml
+        ├── cert-manager-config-kustomization.yaml
+        ├── nfs-provisioner-kustomization.yaml
+        ├── jellyfin-kustomization.yaml
+        ├── jellyseerr-kustomization.yaml
+        ├── minecraft-bedrock.yaml
+        ├── openhands-kustomization.yaml
+        └── skel-kustomization.yaml
 ```
 
 ## Quick Start
@@ -41,7 +53,7 @@ flux bootstrap github \
   --personal
 ```
 
-If you rely on cluster-local resources (Storage, DNS, LoadBalancer), ensure they exist before reconciling the app kustomizations (see "Environment-specific notes" below).
+If you rely on cluster-local resources (Storage, DNS, LoadBalancer), ensure they exist before reconciling the app kustomizations. Many manifests assume an NFS backend and working DNS/LoadBalancer.
 
 ### Verify Deployment
 
@@ -63,13 +75,14 @@ flux trace
 
 - **Traefik**: Ingress controller (see `infrastructure/traefik/helmrelease.yaml`) deployed as a DaemonSet + LoadBalancer.
 - **Cert-Manager**: Certificate management (see `infrastructure/cert-manager/helmrelease.yaml` and `infrastructure/cert-manager-config/clusterissuer.yaml`). ClusterIssuers use HTTP01 via Traefik by default.
-- **NFS Provisioner**: `nfs-subdir-external-provisioner` configured in `infrastructure/nfs-provisioner/helmrelease.yaml`.
+- **NFS Provisioner**: nfs-subdir-external-provisioner configured in `infrastructure/nfs-provisioner/helmrelease.yaml`; default StorageClass name: `nfs-provisioner`.
 
 ### Applications
 
 - **Jellyfin**: Media streaming server (`apps/jellyfin/*`).
 - **Jellyseerr**: Media request manager (`apps/jellyseerr/*`).
 - **Minecraft Bedrock**: Game server (`apps/minecraft-bedrock/*`).
+- **OpenHands**: OpenHands app with DinD sidecar and Ingress (`apps/openhands/*`).
 
 ## Development Workflow
 
@@ -90,8 +103,11 @@ flux diff kustomization jellyfin -n flux-system
 ## Useful Commands
 
 ```bash
-# Show diffs
+# Show diffs for the entire cluster overlay
 flux diff kustomization clusters/k3s-lab
+
+# Show diffs for a single kustomization (recommended during development)
+flux diff kustomization jellyfin -n flux-system
 
 # Force reconciliation for a named kustomization
 flux reconcile kustomization <name> -n flux-system
