@@ -10,6 +10,10 @@ resources:
   - jellyseerr-kustomization.yaml
   - minecraft-bedrock.yaml
   - openhands-kustomization.yaml
+  - radarr-kustomization.yaml
+  - sonarr-kustomization.yaml
+  - prowlarr-kustomization.yaml
+  - flaresolverr-kustomization.yaml
   # To add a new app, add its cluster kustomization file here (pattern used in this repo).
   # For example, create `clusters/k3s-lab/<app>-kustomization.yaml` and then add:
   # - <app>-kustomization.yaml
