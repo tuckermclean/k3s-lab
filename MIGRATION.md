@@ -23,23 +23,26 @@ This document outlines the changes made during the repository refactoring to fol
 ```
 .
 ├── apps/                      # Applications only
-│   ├── authentik/            # Identity provider
-│   ├── jellyfin/             # Media server
-│   └── dashboard/            # Kubernetes dashboard
-├── infrastructure/           # Infrastructure components
-│   ├── traefik/             # Ingress controller
-│   ├── cert-manager/        # Certificate management
-│   └── nfs-provisioner/     # Storage provisioner
-└── clusters/k3s-lab/        # Cluster configuration
-    ├── kustomization.yaml   # Kustomize resources
-    └── flux-kustomization.yaml # Flux management
+│   ├── jellyfin/              # Media server
+│   ├── jellyseerr/            # Media request manager
+│   ├── minecraft-bedrock/     # Game server
+│   ├── openhands/             # OpenHands app
+│   └── skel/                  # App skeleton templates
+├── infrastructure/            # Infrastructure components
+│   ├── traefik/               # Ingress controller
+│   ├── cert-manager/          # Certificate management
+│   ├── cert-manager-config/   # ClusterIssuers and related config
+│   └── nfs-provisioner/       # Storage provisioner
+└── clusters/k3s-lab/          # Cluster configuration
+    ├── kustomization.yaml     # top-level includes
+    └── flux-system/           # Flux bootstrap artifacts (gotk-*.yaml)
 ```
 
 ## Key Improvements
 
 ### 1. Clear Separation of Concerns
 - **Infrastructure**: Cluster-level components (traefik, cert-manager, nfs-provisioner)
-- **Applications**: User-facing services (authentik, jellyfin, dashboard)
+- **Applications**: User-facing services (e.g., jellyfin, jellyseerr, openhands)
 - **Cluster**: Flux configuration and cluster-specific settings
 
 ### 2. Proper GitOps Labels
@@ -65,11 +68,8 @@ spec:
 
 ### 1. Backup Current State
 ```bash
-# Export current Helm releases
-./export-helm-state.sh
-
-# Backup any custom configurations
-kubectl get all -o yaml > backup-all.yaml
+# Backup cluster state (example)
+kubectl get all --all-namespaces -o yaml > backup-all.yaml
 ```
 
 ### 2. Update Flux Bootstrap
@@ -106,12 +106,10 @@ flux trace
 | `clusters/lab/apps/traefik/` | `infrastructure/traefik/` | Infrastructure component |
 | `clusters/lab/apps/cert-manager/` | `infrastructure/cert-manager/` | Infrastructure component |
 | `clusters/lab/apps/nfs-provisioner/` | `infrastructure/nfs-provisioner/` | Infrastructure component |
-| `clusters/lab/apps/authentik/` | `apps/authentik/` | Application |
+
 | `clusters/lab/apps/jellyfin/` | `apps/jellyfin/` | Application |
-| `clusters/lab/apps/dashboard/` | `apps/dashboard/` | Application |
-| `authentik-values.yaml` | `apps/authentik/values.yaml` | Renamed and moved |
-| `certificate.yaml` | `infrastructure/cert-manager/certificate.yaml` | Moved to cert-manager |
 | `media-volume.yaml` | `apps/jellyfin/media-volume.yaml` | Moved to jellyfin app |
+| `flux-system/*` | `clusters/k3s-lab/flux-system/*` | Flux bootstrap artifacts |
 
 ## Troubleshooting
 
@@ -132,5 +130,5 @@ If issues occur, you can rollback by:
 
 1. **Test the new structure** with `flux diff kustomization clusters/k3s-lab`
 2. **Add monitoring** with Grafana/Loki using the gitops labels
-3. **Implement secrets management** with SOPS if not already done
-4. **Add policy management** with OPA Gatekeeper or similar 
+3. Optionally evaluate secrets management with SOPS
+4. Optionally add policy management with OPA Gatekeeper or similar 
