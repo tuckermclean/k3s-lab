@@ -43,12 +43,8 @@ spec:
       type: ClusterIP
     config:
       persistence:
-        name: jellyseerr-config-root-pvc
-        volumeName: jellyseerr-nfs-config-pv
-        storageClass: nfs-provisioner
-        accessModes:
-          - ReadWriteMany
-        size: "100Gi"
+        enabled: true
+        existingClaim: jellyseerr-config-pvc
     ingress:
       enabled: true
       ingressClassName: traefik
