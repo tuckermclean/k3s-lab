@@ -32,7 +32,7 @@ spec:
       nodeSelector: {}
       containers:
         - name: jellyfin
-          image: ghcr.io/jellyfin/jellyfin:10.10.7
+          image: ghcr.io/jellyfin/jellyfin:10.11.0-rc9
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
