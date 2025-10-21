@@ -18,6 +18,9 @@ spec:
     spec:
       # Share network namespace across containers (default), Gluetun will manage egress
       # Deluge will expose 8112 and others inside the Pod; Gluetun firewall must allow 8112
+      dnsPolicy: None
+      dnsConfig:
+        nameservers: ["127.0.0.1"]
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -39,6 +42,12 @@ spec:
               value: "8112,58846,50000"
             - name: HEALTH_TARGET_ADDRESS
               value: "cloudflare.com:443"
+            - name: DOT
+              value: "on"
+            - name: DOT_PROVIDERS
+              value: "cloudflare"
+            - name: DNS_ADDRESS
+              value: "127.0.0.1"
           volumeMounts:
             - name: dev-net-tun
               mountPath: /dev/net/tun
