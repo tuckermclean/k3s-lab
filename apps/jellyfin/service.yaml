@@ -8,6 +8,6 @@ spec:
     app.kubernetes.io/name: jellyfin   # matches your pod labels
   ports:
     - name: http
-      port: 80          # service port
+      port: 8096
       targetPort: 8096  # container port
   type: ClusterIP
