@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-deluge-config-pv
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-path
+  hostPath:
+    path: /var/lib/deluge/config
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deluge-config-pvc
+  namespace: media
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: local-deluge-config-pv
+  storageClassName: local-path
