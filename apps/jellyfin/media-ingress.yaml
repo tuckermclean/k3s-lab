@@ -4,7 +4,7 @@ metadata:
   name: media-ingress
   namespace: media
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "local-selfsigned"
 spec:
   ingressClassName: traefik
   tls:
