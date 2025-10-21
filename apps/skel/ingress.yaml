@@ -6,7 +6,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "traefik"
     # cert-manager will use the cluster issuer to create TLS certs
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "local-selfsigned"
   labels:
     app.kubernetes.io/part-of: gitops
 spec:
