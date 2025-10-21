@@ -5,7 +5,7 @@ metadata:
   namespace: media
   annotations:
     kubernetes.io/ingress.class: "traefik"
-    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    cert-manager.io/cluster-issuer: "local-selfsigned"
   labels:
     app.kubernetes.io/part-of: gitops
 spec:
