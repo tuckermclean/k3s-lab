@@ -1,4 +1,9 @@
 apiVersion: apps/v1
+# Secret contract (media/deluge-vpn-env):
+# - VPN_SERVICE_PROVIDER, VPN_TYPE (openvpn|wireguard)
+# - OPENVPN_USER, OPENVPN_PASSWORD (or WireGuard keys)
+# - TZ
+
 kind: Deployment
 metadata:
   name: deluge
