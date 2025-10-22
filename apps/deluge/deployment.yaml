@@ -58,6 +58,7 @@ spec:
               mountPath: /dev/net/tun
             - name: config
               mountPath: /gluetun
+              subPath: gluetun
           ports:
             - name: control
               containerPort: 8000
@@ -94,6 +95,7 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+              subPath: deluge
             - name: media
               mountPath: /data
           resources:
