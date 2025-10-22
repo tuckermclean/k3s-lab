@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: deluge-ingress
+  namespace: media
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: "local-selfsigned"
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  tls:
+    - hosts:
+        - deluge.home.dcxxiv.com
+      secretName: deluge-tls
+  rules:
+    - host: deluge.home.dcxxiv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: deluge
+                port:
+                  number: 8112
