@@ -30,10 +30,11 @@ spec:
             - --host=unix:///var/run/docker.sock
           resources:
             requests:
-              cpu: "250m"
-              memory: "512Mi"
+              cpu: "1"
+              memory: "2Gi"
             limits:
-              memory: "1Gi"
+              cpu: "2"
+              memory: "4Gi"
           volumeMounts:
             - { name: docker-run, mountPath: /var/run }
             - { name: docker-lib, mountPath: /var/lib/docker }
@@ -57,11 +58,11 @@ spec:
             periodSeconds: 30
           resources:
             requests:
-              cpu: "500m"
-              memory: "1Gi"
-            limits:
               cpu: "2"
-              memory: "4Gi"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
           env:
             - name: SANDBOX_RUNTIME_CONTAINER_IMAGE
               value: docker.all-hands.dev/all-hands-ai/runtime:0.59-nikolaik

@@ -82,14 +82,14 @@ flux trace
 - **Jellyfin**: Media streaming server (`apps/jellyfin/*`).
 - **Jellyseerr**: Media request manager (`apps/jellyseerr/*`).
 - **Minecraft Bedrock**: Game server (`apps/minecraft-bedrock/*`).
-- **OpenHands**: OpenHands app with DinD sidecar and Ingress (`apps/openhands/*`).
+- **OpenHands**: OpenHands app with DinD sidecar and Ingress (`apps/openhands/*`). The DinD sidecar is resource-hungry; allocate at least 2–4 GiB memory and 1 CPU for comfortable operation. The OpenHands container typically uses ~0.5 GiB RSS with one runtime; plan for 2–3 runtimes by allocating 2–4 GiB and 2–4 CPU to the openhands container, and 2 GiB+ to dind.
 
 
 ## Storage guidance
 
 - NFS-backed volumes remain ReadWriteMany (RWX) and should use the `nfs-provisioner` StorageClass or explicit NFS PVs. Examples: Jellyfin media PV/PVC.
 - Local hostPath volumes should be ReadWriteOnce (RWO) and should not set `storageClassName` on PVs/PVCs. Examples: Jellyseerr, Deluge, OpenHands, and Jellyfin’s local config PV in this repo.
-- Servarr apps (Radarr/Sonarr/Prowlarr) currently run on local storage in practice; manifests in this repo still reference `nfs-provisioner`. Align storage to your environment or keep as-is; we document the local-storage recommendation here and can update manifests in a follow-up.
+- Servarr apps (Radarr/Sonarr/Prowlarr) use local hostPath PV/PVCs for config (RWO, no storageClassName) in manifests. Media remains on NFS RWX via `nfs-provisioner`.
 
 ## Development Workflow
 
