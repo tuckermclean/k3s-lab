@@ -17,7 +17,7 @@ spec:
     adminUser:
       create: true
       username: admin
-      passwordHash: "$2y$10$JCMRwnCRyTnFBwpZhRHskezUASsudBwFX9ZDbpXJaF6rCJ3WcVOO." # password: admin
+      passwordHash: "$2y$10$JCMRwnCRyTnFBwpZhRHskezUASsudBwFX9ZDbpXJaF6rCJ3WcVOO."     # password: admin
     service:
       type: ClusterIP
     ingress:

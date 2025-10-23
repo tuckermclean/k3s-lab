@@ -42,19 +42,6 @@ spec:
               mountPath: /config
             - name: media
               mountPath: /media
-          # Optional probes (uncomment if you want them)
-          # readinessProbe:
-          #   httpGet:
-          #     path: /health
-          #     port: http
-          #   initialDelaySeconds: 10
-          #   periodSeconds: 10
-          # livenessProbe:
-          #   httpGet:
-          #     path: /health
-          #     port: http
-          #   initialDelaySeconds: 30
-          #   periodSeconds: 30
       volumes:
         - name: config
           persistentVolumeClaim:

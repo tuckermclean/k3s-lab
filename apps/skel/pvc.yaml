@@ -11,6 +11,6 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  # If your cluster uses the NFS provisioner defined in this repo, explicitly
-  # set storageClassName: nfs-provisioner
-  # storageClassName: nfs-provisioner
+      # If your cluster uses the NFS provisioner defined in this repo, explicitly
+      # set storageClassName: nfs-provisioner
+      # storageClassName: nfs-provisioner
