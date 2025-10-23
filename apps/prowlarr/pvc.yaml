@@ -8,9 +8,8 @@ spec:
   capacity:
     storage: 5Gi
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-path
   hostPath:
     path: /var/lib/prowlarr/config
     type: DirectoryOrCreate
@@ -24,9 +23,8 @@ metadata:
     app.kubernetes.io/part-of: gitops
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
-  storageClassName: local-path
   volumeName: local-prowlarr-config-pv

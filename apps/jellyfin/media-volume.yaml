@@ -84,4 +84,3 @@ spec:
     requests:
       storage: 100Gi
   volumeName: local-jellyfin-config-pv
-  storageClassName: local-path
