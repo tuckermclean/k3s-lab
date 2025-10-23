@@ -82,7 +82,7 @@ flux trace
 - **Jellyfin**: Media streaming server (`apps/jellyfin/*`).
 - **Jellyseerr**: Media request manager (`apps/jellyseerr/*`).
 - **Minecraft Bedrock**: Game server (`apps/minecraft-bedrock/*`).
-- **OpenHands**: OpenHands app with DinD sidecar and Ingress (`apps/openhands/*`). The DinD sidecar is resource-hungry; allocate at least 2–4 GiB memory and 1 CPU for comfortable operation. The OpenHands container typically uses ~0.5 GiB RSS with one runtime; plan for 2–3 runtimes by allocating 2–4 GiB and 2–4 CPU to the openhands container, and 2 GiB+ to dind.
+- **OpenHands**: UI container plus DinD sidecar. The UI is lightweight; give it ~0.5–1 GiB and ~0.5–1 CPU. The DinD sidecar launches runtime containers and needs the bulk of resources: for 1–3 concurrent runtimes, allocate 4–8 GiB memory and 2–4 CPU to DinD. Scale further based on actual runtime mix.
 
 
 ## Storage guidance
