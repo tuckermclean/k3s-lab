@@ -8,9 +8,8 @@ spec:
   capacity:
     storage: 100Gi
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-path
   hostPath:
     path: /var/lib/openhands/config
     type: DirectoryOrCreate
@@ -24,9 +23,8 @@ metadata:
     app.kubernetes.io/part-of: gitops
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 50Gi
-  storageClassName: local-path
   volumeName: local-openhands-config-pv

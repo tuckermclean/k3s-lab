@@ -8,9 +8,8 @@ spec:
   capacity:
     storage: 5Gi
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-path
   hostPath:
     path: /var/lib/jellyseerr/config
     type: DirectoryOrCreate
@@ -24,9 +23,8 @@ metadata:
     app.kubernetes.io/part-of: gitops
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
   volumeName: local-jellyseerr-config-pv
-  storageClassName: local-path

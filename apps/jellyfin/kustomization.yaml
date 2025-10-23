@@ -6,3 +6,4 @@ resources:
   - media-volume.yaml
   - service.yaml
   - media-ingress.yaml
+# Explicitly choosing plain manifests for Jellyfin; the HelmRelease present here is unused and will be removed to avoid confusion.

@@ -104,6 +104,18 @@ spec:
               memory: "256Mi"
             limits:
               memory: "1024Mi"
+          readinessProbe:
+            tcpSocket:
+              port: 8112
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8112
+            initialDelaySeconds: 30
+            periodSeconds: 30
+
+              memory: "1024Mi"
       volumes:
         - name: dev-net-tun
           hostPath:

@@ -28,6 +28,10 @@ spec:
             privileged: true
           args:
             - --host=unix:///var/run/docker.sock
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
           volumeMounts:
             - { name: docker-run, mountPath: /var/run }
             - { name: docker-lib, mountPath: /var/lib/docker }
@@ -37,6 +41,24 @@ spec:
           ports:
             - name: http
               containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              memory: "2Gi"
           env:
             - name: SANDBOX_RUNTIME_CONTAINER_IMAGE
               value: docker.all-hands.dev/all-hands-ai/runtime:0.59-nikolaik

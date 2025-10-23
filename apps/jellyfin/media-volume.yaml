@@ -28,9 +28,8 @@ spec:
   capacity:
     storage: 100Gi
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-path
   hostPath:
     path: /var/lib/jellyfin/config
     type: DirectoryOrCreate

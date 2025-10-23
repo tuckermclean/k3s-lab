@@ -4,11 +4,11 @@ metadata:
   name: flaresolverr-ingress
   namespace: media
   annotations:
-    kubernetes.io/ingress.class: "traefik"
     cert-manager.io/cluster-issuer: "local-selfsigned"
   labels:
     app.kubernetes.io/part-of: gitops
 spec:
+  ingressClassName: traefik
   tls:
     - hosts:
         - flaresolverr.home.dcxxiv.com
