@@ -29,8 +29,8 @@ spec:
           args:
             - --host=unix:///var/run/docker.sock
           volumeMounts:
-            - { name: docker-run, mountPath: /var/run }
-            - { name: docker-lib, mountPath: /var/lib/docker }
+            - {name: docker-run, mountPath: /var/run}
+            - {name: docker-lib, mountPath: /var/lib/docker}
         - name: openhands
           image: docker.all-hands.dev/all-hands-ai/openhands:0.59
           imagePullPolicy: IfNotPresent

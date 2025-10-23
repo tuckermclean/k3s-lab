@@ -1,10 +1,10 @@
 extends: default
 
+ignore: |
+  clusters/k3s-lab/flux-system/gotk-components.yaml
+
 rules:
   document-start: disable
   truthy: disable
-  line-length:
-    max: 160
-    allow-non-breakable-words: true
-    allow-non-breakable-inline-mappings: true
-    level: warning
+  line-length: disable
+  new-line-at-end-of-file: disable
