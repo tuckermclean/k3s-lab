@@ -9,7 +9,6 @@ resources:
   - cert-manager-kustomization.yaml
   - cert-manager-config-kustomization.yaml
   - authentik-kustomization.yaml
-  - oauth2-proxy-kustomization.yaml
   - nfs-provisioner-kustomization.yaml
   - jellyfin-kustomization.yaml
   - jellyseerr-kustomization.yaml
