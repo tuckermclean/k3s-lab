@@ -12,7 +12,7 @@ spec:
         kind: HelmRepository
         name: authentik
         namespace: flux-system
-      version: "2025.*"
+      version: "2025.8.4"
   valuesFrom:
     - kind: Secret
       name: authentik-secret
