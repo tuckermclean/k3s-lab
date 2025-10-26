@@ -17,7 +17,7 @@ spec:
     - kind: Secret
       name: authentik-secret
       valuesKey: secretKey
-      targetPath: authentik.secretKey
+      targetPath: authentik.secret_key
   values:
     global:
       host: auth.home.dcxxiv.com
