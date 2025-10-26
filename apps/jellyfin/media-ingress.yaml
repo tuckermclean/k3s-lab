@@ -5,6 +5,8 @@ metadata:
   namespace: media
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares-https: traefik-forward-auth@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
