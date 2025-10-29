@@ -50,6 +50,8 @@ spec:
       ingressClassName: traefik
       annotations:
         cert-manager.io/cluster-issuer: "local-selfsigned"
+        traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
+        traefik.ingress.kubernetes.io/router.middlewares-https: traefik-forward-auth@kubernetescrd
       hosts:
         - host: jellyseerr.home.dcxxiv.com
           paths:

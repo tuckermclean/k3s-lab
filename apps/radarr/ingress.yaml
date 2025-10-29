@@ -6,6 +6,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "traefik"
     cert-manager.io/cluster-issuer: "local-selfsigned"
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-forward-auth@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares-https: traefik-forward-auth@kubernetescrd
   labels:
     app.kubernetes.io/part-of: gitops
 spec:
