@@ -35,10 +35,7 @@ spec:
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-prod
         hosts:
-          - host: auth.home.dcxxiv.com
-            paths:
-              - path: /
-                pathType: Prefix
+          - auth.home.dcxxiv.com
         tls:
           - secretName: authentik-tls
             hosts:
