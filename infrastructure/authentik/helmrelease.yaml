@@ -5,6 +5,15 @@ metadata:
   namespace: authentik
 spec:
   interval: 5m
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+    createNamespace: true
+  upgrade:
+    remediation:
+      retries: 3
+    cleanupOnFail: true
   chart:
     spec:
       chart: authentik
