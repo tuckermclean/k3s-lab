@@ -77,10 +77,10 @@ spec:
             - name: daemon
               containerPort: 58846
             - name: tcp-in
-              containerPort: 50000
+              containerPort: 42673
               protocol: TCP
             - name: udp-in
-              containerPort: 50000
+              containerPort: 42673
               protocol: UDP
           env:
             - name: PUID
