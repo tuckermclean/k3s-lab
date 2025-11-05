@@ -44,7 +44,7 @@ spec:
                 name: deluge-vpn-env
           env:
             - name: FIREWALL_INPUT_PORTS
-              value: "8112,58846,50000"
+              value: "8112,58846,42673"
             - name: HEALTH_TARGET_ADDRESS
               value: "cloudflare.com:443"
             - name: DOT
