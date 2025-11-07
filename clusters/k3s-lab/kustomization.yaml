@@ -21,3 +21,4 @@ resources:
   - monitoring-kustomization.yaml
   - weave-gitops-kustomization.yaml
   - deluge-kustomization.yaml
+  - lidarr-kustomization.yaml
