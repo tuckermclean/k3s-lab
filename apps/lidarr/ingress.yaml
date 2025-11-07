@@ -23,4 +23,4 @@ spec:
               service:
                 name: lidarr
                 port:
-                  number: 7878
+                  number: 8686
