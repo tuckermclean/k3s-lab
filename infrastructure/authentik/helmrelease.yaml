@@ -27,6 +27,14 @@ spec:
       name: authentik-secret
       valuesKey: secretKey
       targetPath: authentik.secret_key
+    - kind: Secret
+      name: authentik-db-secret
+      valuesKey: postgres-password
+      targetPath: postgresql.auth.password
+    - kind: Secret
+      name: authentik-db-secret
+      valuesKey: postgres-password
+      targetPath: authentik.postgresql.password
   values:
     global:
       host: auth.home.dcxxiv.com
@@ -37,6 +45,10 @@ spec:
         enabled: true
         types:
           - forward_auth
+      postgresql:
+        host: authentik-postgresql
+        user: authentik
+        name: authentik
     server:
       ingress:
         enabled: true
@@ -51,5 +63,8 @@ spec:
               - auth.home.dcxxiv.com
     postgresql:
       enabled: true
+      auth:
+        username: authentik
+        database: authentik
     redis:
       enabled: true
