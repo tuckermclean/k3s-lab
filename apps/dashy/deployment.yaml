@@ -25,6 +25,7 @@ spec:
           volumeMounts:
             - name: dashy-config
               mountPath: /app/public/conf.yml
+              subPath: conf.yml
       volumes:
         - name: dashy-config
           configMap:
