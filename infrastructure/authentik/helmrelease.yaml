@@ -66,5 +66,13 @@ spec:
       auth:
         username: authentik
         database: authentik
+      primary:
+        persistence:
+          storageClass: local-path    # or nfs-provisioner
+          size: 8Gi
     redis:
       enabled: true
+      master:
+        persistence:
+          storageClass: local-path    # or nfs-provisioner
+          size: 8Gi
