@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashy-config
+  namespace: dashy
+data:
+  conf.yml: |
+    appConfig:
+      title: "Homelab"
+      description: "Quick launch for services"
+      theme: one-dark
+      icon: 🧭
+      footerText: "dcxxiv homelab"
+      layout: auto
+      startingView: default
+      language: en
+      enableErrorReporting: false
+      hideErrors: true
+      navLinks:
+        - title: Flux
+          path: https://gitops.home.dcxxiv.com
+        - title: Grafana
+          path: https://grafana.home.dcxxiv.com
+        - title: Authentik
+          path: https://auth.home.dcxxiv.com
+
+    sections:
+      - name: Media
+        icon: 🎬
+        items:
+          - title: Jellyfin
+            icon: si-jellyfin
+            url: https://jellyfin.home.dcxxiv.com
+          - title: Jellyseerr
+            icon: si-plex
+            url: https://jellyseerr.home.dcxxiv.com
+          - title: Sonarr
+            icon: si-sonarr
+            url: https://sonarr.home.dcxxiv.com
+          - title: Radarr
+            icon: si-radarr
+            url: https://radarr.home.dcxxiv.com
+          - title: Lidarr
+            icon: si-lidarr
+            url: https://lidarr.home.dcxxiv.com
+          - title: Prowlarr
+            icon: si-prowlarr
+            url: https://prowlarr.home.dcxxiv.com
+          - title: Deluge
+            icon: si-deluge
+            url: https://deluge.home.dcxxiv.com
+
+      - name: Infra
+        icon: 🧰
+        items:
+          - title: Weave GitOps
+            icon: si-git
+            url: https://flux.home.dcxxiv.com
+          - title: Grafana
+            icon: si-grafana
+            url: https://grafana.home.dcxxiv.com
+          - title: Authentik
+            icon: si-auth0
+            url: https://auth.home.dcxxiv.com
+
+      - name: Misc
+        icon: 🧩
+        items:
+          - title: OpenHands
+            icon: 🤖
+            url: https://openhands.home.dcxxiv.com
+          - title: Minecraft Bedrock
+            icon: 🎮
+            url: "#"
+            isDisabled: true
+            description: "No web UI (placeholder)"
