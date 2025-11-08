@@ -68,11 +68,9 @@ spec:
         database: authentik
       primary:
         persistence:
-          storageClass: local-path    # or nfs-provisioner
-          size: 8Gi
+          existingClaim: postgresql-config-pvc
     redis:
       enabled: true
       master:
         persistence:
-          storageClass: local-path    # or nfs-provisioner
-          size: 8Gi
+          existingClaim: redis-config-pvc
