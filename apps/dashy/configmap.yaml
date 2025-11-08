@@ -6,24 +6,12 @@ metadata:
 data:
   conf.yml: |
     appConfig:
-      title: "Homelab"
-      description: "Quick launch for services"
       theme: one-dark
-      icon: 🧭
-      footerText: "dcxxiv homelab"
       layout: auto
       startingView: default
       language: en
       enableErrorReporting: false
-      hideErrors: true
-      navLinks:
-        - title: Flux
-          path: https://gitops.home.dcxxiv.com
-        - title: Grafana
-          path: https://grafana.home.dcxxiv.com
-        - title: Authentik
-          path: https://auth.home.dcxxiv.com
-
+      disableConfiguration: true
     sections:
       - name: Media
         icon: 🎬
@@ -49,7 +37,6 @@ data:
           - title: Deluge
             icon: si-deluge
             url: https://deluge.home.dcxxiv.com
-
       - name: Infra
         icon: 🧰
         items:
@@ -62,7 +49,6 @@ data:
           - title: Authentik
             icon: si-auth0
             url: https://auth.home.dcxxiv.com
-
       - name: Misc
         icon: 🧩
         items:
@@ -71,6 +57,16 @@ data:
             url: https://openhands.home.dcxxiv.com
           - title: Minecraft Bedrock
             icon: 🎮
-            url: "#"
-            isDisabled: true
-            description: "No web UI (placeholder)"
+            url: '#'
+            description: No web UI (placeholder)
+    pageInfo:
+      title: Homelab
+      description: Quick launch for services
+      footerText: dcxxiv homelab
+      navLinks:
+        - title: Weave GitOps
+          path: https://flux.home.dcxxiv.com
+        - title: Grafana
+          path: https://grafana.home.dcxxiv.com
+        - title: Authentik
+          path: https://auth.home.dcxxiv.com
