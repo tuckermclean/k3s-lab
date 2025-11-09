@@ -1,0 +1,23 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: jf-root-to-oidc
+  namespace: media
+spec:
+  redirectRegex:
+    regex: ^/$
+    replacement: https://jellyfin.home.dcxxiv.com/sso/OID/start/Authentik
+    permanent: false   # 302
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: jf-root-login
+  namespace: media
+spec:
+  chain:
+    middlewares:
+      - name: ak-forward-auth
+        namespace: authentik
+      - name: jf-root-to-oidc
+        namespace: media
