@@ -5,5 +5,4 @@ resources:
   - deployment.yaml
   - media-volume.yaml
   - service.yaml
-  - middleware.yaml
   - media-ingress.yaml
