@@ -14,6 +14,8 @@ spec:
     remediation:
       remediateLastFailure: true
     cleanupOnFail: true
+  driftDetection:
+    mode: enabled
   chart:
     spec:
       chart: authentik
