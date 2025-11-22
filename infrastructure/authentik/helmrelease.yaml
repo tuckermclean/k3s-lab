@@ -8,11 +8,11 @@ spec:
   timeout: 60m
   install:
     remediation:
-      retries: 3
+      remediateLastFailure: true
     createNamespace: true
   upgrade:
     remediation:
-      retries: 3
+      remediateLastFailure: true
     cleanupOnFail: true
   chart:
     spec:
