@@ -9,6 +9,24 @@ metadata:
   labels:
     app.kubernetes.io/part-of: gitops
 spec:
+  routes:
+    - kind: Rule
+      match: "Host(`radarr.home.dcxxiv.com`)"
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      priority: 10
+      services: # Unchanged
+      # This part is only required for single-app setups
+    - kind: Rule
+      match: "Host(`radarr.home.dcxxiv.com`) && PathPrefix(`/outpost.goauthentik.io/`)"
+      priority: 15
+      services:
+        - kind: Service
+          # Or, to use an external Outpost, create an ExternalName service and reference that here.
+          # See https://kubernetes.io/docs/concepts/services-networking/service/#externalname
+          name: ak-outpost-example-outpost
+          port: 9000
   tls:
     - hosts:
         - radarr.home.dcxxiv.com
