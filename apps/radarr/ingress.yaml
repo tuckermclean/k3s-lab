@@ -1,44 +1,29 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
-  name: radarr-ingress
+  name: radarr
   namespace: media
-  annotations:
-    kubernetes.io/ingress.class: "traefik"
-    cert-manager.io/cluster-issuer: "local-selfsigned"
   labels:
     app.kubernetes.io/part-of: gitops
 spec:
+  entryPoints:
+    - websecure
   routes:
     - kind: Rule
-      match: "Host(`radarr.home.dcxxiv.com`)"
+      match: Host(`radarr.home.dcxxiv.com`)
       middlewares:
         - name: authentik
           namespace: authentik
-      priority: 10
-      services: # Unchanged
-      # This part is only required for single-app setups
-    - kind: Rule
-      match: "Host(`radarr.home.dcxxiv.com`) && PathPrefix(`/outpost.goauthentik.io/`)"
-      priority: 15
       services:
-        - kind: Service
-          # Or, to use an external Outpost, create an ExternalName service and reference that here.
-          # See https://kubernetes.io/docs/concepts/services-networking/service/#externalname
-          name: ak-outpost-example-outpost
+        - name: radarr
+          port: 7878
+
+    # Route for the Authentik outpost itself
+    - kind: Rule
+      match: Host(`radarr.home.dcxxiv.com`) && PathPrefix(`/outpost.goauthentik.io/`)
+      services:
+        - name: ak-outpost-authentik-embedded-outpost.authentik
           port: 9000
+
   tls:
-    - hosts:
-        - radarr.home.dcxxiv.com
-      secretName: radarr-tls
-  rules:
-    - host: radarr.home.dcxxiv.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: radarr
-                port:
-                  number: 7878
+    secretName: radarr-tls
