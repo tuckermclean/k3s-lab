@@ -63,6 +63,9 @@ spec:
           - secretName: authentik-tls
             hosts:
               - auth.home.dcxxiv.com
+          - secretName: authentik-outpost-tls
+            hosts:
+              - auth.home.dcxxiv.com
     postgresql:
       enabled: true
       auth:
