@@ -1,0 +1,12 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: jellyfin-root-redirect
+  namespace: media
+spec:
+  redirectRegex:
+    # Only match the bare root of the host
+    regex: ^https?://jellyfin\.home\.dcxxiv\.com/?$
+    # Change this to the URL that should trigger Jellyfin's OIDC flow
+    replacement: https://jellyfin.home.dcxxiv.com/sso/OID/start/Authentik
+    permanent: true
