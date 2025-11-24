@@ -4,7 +4,6 @@ resources:
   - namespace.yaml
   - deployment.yaml
   - service.yaml
-  - ingress.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: gitops
