@@ -46,7 +46,7 @@ spec:
         enabled: true
         existingClaim: jellyseerr-config-pvc
     ingress:
-      enabled: true
+      enabled: false
       ingressClassName: traefik
       annotations:
         cert-manager.io/cluster-issuer: "local-selfsigned"
