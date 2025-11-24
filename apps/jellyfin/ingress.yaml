@@ -1,24 +1,33 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
-  name: media-ingress
+  name: jellyfin
   namespace: media
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  labels:
+    app.kubernetes.io/part-of: gitops
 spec:
-  ingressClassName: traefik
+  entryPoints:
+    - websecure
+  routes:
+    # Route 1: redirect requests to "/" to the OIDC-triggering URL
+    - kind: Rule
+      match: Host(`jellyfin.home.dcxxiv.com`) && Path(`/`)
+      middlewares:
+        - name: jellyfin-root-redirect
+      services:
+        # Service is never really hit because middleware redirects first,
+        # but Traefik requires one.
+        - name: jellyfin
+          port: 8096
+
+    # Route 2: normal Jellyfin traffic, protected by Authentik proxy middleware
+    - kind: Rule
+      match: Host(`jellyfin.home.dcxxiv.com`) && PathPrefix(`/`)
+      middlewares:
+        - name: authentik     # your existing Authentik forwardAuth middleware
+      services:
+        - name: jellyfin
+          port: 8096
+
   tls:
-    - hosts:
-        - jellyfin.home.dcxxiv.com
-      secretName: jellyfin-tls
-  rules:
-    - host: jellyfin.home.dcxxiv.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: jellyfin
-                port:
-                  number: 8096
+    secretName: jellyfin-tls
