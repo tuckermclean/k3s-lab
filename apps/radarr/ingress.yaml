@@ -13,17 +13,9 @@ spec:
       match: Host(`radarr.home.dcxxiv.com`)
       middlewares:
         - name: authentik
-          namespace: authentik
       services:
         - name: radarr
           port: 7878
-
-    # Route for the Authentik outpost itself
-    - kind: Rule
-      match: Host(`radarr.home.dcxxiv.com`) && PathPrefix(`/outpost.goauthentik.io/`)
-      services:
-        - name: ak-outpost-authentik-embedded-outpost.authentik
-          port: 9000
 
   tls:
     secretName: radarr-tls
