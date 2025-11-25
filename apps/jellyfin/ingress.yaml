@@ -9,23 +9,10 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # Route 1: redirect requests to "/" to the OIDC-triggering URL
     - kind: Rule
-      match: Host(`jellyfin.home.dcxxiv.com`) && Path(`/`)
+      match: Host(`jellyfin.home.dcxxiv.com`)
       middlewares:
-        - name: jellyfin-root-redirect
         - name: authentik
-      services:
-        # Service is never really hit because middleware redirects first,
-        # but Traefik requires one.
-        - name: jellyfin
-          port: 8096
-
-    # Route 2: normal Jellyfin traffic, protected by Authentik proxy middleware
-    - kind: Rule
-      match: Host(`jellyfin.home.dcxxiv.com`) && PathPrefix(`/`)
-      middlewares:
-        - name: authentik     # your existing Authentik forwardAuth middleware
       services:
         - name: jellyfin
           port: 8096
