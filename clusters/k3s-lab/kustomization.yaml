@@ -5,6 +5,7 @@ resources:
   # For example, create `clusters/k3s-lab/<app>-kustomization.yaml` and then add:
   # - <app>-kustomization.yaml
   # Example: skel-kustomization.yaml  - flux-system/
+  - coredns-kustomization.yaml
   - traefik-kustomization.yaml
   - cert-manager-kustomization.yaml
   - cert-manager-config-kustomization.yaml
