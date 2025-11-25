@@ -13,6 +13,7 @@ spec:
     - kind: Rule
       match: Host(`jellyfin.home.dcxxiv.com`) && Path(`/`)
       middlewares:
+        - name: authentik
         - name: jellyfin-root-redirect
       services:
         # Service is never really hit because middleware redirects first,
