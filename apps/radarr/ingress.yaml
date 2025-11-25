@@ -12,7 +12,7 @@ spec:
     - kind: Rule
       match: Host(`radarr.home.dcxxiv.com`)
       middlewares:
-        - name: authentik
+        - name: authentik-servarr
       services:
         - name: radarr
           port: 7878
