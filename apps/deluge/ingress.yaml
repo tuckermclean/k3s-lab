@@ -12,7 +12,7 @@ spec:
     - kind: Rule
       match: Host(`deluge.home.dcxxiv.com`)
       middlewares:
-        - name: authentik
+        - name: authentik-servarr
       services:
         - name: deluge
           port: 8112

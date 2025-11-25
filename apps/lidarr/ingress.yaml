@@ -12,7 +12,7 @@ spec:
     - kind: Rule
       match: Host(`lidarr.home.dcxxiv.com`)
       middlewares:
-        - name: authentik
+        - name: authentik-servarr
       services:
         - name: lidarr
           port: 8686

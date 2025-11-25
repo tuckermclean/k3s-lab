@@ -12,7 +12,7 @@ spec:
     - kind: Rule
       match: Host(`sonarr.home.dcxxiv.com`)
       middlewares:
-        - name: authentik
+        - name: authentik-servarr
       services:
         - name: sonarr
           port: 8989
