@@ -6,6 +6,8 @@ resources:
   # - <app>-kustomization.yaml
   # Example: skel-kustomization.yaml  - flux-system/
   - longhorn-kustomization.yaml
+  - juicefs-kustomization.yaml
+  - redis-juicefs-kustomization.yaml
   - traefik-kustomization.yaml
   - cert-manager-kustomization.yaml
   - cert-manager-config-kustomization.yaml
@@ -24,4 +26,3 @@ resources:
   - deluge-kustomization.yaml
   - lidarr-kustomization.yaml
   - dashy-kustomization.yaml
-  - juicefs-kustomization.yaml
