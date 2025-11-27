@@ -27,19 +27,3 @@ spec:
   hostPath:
     path: /var/lib/openhands/config
     type: DirectoryOrCreate
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: openhands-config
-  namespace: openhands
-  labels:
-    app.kubernetes.io/part-of: gitops
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 50Gi
-  storageClassName: local-path
-  volumeName: local-openhands-config-pv
