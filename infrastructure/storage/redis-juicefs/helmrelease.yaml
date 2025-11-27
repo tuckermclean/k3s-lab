@@ -1,0 +1,26 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: juicefs-redis
+  namespace: kube-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: redis
+      version: latest
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux-system
+  values:
+    architecture: standalone
+
+    auth:
+      enabled: false    # JuiceFS does not require auth for local-cluster meta
+
+    master:
+      persistence:
+        enabled: true
+        storageClass: longhorn
+        size: 2Gi
