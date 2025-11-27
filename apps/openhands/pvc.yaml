@@ -31,7 +31,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: openhands-pvc
+  name: openhands-config
   namespace: openhands
   labels:
     app.kubernetes.io/part-of: gitops
