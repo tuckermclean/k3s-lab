@@ -22,7 +22,7 @@ spec:
   storageClassName: juicefs
   resources:
     requests:
-      storage: 4096GiB
+      storage: 4096Gi
 ---
 apiVersion: v1
 kind: PersistentVolume
