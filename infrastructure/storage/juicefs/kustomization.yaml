@@ -7,4 +7,3 @@ resources:
   # - secret-juicefs-aws.yaml
   - pvc.yaml
   - storageclass.yaml
-  - pvc.yaml
