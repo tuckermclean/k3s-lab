@@ -52,7 +52,7 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: lidarr-config-pvc
+            claimName: lidarr-config
         - name: media
           persistentVolumeClaim:
             claimName: media-root-pvc
