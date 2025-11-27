@@ -69,4 +69,4 @@ spec:
           emptyDir: {}
         - name: state
           persistentVolumeClaim:
-            claimName: openhands-pvc
+            claimName: openhands-config
