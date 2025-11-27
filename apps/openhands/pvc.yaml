@@ -1,4 +1,17 @@
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openhands-config
+  namespace: openhands
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: local-openhands-config-pv
