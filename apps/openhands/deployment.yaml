@@ -32,14 +32,14 @@ spec:
             - {name: docker-run, mountPath: /var/run}
             - {name: docker-lib, mountPath: /var/lib/docker}
         - name: openhands
-          image: docker.all-hands.dev/all-hands-ai/openhands:0.62
+          image: docker.openhands.dev/openhands/openhands:0.62
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 3000
           env:
             - name: SANDBOX_RUNTIME_CONTAINER_IMAGE
-              value: docker.all-hands.dev/all-hands-ai/runtime:0.62-nikolaik
+              value: docker.openhands.dev/openhands/runtime:0.62-nikolaik
             - name: LOG_ALL_EVENTS
               value: "true"
             - name: DOCKER_HOST_ADDR
