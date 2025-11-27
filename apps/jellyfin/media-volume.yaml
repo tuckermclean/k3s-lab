@@ -12,6 +12,19 @@ spec:
   storageClassName: longhorn
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: juicefs-media-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: juicefs
+  resources:
+    requests:
+      storage: 4096GiB
+---
+apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: nfs-media-pv
