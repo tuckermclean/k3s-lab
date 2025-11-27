@@ -43,8 +43,11 @@ spec:
       type: ClusterIP
     config:
       persistence:
-        enabled: true
-        volumeName: jellyseerr-config
+        enabled: false
+    volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: jellyseerr-config
     ingress:
       enabled: false
       ingressClassName: traefik
