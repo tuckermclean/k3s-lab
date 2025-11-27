@@ -1,0 +1,21 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: juicefs-sc
+provisioner: csi.juicefs.com
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+mountOptions:
+  - writeback
+  - enable-xattr
+  - max_readahead=10Mi
+parameters:
+  csi.storage.k8s.io/provisioner-secret-name: juicefs-secret
+  csi.storage.k8s.io/provisioner-secret-namespace: kube-system
+  csi.storage.k8s.io/node-publish-secret-name: juicefs-secret
+  csi.storage.k8s.io/node-publish-secret-namespace: kube-system
+  csi.storage.k8s.io/controller-expand-secret-name: juicefs-secret
+  csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
+  # For CE with S3 backend, define required keys in the Secret (name, metaurl, bucket, access-key, secret-key, region)
+  # Additional options can be specified in Secret's format-options

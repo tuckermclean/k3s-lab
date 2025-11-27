@@ -24,3 +24,4 @@ resources:
   - deluge-kustomization.yaml
   - lidarr-kustomization.yaml
   - dashy-kustomization.yaml
+  - juicefs-kustomization.yaml
