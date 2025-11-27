@@ -3,7 +3,8 @@ kind: Kustomization
 resources:
   - helmrepository-juicefs.yaml
   - helmrelease-juicefs.yaml
-  - secret-juicefs-aws.yaml
+  # NOTE: Secrets are not committed. Create your own secret based on secret-juicefs-aws.example.yaml
+  # - secret-juicefs-aws.yaml
   - pvc-juicefs-meta-longhorn.yaml
   - storageclass-juicefs.yaml
   - pvc-example-juicefs-app.yaml

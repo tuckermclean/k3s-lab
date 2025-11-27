@@ -29,9 +29,9 @@ To create another JuiceFS-backed storage class/volume set:
 Alternatively, use `subdir` mount option (via ConfigMap or StorageClass/PV for legacy) to isolate application data within a single filesystem.
 
 ## Rotating credentials
-- Update the Secret (`secret-juicefs-aws.yaml`) with new `access-key` / `secret-key`.
-- Commit and let Flux reconcile.
-- Safest approach: roll the CSI controller and application pods so new credentials take effect across Mount Pods.
+- Update the Secret (based on `secret-juicefs-aws.example.yaml`) with new `access-key` / `secret-key`.
+- Apply it out-of-band (kubectl or SOPS-encrypted secret) and let Flux reconcile the rest of the stack.
+- Safest approach: roll the CSI controller and application pods so Mount Pods pick up new credentials.
 
 ## Home-lab caveats
 - If S3 is unavailable: IO may stall or fail depending on cache/state; ensure apps handle transient failures.
