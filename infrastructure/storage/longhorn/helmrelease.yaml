@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: longhorn
-      version: 1.10.1 # or whatever you pick
+      version: 1.10.1    # or whatever you pick
       sourceRef:
         kind: HelmRepository
         name: longhorn
