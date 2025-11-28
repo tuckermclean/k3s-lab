@@ -7,9 +7,7 @@ reclaimPolicy: Delete
 allowVolumeExpansion: true
 volumeBindingMode: Immediate
 mountOptions:
-  - writeback
   - enable-xattr
-  - max_readahead=10Mi
 parameters:
   csi.storage.k8s.io/provisioner-secret-name: juicefs-secret
   csi.storage.k8s.io/provisioner-secret-namespace: kube-system
