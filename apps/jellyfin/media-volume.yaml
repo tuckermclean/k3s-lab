@@ -14,7 +14,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: juicefs-media-pvc
+  name: juicefs-media-bucket
   namespace: media
 spec:
   accessModes:
