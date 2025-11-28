@@ -17,15 +17,7 @@ spec:
     # Keep namespaces consistent: install in kube-system
     namespaceOverride: kube-system
 
-    # Minimal resources for homelab
     controller:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits:
-          cpu: 500m
-          memory: 256Mi
       # Mount Longhorn-backed PVC at /var/lib/juicefs for SQLite meta
       extraVolumes:
         - name: juicefs-meta
@@ -35,15 +27,6 @@ spec:
         - name: juicefs-meta
           mountPath: /var/lib/juicefs
           readOnly: false
-
-    node:
-      resources:
-        requests:
-          cpu: 50m
-          memory: 64Mi
-        limits:
-          cpu: 200m
-          memory: 128Mi
 
     # Use default CSIDriver name csi.juicefs.com
     driver:

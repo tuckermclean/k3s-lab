@@ -27,4 +27,4 @@ spec:
       claimName: media-root-pvc   # <-- change this
   - name: dst
     persistentVolumeClaim:
-      claimName: juicefs-media-pvc   # <-- change this
+      claimName: juicefs-media-bucket   # <-- change this
