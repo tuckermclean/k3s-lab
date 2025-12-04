@@ -54,3 +54,11 @@ charts/
 *.tgz 
 
 .specstory/
+# Python/roastbot artifacts
+__pycache__/
+*.pyc
+.tox/
+.roastbot_state.json
+.tools-venv/
+.tools-cache/
+

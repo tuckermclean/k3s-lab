@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: roastbot
+Version: 0.1.0
+Summary: A savage code review bot that roasts PRs while being technically useful
+Author-email: openhands <openhands@all-hands.dev>
+Requires-Python: >=3.10
+Requires-Dist: httpx>=0.27
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: pydantic>=2.9
+Requires-Dist: tenacity>=8.4
+Requires-Dist: rich>=13.7
+Requires-Dist: typer>=0.12
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: pytest-cov>=5.0; extra == "dev"
+Requires-Dist: respx>=0.21; extra == "dev"
+Requires-Dist: requests-mock>=1.12; extra == "dev"

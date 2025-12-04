@@ -1,0 +1,16 @@
+# RoastBot configuration example
+# Copy to config.yaml and adjust
+
+GITHUB_TOKEN: "ghp_xxx..."  # or set env var GITHUB_TOKEN
+repos:
+  - "owner/repo1"
+  - "owner/repo2"
+
+# Optional
+poll_interval: 120
+review_commits: false
+branch_filters:
+  - main
+  - master
+log_level: INFO
+state_file: ".roastbot_state.json"
