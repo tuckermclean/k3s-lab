@@ -7,6 +7,7 @@ roastbot/controller.py
 roastbot/diff_utils.py
 roastbot/github_client.py
 roastbot/llm.py
+roastbot/llm_openai.py
 roastbot/state.py
 roastbot.egg-info/PKG-INFO
 roastbot.egg-info/SOURCES.txt

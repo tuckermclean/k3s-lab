@@ -10,6 +10,7 @@ Requires-Dist: pydantic>=2.9
 Requires-Dist: tenacity>=8.4
 Requires-Dist: rich>=13.7
 Requires-Dist: typer>=0.12
+Requires-Dist: openai>=1.51.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0; extra == "dev"
 Requires-Dist: pytest-cov>=5.0; extra == "dev"

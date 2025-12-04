@@ -16,6 +16,11 @@ class Settings:
     branch_filters: List[str] = field(default_factory=lambda: ["main", "master"])
     log_level: str = "INFO"
     state_file: str = ".roastbot_state.json"
+    # LLM config
+    llm_provider: str = "mock"  # "mock" | "openai"
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4o-mini"
+    openai_base_url: Optional[str] = None
 
     @staticmethod
     def from_env_or_file(path: Optional[str] = None) -> "Settings":
@@ -40,4 +45,8 @@ class Settings:
             branch_filters=cfg.get("branch_filters", ["main", "master"]),
             log_level=os.getenv("ROASTBOT_LOG_LEVEL", cfg.get("log_level", "INFO")),
             state_file=os.getenv("ROASTBOT_STATE_FILE", cfg.get("state_file", ".roastbot_state.json")),
+            llm_provider=os.getenv("ROASTBOT_LLM_PROVIDER", cfg.get("llm_provider", "mock")).lower(),
+            openai_api_key=os.getenv("OPENAI_API_KEY", cfg.get("OPENAI_API_KEY", cfg.get("openai_api_key"))),
+            openai_model=os.getenv("OPENAI_MODEL", cfg.get("openai_model", "gpt-4o-mini")),
+            openai_base_url=os.getenv("OPENAI_BASE_URL", cfg.get("openai_base_url")),
         )

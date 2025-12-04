@@ -14,3 +14,9 @@ branch_filters:
   - master
 log_level: INFO
 state_file: ".roastbot_state.json"
+
+# LLM settings
+llm_provider: openai  # mock | openai
+OPENAI_API_KEY: "sk-xxx"  # or set env var OPENAI_API_KEY
+openai_model: gpt-4o-mini
+# openai_base_url: "https://api.openai.com/v1" # optional for self-hosted gateways

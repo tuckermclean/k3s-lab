@@ -7,6 +7,7 @@ from .config import Settings
 from .diff_utils import summarize_diff
 from .github_client import GitHubClient
 from .llm import RoastEngine
+from .llm_openai import OpenAIEngine, OpenAIConfig
 from .state import State
 
 logger = logging.getLogger(__name__)
@@ -16,7 +17,13 @@ class Controller:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.gh = GitHubClient(settings.github_token)
-        self.engine = RoastEngine()
+        # Select LLM engine
+        if settings.llm_provider == "openai":
+            if not settings.openai_api_key:
+                raise ValueError("OPENAI_API_KEY is required when llm_provider=openai")
+            self.engine = OpenAIEngine(OpenAIConfig(api_key=settings.openai_api_key, model=settings.openai_model, base_url=settings.openai_base_url))
+        else:
+            self.engine = RoastEngine()
         self.state = State(settings.state_file)
         self.state.load()
 

@@ -30,7 +30,7 @@ Quickstart
 Docker
 ------
 - Build: `docker build -t roastbot:dev tools/roastbot`
-- Run: `docker run -e GITHUB_TOKEN=... -v $PWD/tools/roastbot/config.example.yaml:/app/config.yaml roastbot:dev run --config /app/config.yaml`
+- Run: `docker run -e GITHUB_TOKEN=... -e OPENAI_API_KEY=sk-... -v $PWD/tools/roastbot/config.example.yaml:/app/config.yaml roastbot:dev run --config /app/config.yaml`
 
 Tests
 -----
