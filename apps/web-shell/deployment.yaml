@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-shell
+  namespace: web-shell
+  labels:
+    app.kubernetes.io/name: web-shell
+    app.kubernetes.io/part-of: gitops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web-shell
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web-shell
+    spec:
+      serviceAccountName: web-shell
+      terminationGracePeriodSeconds: 15
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: server
+          image: ghcr.io/tuckermclean/web-shell:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: web-shell-config
+          env:
+            - name: PORT
+              value: "8080"
+            - name: SESSION_NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: SESSION_NAMESPACE
+            - name: SHELL_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: SHELL_IMAGE
+            - name: IDLE_TIMEOUT_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: IDLE_TIMEOUT_SECONDS
+            - name: MAX_SESSION_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: MAX_SESSION_SECONDS
+            - name: CLEANUP_GRACE_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: CLEANUP_GRACE_SECONDS
+            - name: CPU_REQUEST
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: CPU_REQUEST
+            - name: MEM_REQUEST
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: MEM_REQUEST
+            - name: CPU_LIMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: CPU_LIMIT
+            - name: MEM_LIMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: web-shell-config
+                  key: MEM_LIMIT
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              memory: "256Mi"

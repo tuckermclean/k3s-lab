@@ -1,0 +1,8 @@
+github.com/gorilla/websocket v1.5.1 h1:cnJYJQj2NS2rADr2Y7zECRWz1F2z8YlKuoBHw6PrPAE=
+github.com/gorilla/websocket v1.5.1/go.mod h1:zT3dIVzF4m+cxx/6PByio7Tl6WTzVcoJ1ch1s+V7IBw=
+k8s.io/api v0.30.4 h1:D8fQy0LDOtra8hDf8VFA9htpG9V8q6qefkOPjOBXpcQ=
+k8s.io/api v0.30.4/go.mod h1:2VwJT7yRb1xSSLvC1rvvxr6N6RV1DCn8VKSJcSgQNVk=
+k8s.io/apimachinery v0.30.4 h1:3QCvZFrQGGu//m4prmXPHh12INO98ZxrDov+FN3Z0HU=
+k8s.io/apimachinery v0.30.4/go.mod h1:t3QC5AIAf07xziCkTq+K7lGYMYtLQxyuv8KA+La8V1c=
+k8s.io/client-go v0.30.4 h1:+FdzPSzywolt1H7xP6kNIEQRBs2rKlbpn7Q8tRowgMQ=
+k8s.io/client-go v0.30.4/go.mod h1:c2m6yna8prV+BxK6q6tnsJUiGbdB1fC0cLfe5JcQmD0=

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-shell
+  namespace: web-shell
+  labels:
+    app.kubernetes.io/name: web-shell
+spec:
+  selector:
+    app.kubernetes.io/name: web-shell
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080

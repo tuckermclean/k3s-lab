@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: web-shell
+  namespace: web-shell
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: web-shell-pod-manager
+  namespace: web-shell-sessions
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/exec", "pods/log"]
+    verbs: ["create", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: web-shell-pod-manager-binding
+  namespace: web-shell-sessions
+subjects:
+  - kind: ServiceAccount
+    name: web-shell
+    namespace: web-shell
+roleRef:
+  kind: Role
+  name: web-shell-pod-manager
+  apiGroup: rbac.authorization.k8s.io

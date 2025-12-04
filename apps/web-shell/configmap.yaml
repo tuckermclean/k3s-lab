@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-shell-config
+  namespace: web-shell
+  labels:
+    app: web-shell
+    app.kubernetes.io/part-of: gitops
+  annotations:
+    # Authentik forwardAuth headers expected by backend for user identification
+    web-shell.io/auth-username-header: X-authentik-username
+    web-shell.io/auth-email-header: X-authentik-email
+    web-shell.io/auth-groups-header: X-authentik-groups
+    web-shell.io/auth-jwt-header: X-authentik-jwt
+    web-shell.io/notes: "These headers must be forwarded by the Authentik outpost"
+data:
+  # Namespace where ephemeral session pods will run
+  SESSION_NAMESPACE: "web-shell-sessions"
+  # Container image to use for ephemeral shells (non-root Alpine with bash)
+  SHELL_IMAGE: "ghcr.io/janogonzalez/alpine-nonroot-bash:3.20"
+  # Command to start inside the pod
+  SHELL_COMMAND: "/bin/bash"
+  # Resource requests/limits
+  CPU_REQUEST: "50m"
+  MEM_REQUEST: "64Mi"
+  CPU_LIMIT: "200m"
+  MEM_LIMIT: "256Mi"
+  # Idle timeout seconds without websocket activity
+  IDLE_TIMEOUT_SECONDS: "600"
+  # Max session duration in seconds
+  MAX_SESSION_SECONDS: "1800"
+  # Cleanup grace period after disconnect (seconds)
+  CLEANUP_GRACE_SECONDS: "5"
