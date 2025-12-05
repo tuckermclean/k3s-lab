@@ -45,13 +45,15 @@ class OpenAIEngine:
         )
         content = resp.choices[0].message.content or "{}"
         import json
+        from .json_utils import coerce_roast_json
         try:
             data = json.loads(content)
         except Exception:
             data = {}
+        parsed = coerce_roast_json(data)
         return LLMResponse(
-            summary=(data.get("summary") or "").strip(),
-            issues=(data.get("issues") or "").strip(),
-            praise=(data.get("praise") or "").strip(),
-            one_killer_roast_line=(data.get("one_killer_roast_line") or "This code trips over its own abstractions.").strip(),
+            summary=parsed.summary,
+            issues=parsed.issues,
+            praise=parsed.praise,
+            one_killer_roast_line=parsed.one_killer_roast_line,
         )

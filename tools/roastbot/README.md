@@ -1,4 +1,11 @@
 RoastBot - Brutal, Useful Code Roast Reviews for GitHub
+Contributing
+------------
+- Keep PRs small and focused. Large PRs will be roasted and may be rejected.
+- Prefer atomic commits and clear messages.
+- Avoid committing build artifacts (egg-info, dist/).
+
+
 =======================================================
 
 Purpose

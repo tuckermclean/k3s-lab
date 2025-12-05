@@ -35,8 +35,11 @@ class Controller:
 
     def run_once(self) -> None:
         for full_repo in self.settings.repos:
-            self._process_repo(full_repo)
-        self.state.save()
+            try:
+                self._process_repo(full_repo)
+            except Exception as e:
+                logger.exception("Error processing repo %s: %s", full_repo, e)
+        self.state.save(max_entries=getattr(self.settings, "state_max_entries", None) or None)
 
     def _process_repo(self, full_repo: str) -> None:
         prs = self.gh.list_open_prs(full_repo)

@@ -1,16 +1,9 @@
 # syntax=docker/dockerfile:1
 FROM python:3.11-slim
 WORKDIR /app
-# Install runtime dependencies first for better layer caching
+# Install runtime dependencies from project metadata for reproducibility
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir \
-    httpx>=0.27 \
-    pyyaml>=6.0 \
-    pydantic>=2.9 \
-    tenacity>=8.4 \
-    rich>=13.7 \
-    typer>=0.12 \
-    openai>=1.51.0
+RUN pip install --no-cache-dir .
 # Copy source last
 COPY roastbot ./roastbot
 COPY README.md ./
