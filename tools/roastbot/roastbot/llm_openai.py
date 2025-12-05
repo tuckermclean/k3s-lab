@@ -37,26 +37,21 @@ class OpenAIEngine:
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a brutally honest senior engineer who roasts code mercilessly while being technically precise and professional."},
-                {"role": "user", "content": prompt},
+                {"role": "system", "content": "You are a brutally honest senior engineer who roasts code mercilessly while being technically precise and professional. Always produce strict JSON with keys: summary, issues, praise, one_killer_roast_line."},
+                {"role": "user", "content": prompt + "\n\nRespond ONLY in minified JSON with keys: summary, issues, praise, one_killer_roast_line."},
             ],
             temperature=0.4,
+            response_format={"type": "json_object"},
         )
-        content = resp.choices[0].message.content or ""
-        # naive parsing by sections; robust parsing can be added later
-        sections = {"summary": "", "issues": "", "praise": "", "one_killer_roast_line": ""}
-        current = None
-        for line in content.splitlines():
-            l = line.strip()
-            key = l.lower().strip(":")
-            if key in sections:
-                current = key
-                continue
-            if current:
-                sections[current] += (line + "\n")
+        content = resp.choices[0].message.content or "{}"
+        import json
+        try:
+            data = json.loads(content)
+        except Exception:
+            data = {}
         return LLMResponse(
-            summary=sections["summary"].strip() or content.strip(),
-            issues=sections["issues"].strip() or "",
-            praise=sections["praise"].strip() or "",
-            one_killer_roast_line=sections["one_killer_roast_line"].strip() or "This code trips over its own abstractions.",
+            summary=(data.get("summary") or "").strip(),
+            issues=(data.get("issues") or "").strip(),
+            praise=(data.get("praise") or "").strip(),
+            one_killer_roast_line=(data.get("one_killer_roast_line") or "This code trips over its own abstractions.").strip(),
         )

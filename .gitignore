@@ -61,4 +61,5 @@ __pycache__/
 .roastbot_state.json
 .tools-venv/
 .tools-cache/
+*.egg-info/
 

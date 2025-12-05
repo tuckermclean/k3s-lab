@@ -19,9 +19,15 @@ class Controller:
         self.gh = GitHubClient(settings.github_token)
         # Select LLM engine
         if settings.llm_provider == "openai":
-            if not settings.openai_api_key:
-                raise ValueError("OPENAI_API_KEY is required when llm_provider=openai")
-            self.engine = OpenAIEngine(OpenAIConfig(api_key=settings.openai_api_key, model=settings.openai_model, base_url=settings.openai_base_url))
+            try:
+                if not settings.openai_api_key:
+                    raise ValueError("OPENAI_API_KEY is required when llm_provider=openai")
+                self.engine = OpenAIEngine(
+                    OpenAIConfig(api_key=settings.openai_api_key, model=settings.openai_model, base_url=settings.openai_base_url)
+                )
+            except Exception as e:
+                logger.warning("OpenAI engine unavailable (%s); falling back to mock engine.", e)
+                self.engine = RoastEngine()
         else:
             self.engine = RoastEngine()
         self.state = State(settings.state_file)
