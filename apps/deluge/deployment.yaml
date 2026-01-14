@@ -20,6 +20,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: deluge
+  strategy:
+    type: Recreate
     spec:
       # Share network namespace across containers (default), Gluetun will manage egress
       # Deluge will expose 8112 and others inside the Pod; Gluetun firewall must allow 8112
@@ -33,6 +35,10 @@ spec:
       containers:
         - name: gluetun
           image: qmcgaw/gluetun:latest
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "(ip rule del table 51820; ip -6 rule del table 51820) || true"]
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 0
