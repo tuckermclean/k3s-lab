@@ -15,7 +15,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: frontend
+                name: personliness
                 port:
                   number: 80
     - host: personliness.home.dcxxiv.com
@@ -25,7 +25,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: frontend
+                name: personliness
                 port:
                   number: 80
   tls:
