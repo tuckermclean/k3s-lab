@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: personliness
+  labels:
+    app.kubernetes.io/name: personliness-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: personliness-db
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: personliness-db
+    spec:
+      containers:
+        - name: db
+          image: postgres:15
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: personliness-config
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: personliness-config
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: personliness-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: personliness
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: personliness-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
