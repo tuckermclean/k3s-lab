@@ -7,11 +7,10 @@ spec:
   interval: 5m
   chart:
     spec:
-      chart: cert-manager-webhook-vultr
+      chart: ./deploy/cert-manager-webhook-vultr
       sourceRef:
-        kind: HelmRepository
-        name: vultr
+        kind: GitRepository
+        name: cert-manager-webhook-vultr
         namespace: flux-system
-      version: ">=1.0.0"
   values:
     groupName: acme.vultr.com

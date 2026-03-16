@@ -1,8 +1,0 @@
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
-  name: vultr
-  namespace: flux-system
-spec:
-  interval: 1h
-  url: https://vultr.github.io/cert-manager-webhook-vultr
