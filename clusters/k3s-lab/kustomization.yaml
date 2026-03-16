@@ -11,6 +11,7 @@ resources:
   - traefik-kustomization.yaml
   - cert-manager-kustomization.yaml
   - cert-manager-config-kustomization.yaml
+  - cert-manager-webhook-vultr-kustomization.yaml
   - authentik-kustomization.yaml
   - nfs-provisioner-kustomization.yaml
   - jellyfin-kustomization.yaml

@@ -9,9 +9,14 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-staging
     solvers:
-      - http01:
-          ingress:
-            class: traefik
+      - dns01:
+          webhook:
+            groupName: acme.vultr.com
+            solverName: vultr
+            config:
+              apiKeySecretRef:
+                name: vultr-credentials
+                key: apiKey
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -24,9 +29,14 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-      - http01:
-          ingress:
-            class: traefik
+      - dns01:
+          webhook:
+            groupName: acme.vultr.com
+            solverName: vultr
+            config:
+              apiKeySecretRef:
+                name: vultr-credentials
+                key: apiKey
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
