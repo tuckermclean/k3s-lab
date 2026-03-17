@@ -39,8 +39,7 @@ spec:
       targetPath: authentik.postgresql.password
   values:
     global:
-      host: https://authentik-server.authentik.svc.cluster.local
-      host_browser: https://auth.home.dcxxiv.com
+      host: https://auth.home.dcxxiv.com
     authentik:
       errorReporting:
         enabled: false
