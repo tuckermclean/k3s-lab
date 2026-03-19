@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: juicefs-sc
+  storageClassName: juicefs
   resources:
     requests:
       storage: 100Gi
