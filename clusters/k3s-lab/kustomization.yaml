@@ -28,3 +28,4 @@ resources:
   - lidarr-kustomization.yaml
   - dashy-kustomization.yaml
   - personliness-kustomization.yaml
+  - coredns-kustomization.yaml
