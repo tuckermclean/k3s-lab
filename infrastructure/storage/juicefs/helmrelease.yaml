@@ -17,23 +17,8 @@ spec:
     # Keep namespaces consistent: install in kube-system
     namespaceOverride: kube-system
 
-    controller:
-      # Mount Longhorn-backed PVC at /var/lib/juicefs for SQLite meta
-      extraVolumes:
-        - name: juicefs-meta
-          persistentVolumeClaim:
-            claimName: juicefs-meta-pvc
-      extraVolumeMounts:
-        - name: juicefs-meta
-          mountPath: /var/lib/juicefs
-          readOnly: false
+    controller: {}
 
     # Use default CSIDriver name csi.juicefs.com
     driver:
       name: csi.juicefs.com
-
-    # Basic securityContext that works with K3s + Longhorn
-    podSecurityContext:
-      fsGroup: 65534
-      runAsUser: 0
-      runAsGroup: 0
