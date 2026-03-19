@@ -52,7 +52,7 @@ spec:
       enabled: false
       ingressClassName: traefik
       annotations:
-        cert-manager.io/cluster-issuer: "local-selfsigned"
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
       hosts:
         - host: jellyseerr.home.dcxxiv.com
           paths:

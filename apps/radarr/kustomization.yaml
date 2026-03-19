@@ -6,6 +6,7 @@ resources:
   - pvc.yaml
   - deployment.yaml
   - service.yaml
+  - certificate.yaml
   - ingress.yaml
 labels:
   - pairs:

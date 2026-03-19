@@ -4,6 +4,7 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - service.yaml
+  - certificate.yaml
   - ingress.yaml
   - deployment.yaml
 labels:

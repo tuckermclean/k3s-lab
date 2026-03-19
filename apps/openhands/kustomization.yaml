@@ -6,5 +6,6 @@ resources:
   - pvc.yaml
   - deployment.yaml
   - service.yaml
+  - certificate.yaml
   - ingress.yaml
   - configmap.yaml

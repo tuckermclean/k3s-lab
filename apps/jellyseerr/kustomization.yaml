@@ -5,4 +5,5 @@ resources:
   - helmrepository.yaml
   - helmrelease.yaml
   - config-volume.yaml
+  - certificate.yaml
   - ingress.yaml
