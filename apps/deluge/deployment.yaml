@@ -16,12 +16,12 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: deluge
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
         app.kubernetes.io/name: deluge
-  strategy:
-    type: Recreate
     spec:
       # Share network namespace across containers (default), Gluetun will manage egress
       # Deluge will expose 8112 and others inside the Pod; Gluetun firewall must allow 8112
