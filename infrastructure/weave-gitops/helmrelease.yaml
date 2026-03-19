@@ -25,6 +25,7 @@ spec:
       ingressClassName: traefik
       annotations:
         cert-manager.io/cluster-issuer: local-selfsigned
+        traefik.ingress.kubernetes.io/router.middlewares: media-authentik-servarr@kubernetescrd
       hosts:
         - host: flux.home.dcxxiv.com
           paths:

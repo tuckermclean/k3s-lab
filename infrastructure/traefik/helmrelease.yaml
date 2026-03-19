@@ -33,6 +33,9 @@ spec:
       isDefaultClass: false
 
     ports:
+      web:
+        redirectTo:
+          port: websecure
       bedrock:
         port: 19132           # Traefik's internal listening port
         expose:
