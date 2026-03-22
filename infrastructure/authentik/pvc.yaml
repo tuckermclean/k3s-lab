@@ -24,24 +24,6 @@ spec:
       storage: 5Gi
   storageClassName: longhorn
 ---
-
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: local-redis-config-pv
-  labels:
-    app.kubernetes.io/part-of: gitops
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-path
-  hostPath:
-    path: /var/lib/redis/config
-    type: DirectoryOrCreate
----
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -51,29 +33,11 @@ metadata:
     app.kubernetes.io/part-of: gitops
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
-  storageClassName: local-path
-  volumeName: local-redis-config-pv
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: local-postgresql-config-pv
-  labels:
-    app.kubernetes.io/part-of: gitops
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-path
-  hostPath:
-    path: /var/lib/postgresql/config
-    type: DirectoryOrCreate
+  storageClassName: longhorn
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -84,9 +48,8 @@ metadata:
     app.kubernetes.io/part-of: gitops
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
-  storageClassName: local-path
-  volumeName: local-postgresql-config-pv
+  storageClassName: longhorn
