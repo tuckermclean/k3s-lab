@@ -27,7 +27,7 @@ spec:
       enabled: true
       ingressClassName: traefik
       annotations:
-        cert-manager.io/cluster-issuer: local-selfsigned
+        cert-manager.io/cluster-issuer: letsencrypt-prod
       hosts:
         - host: flux.home.dcxxiv.com
           paths:

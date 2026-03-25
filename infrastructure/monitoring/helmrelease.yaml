@@ -44,7 +44,7 @@ spec:
         enabled: true
         ingressClassName: traefik
         annotations:
-          cert-manager.io/cluster-issuer: local-selfsigned
+          cert-manager.io/cluster-issuer: letsencrypt-prod
         hosts:
           - grafana.home.dcxxiv.com
         tls:
