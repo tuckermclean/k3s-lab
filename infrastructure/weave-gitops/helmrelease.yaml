@@ -17,7 +17,10 @@ spec:
     adminUser:
       create: true
       username: admin
-      passwordHash: "$2y$10$JCMRwnCRyTnFBwpZhRHskezUASsudBwFX9ZDbpXJaF6rCJ3WcVOO."     # password: admin
+      # passwordHash set via out-of-band Secret — see SECURITY.md
+      # kubectl create secret generic weave-gitops-admin -n weave-gitops \
+      #   --from-literal=password="$(openssl rand -base64 24)"
+      existingSecret: weave-gitops-admin
     service:
       type: ClusterIP
     ingress:

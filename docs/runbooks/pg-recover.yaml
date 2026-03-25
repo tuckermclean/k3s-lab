@@ -1,3 +1,7 @@
+# MANUAL APPLY ONLY — not managed by Flux
+# Usage: kubectl apply -f docs/runbooks/pg-recover.yaml
+#        kubectl exec -it pg-recover -n authentik -- bash
+#        kubectl delete pod pg-recover -n authentik  # delete when done
 apiVersion: v1
 kind: Pod
 metadata:

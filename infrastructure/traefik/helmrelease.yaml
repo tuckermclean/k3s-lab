@@ -22,10 +22,11 @@ spec:
       type: LoadBalancer
       spec:
         externalTrafficPolicy: Cluster
+      # Environment-specific IPs — update to match your node addresses
       externalIPs:
-        - 192.168.0.204
-        - 45.32.227.185
-        - 5.78.149.27
+        - 51.81.211.178   # k3s04 (OVH VPS)
+        - 45.32.227.185   # k3s02 (Vultr VPS)
+        - 5.78.149.27     # k3s03 (Hetzner VPS)
 
     ingressClass:
       enabled: true

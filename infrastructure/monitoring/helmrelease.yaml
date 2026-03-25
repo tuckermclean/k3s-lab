@@ -13,9 +13,13 @@ spec:
         name: prometheus-community
         namespace: flux-system
       version: "56.x"
+  valuesFrom:
+    - kind: Secret
+      name: grafana-admin-secret
+      valuesKey: adminPassword
+      targetPath: grafana.adminPassword
   values:
     grafana:
-      adminPassword: "admin"
       ingress:
         enabled: true
         ingressClassName: traefik
@@ -35,7 +39,7 @@ spec:
           volumeClaimTemplate:
             spec:
               accessModes: ["ReadWriteOnce"]
-              storageClassName: nfs-provisioner
+              storageClassName: longhorn
               resources:
                 requests:
                   storage: 10Gi
