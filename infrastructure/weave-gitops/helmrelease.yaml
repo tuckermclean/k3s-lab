@@ -16,12 +16,11 @@ spec:
   values:
     adminUser:
       create: false
-      existingSecret: weave-gitops-admin
+      existingSecret: cluster-user-auth
     additionalArgs:
       - --auth-methods=oidc
-      - --oidc-secret-name=weave-gitops-oidc
     oidcSecret:
-      name: weave-gitops-oidc
+      name: oidc-auth
     service:
       type: ClusterIP
     ingress:
