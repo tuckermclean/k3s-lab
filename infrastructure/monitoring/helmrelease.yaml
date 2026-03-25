@@ -26,7 +26,8 @@ spec:
           root_url: https://grafana.home.dcxxiv.com
         auth:
           signout_redirect_url: https://auth.home.dcxxiv.com/application/o/grafana/end-session/
-          oauth_auto_login: false
+          disable_login_form: true
+          oauth_auto_login: true
         auth.generic_oauth:
           enabled: true
           name: Authentik
