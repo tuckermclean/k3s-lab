@@ -8,12 +8,6 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`longhorn.home.dcxxiv.com`) && PathPrefix(`/outpost.goauthentik.io/`)
-      services:
-        - name: ak-outpost-infrastructure
-          namespace: authentik
-          port: 9000
-    - kind: Rule
       match: Host(`longhorn.home.dcxxiv.com`)
       middlewares:
         - name: authentik
