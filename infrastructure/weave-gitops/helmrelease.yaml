@@ -19,6 +19,7 @@ spec:
       existingSecret: weave-gitops-admin
     additionalArgs:
       - --auth-methods=oidc
+      - --oidc-secret-name=weave-gitops-oidc
     oidcSecret:
       name: weave-gitops-oidc
     service:
