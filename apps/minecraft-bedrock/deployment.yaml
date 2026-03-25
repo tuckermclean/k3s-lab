@@ -60,4 +60,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: bedrock-data
+            claimName: bedrock

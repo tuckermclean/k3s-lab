@@ -13,7 +13,6 @@ resources:
   - cert-manager-config-kustomization.yaml
   - cert-manager-webhook-vultr-kustomization.yaml
   - authentik-kustomization.yaml
-  - nfs-provisioner-kustomization.yaml
   - jellyfin-kustomization.yaml
   - jellyseerr-kustomization.yaml
   - minecraft-bedrock.yaml

@@ -10,15 +10,3 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: bedrock-data
-  namespace: minecraft
-spec:
-  accessModes: ["ReadWriteMany"]
-  storageClassName: nfs-provisioner
-  resources:
-    requests:
-      storage: 20Gi
