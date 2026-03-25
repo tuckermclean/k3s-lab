@@ -16,6 +16,7 @@ spec:
   values:
     adminUser:
       create: false
+      existingSecret: weave-gitops-admin
     additionalArgs:
       - --auth-methods=oidc
     oidcSecret:
