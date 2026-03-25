@@ -15,12 +15,9 @@ spec:
       version: "4.x"
   values:
     adminUser:
-      create: true
-      username: admin
-      # passwordHash set via out-of-band Secret — see SECURITY.md
-      # kubectl create secret generic weave-gitops-admin -n weave-gitops \
-      #   --from-literal=password="$(openssl rand -base64 24)"
-      existingSecret: weave-gitops-admin
+      create: false
+    oidcSecret:
+      name: weave-gitops-oidc
     service:
       type: ClusterIP
     ingress:
@@ -28,7 +25,6 @@ spec:
       ingressClassName: traefik
       annotations:
         cert-manager.io/cluster-issuer: local-selfsigned
-        traefik.ingress.kubernetes.io/router.middlewares: media-authentik-servarr@kubernetescrd
       hosts:
         - host: flux.home.dcxxiv.com
           paths:
