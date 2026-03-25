@@ -1,153 +1,177 @@
-# K3s Lab - GitOps Repository
+# k3s-lab
 
-This repository follows the Flux v2 GitOps pattern for managing a single-cluster Kubernetes lab environment.
+GitOps-managed k3s cluster across three cloud providers. Everything declarative, everything in this repo except secrets.
 
-## Repository Structure
+## Nodes
+
+| Node | Role | Provider | Location |
+|------|------|----------|----------|
+| k3s04 | server / control-plane | OVH VPS | Hillsboro, OR |
+| k3s02 | agent | Vultr VPS | Seattle, WA |
+| k3s03 | agent | Hetzner VPS | Hillsboro, OR |
+
+k3s02 has the `node-role=storage-ingress:NoSchedule` taint. Add a toleration explicitly if you need to schedule something there.
+
+## Stack
+
+**GitOps:** Flux v2, watching `clusters/k3s-lab/`
+
+**Ingress:** Traefik, deployed as DaemonSet + LoadBalancer. Uses IngressRoute CRDs throughout — there are no standard Ingress objects in this cluster. Do not add them.
+
+**TLS:** cert-manager with Vultr DNS01 challenge. ClusterIssuer is `letsencrypt-prod`. Certs are issued for `*.home.dcxxiv.com`.
+
+**Storage:**
+- Longhorn — replicated block storage, 2 replicas, default StorageClass. Use this for anything that needs a PVC and doesn't need to be shared across pods.
+- JuiceFS — S3-backed shared filesystem. Use for ReadWriteMany workloads or media-style shared access.
+
+**Auth:** authentik at `auth.home.dcxxiv.com`. Every app sits behind forward auth. See the auth section below.
+
+**Monitoring:** Prometheus + Grafana
+
+**GitOps UI:** Weave GitOps
+
+**DNS:** CoreDNS custom ConfigMap for internal rewrites. This is why `auth.home.dcxxiv.com` resolves correctly inside the cluster even though it's a public domain — without the rewrite, the outpost callback loop breaks.
+
+## Repo Layout
 
 ```
-.
-├── apps/                    # Application HelmReleases & manifests
-│   ├── jellyfin/            # Media server
-│   ├── jellyseerr/          # Media request manager
-│   ├── minecraft-bedrock/   # Game server (UDP via Traefik)
-│   ├── openhands/           # OpenHands app
-│   └── skel/                # App skeleton templates
-├── infrastructure/          # Cluster infrastructure components
-│   ├── traefik/             # Ingress controller (DaemonSet + LoadBalancer)
-│   ├── cert-manager/        # Certificate management
-│   ├── cert-manager-config/ # ClusterIssuers and related config
-│   └── nfs-provisioner/     # Storage provisioner
-└── clusters/
-    └── k3s-lab/             # Cluster-specific configuration
-        ├── kustomization.yaml
-        ├── flux-system/     # Flux bootstrap artifacts (gotk-*.yaml)
-        ├── traefik-kustomization.yaml
-        ├── cert-manager-kustomization.yaml
-        ├── cert-manager-config-kustomization.yaml
-        ├── nfs-provisioner-kustomization.yaml
-        ├── jellyfin-kustomization.yaml
-        ├── jellyseerr-kustomization.yaml
-        ├── minecraft-bedrock.yaml
-        ├── openhands-kustomization.yaml
-        └── skel-kustomization.yaml
+apps/                        # one dir per app
+infrastructure/
+  authentik/
+  cert-manager/
+  cert-manager-config/
+  cert-manager-webhook-vultr/
+  monitoring/
+  storage/longhorn/
+  storage/juicefs/
+  traefik/
+clusters/k3s-lab/
+  kustomization.yaml
+  flux-system/
+bootstrap/
+  BOOTSTRAP.md
+  cloud-init/
+  scripts/
 ```
 
-## Quick Start
+The entry point for Flux is `clusters/k3s-lab/kustomization.yaml`. Every Flux Kustomization that should be active needs to be referenced there (or transitively via something that is).
 
-### Prerequisites
+## Active Apps
 
-- A K3s (or Kubernetes) cluster
-- Flux CLI installed and authenticated to your Git provider
-- `kubectl` configured to access your cluster
+- openhands
+- minecraft-bedrock
+- personliness
 
-### Bootstrap
+Removed apps (jellyfin, jellyseerr, sonarr, radarr, lidarr, deluge, prowlarr, flaresolverr, dashy) are preserved in the `media-apps` branch, not deleted, in case they come back.
 
-Flux bootstrap is the supported way to install Flux and point it at this repo. Example:
+## Adding an App
+
+1. Create `apps/<name>/` with at minimum: `namespace.yaml`, `kustomization.yaml`, and your workload manifests.
+2. Create `clusters/k3s-lab/<name>-kustomization.yaml` — this is a Flux `Kustomization` resource pointing at `apps/<name>/`.
+3. Add that file to the resources list in `clusters/k3s-lab/kustomization.yaml`.
+4. Add a `Middleware` resource in the app's namespace for authentik forward auth (see below).
+5. Reference the middleware in the app's `IngressRoute`.
+
+See `apps/openhands/` as the reference implementation.
+
+## Auth Pattern
+
+Every app needs a `Middleware` in its own namespace:
+
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: authentik
+  namespace: <app-namespace>
+spec:
+  forwardAuth:
+    address: http://ak-outpost-<outpost-name>.authentik:9000/outpost.goauthentik.io/auth/traefik
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-authentik-username
+      - X-authentik-groups
+      - X-authentik-email
+      - X-authentik-name
+      - X-authentik-uid
+      - X-authentik-jwt
+      - X-authentik-meta-jwks
+      - X-authentik-meta-outpost
+      - X-authentik-meta-provider
+      - X-authentik-meta-app
+      - X-authentik-meta-version
+```
+
+The IngressRoute references it:
+
+```yaml
+routes:
+  - match: Host(`myapp.home.dcxxiv.com`)
+    kind: Rule
+    middlewares:
+      - name: authentik
+    services:
+      - name: myapp
+        port: 80
+```
+
+The outpost in authentik must be configured with:
+- `authentik_host_browser: https://auth.home.dcxxiv.com/`
+- Domain-level forward auth mode
+
+This matters because without `authentik_host_browser` set correctly, the browser gets redirected to the internal outpost address after login, which does not work.
+
+## Secrets
+
+Nothing sensitive goes in Git. No SOPS is set up yet. Create Secret objects directly in-cluster via kubectl and reference them in workloads with `envFrom.secretRef` or `secretKeyRef`. Keep a backup of secrets somewhere offline — if the cluster dies, secrets are gone.
 
 ```bash
+kubectl create secret generic <name> \
+  --namespace <namespace> \
+  --from-literal=KEY=value
+```
+
+See `bootstrap/BOOTSTRAP.md` for the secrets backup and restore procedure.
+
+## Bootstrapping / DR
+
+See `bootstrap/BOOTSTRAP.md`. It covers node provisioning, WireGuard mesh setup, Flux installation, and how to get back to a running state from scratch.
+
+Cloud-init files are in `bootstrap/cloud-init/` for k3s01–k3s03. k3s04 (OVH, current control plane) does not have a cloud-init file yet.
+
+Quick reference for bootstrapping Flux onto a fresh cluster:
+```bash
 flux bootstrap github \
-  --owner=yourusername \
+  --owner=<github-username> \
   --repository=k3s-lab \
   --branch=main \
   --path=./clusters/k3s-lab \
   --personal
 ```
 
-If you rely on cluster-local resources (Storage, DNS, LoadBalancer), ensure they exist before reconciling the app kustomizations. Many manifests assume an NFS backend and working DNS/LoadBalancer.
-
-### Verify Deployment
-
-```bash
-# Check Flux controllers and sources
-flux get all
-
-# Check all GitOps-managed resources
-kubectl get all -l app.kubernetes.io/part-of=gitops
-
-# View reconciliation trace for a Kustomization or resource
-flux trace
-```
-
-
-## Components
-
-### Infrastructure
-
-- **Traefik**: Ingress controller (see `infrastructure/traefik/helmrelease.yaml`) deployed as a DaemonSet + LoadBalancer.
-- **Cert-Manager**: Certificate management (see `infrastructure/cert-manager/helmrelease.yaml` and `infrastructure/cert-manager-config/clusterissuer.yaml`). ClusterIssuers use HTTP01 via Traefik by default.
-- **NFS Provisioner**: nfs-subdir-external-provisioner configured in `infrastructure/nfs-provisioner/helmrelease.yaml`; default StorageClass name: `nfs-provisioner`.
-
-### Applications
-
-- **Jellyfin**: Media streaming server (`apps/jellyfin/*`).
-- **Jellyseerr**: Media request manager (`apps/jellyseerr/*`).
-- **Minecraft Bedrock**: Game server (`apps/minecraft-bedrock/*`).
-- **OpenHands**: OpenHands app with DinD sidecar and Ingress (`apps/openhands/*`).
-
-## Development Workflow
-
-1. Make changes in a feature branch (edit manifests under `apps/` or `infrastructure/`).
-2. Test diffs locally with Flux (per-kustomization):
-
-```bash
-# show what would change for all cluster overlays
-flux diff kustomization clusters/k3s-lab
-
-# or target a single kustomization (recommended during development)
-flux diff kustomization jellyfin -n flux-system
-```
-
-3. Create a PR and merge to `main`.
-4. Flux will reconcile the Kustomizations declared in `clusters/k3s-lab/`.
+Flux will not successfully reconcile infrastructure or apps until their dependencies (storage, DNS, load balancer) exist in the cluster. Bootstrap order matters — see `bootstrap/BOOTSTRAP.md` for the sequence.
 
 ## Useful Commands
 
 ```bash
-# Show diffs for the entire cluster overlay
-flux diff kustomization clusters/k3s-lab
+# See everything Flux is managing and its sync status
+flux get all
 
-# Show diffs for a single kustomization (recommended during development)
-flux diff kustomization jellyfin -n flux-system
-
-# Force reconciliation for a named kustomization
-flux reconcile kustomization <name> -n flux-system
-
-# Follow Flux logs
+# Watch Flux logs in real time
 flux logs --follow
 
-# List HelmReleases in a namespace
-flux get helmreleases -n media
-```
+# Force a reconciliation if you don't want to wait for the interval
+flux reconcile kustomization <name> -n flux-system
 
-## Security Notes
+# Preview what Flux would apply without applying it
+flux diff kustomization <name> -n flux-system
 
-- **No plaintext secrets in Git**: This repo does not include SOPS-encrypted secrets. Create secrets in-cluster or use external secret management.
-- **Certificates**: cert-manager will manage TLS certs for Ingress objects annotated to use ClusterIssuers (see `infrastructure/cert-manager-config/clusterissuer.yaml`). Replace the email/ACME endpoints with your values when bootstrapping.
-- **Labels**: Most resources are labeled with `app.kubernetes.io/part-of: gitops` for easy selection.
+# Find all resources tagged as part of this GitOps setup
+kubectl get all -l app.kubernetes.io/part-of=gitops
 
-## Troubleshooting
-
-### Common Issues
-
-1. Reconciliation failures: check `flux logs --follow` and `kubectl describe kustomization <name> -n flux-system`.
-2. Missing resources: ensure file paths referenced by kustomizations exist (each `apps/<name>/kustomization.yaml` includes namespace/helmrelease/resources).
-3. Environment mismatches: many manifests assume an NFS backend and a working DNS/LoadBalancer.
-
-### Debug commands
-
-```bash
-# Flux and controller health
-kubectl get pods -n flux-system
-flux get kustomizations -n flux-system
-
-# Reconciliation events
+# Recent Flux events
 flux events
 
-# Inspect a Kustomization
-kubectl describe kustomization jellyfin -n flux-system
+# Inspect a failing kustomization
+kubectl describe kustomization <name> -n flux-system
 ```
-
-### Fix
-
-- Several manifests reference an external NFS server: `openmediavault.home.dcxxiv.com` (see `apps/jellyfin/media-volume.yaml` and `infrastructure/nfs-provisioner/helmrelease.yaml`). Update these or provide an equivalent NFS server in your environment before applying PVs/PVCs.
-- `infrastructure/cert-manager-config/clusterissuer.yaml` contains example ACME accounts/emails. Replace them with your own email and appropriate ACME endpoints for production.

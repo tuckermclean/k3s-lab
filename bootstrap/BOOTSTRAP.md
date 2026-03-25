@@ -75,12 +75,22 @@ Paste `/tmp/k3s02-userdata.yaml` into the Vultr/Hetzner user-data field when cre
 | authentik | `authentik-db-secret` | `postgres-password` | Must update DB too |
 | cert-manager | `vultr-credentials` | Vultr API key | cert-manager DNS01 stops working |
 | flux-system | `flux-system` | GitHub deploy key | Flux loses repo access |
+| kube-system | `juicefs-secret` | S3 access key, secret key, bucket, metaurl | All JuiceFS PVCs fail to mount |
+| monitoring | `grafana-oidc-secret` | Grafana → authentik OIDC credentials | Grafana SSO broken |
+| monitoring | `grafana-admin-secret` | Grafana admin password | No local admin fallback |
+| weave-gitops | `oidc-auth` | Weave GitOps → authentik OIDC credentials | Weave GitOps SSO broken |
+| weave-gitops | `cluster-user-auth` | Weave GitOps local admin password | No local admin fallback |
+| personliness | `personliness-secret` | App secrets | App non-functional |
 | (node) | `/etc/wireguard/*.conf` | WireGuard private keys | Must renegotiate with all peers |
 | (node) | `/var/lib/rancher/k3s/server/node-token` | k3s join token | Must re-join all agents |
 
+The bulk backup below captures all of these in one shot. This list exists so you know what you're missing if a restore is partial or a single secret needs rotating.
+
 ### Backup Procedure
 
-**Kubernetes secrets (run after any rotation and monthly):**
+**There is no automated backup.** Run this manually after any secret rotation and at least monthly. Verify the output file exists and is non-zero before closing the terminal.
+
+**Kubernetes secrets:**
 ```bash
 kubectl get secrets -A -o yaml \
   | gpg --symmetric --cipher-algo AES256 \

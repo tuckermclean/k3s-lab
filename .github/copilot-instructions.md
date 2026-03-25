@@ -1,39 +1,63 @@
-# AI Assistant Instructions for k3s-lab
+# k3s-lab — AI Assistant Context
 
-This repository manages a single-cluster Kubernetes lab using Flux v2 (GitOps). Follow these concise rules to be effective:
+Flux v2 GitOps repo for a k3s cluster. Path watched by Flux: `clusters/k3s-lab/`.
 
-Architecture
-- GitOps: All state is defined in this repo; Flux reconciles automatically.
-- Key directories:
-  - apps/: Application manifests (per-app kustomization, namespace, HelmRelease/plain resources). Examples: apps/jellyfin/*, apps/minecraft-bedrock/*, apps/openhands/*.
-  - infrastructure/: Cluster infra (Traefik, cert-manager, NFS provisioner).
-  - clusters/k3s-lab/: Flux Kustomizations wiring repo paths to the cluster. flux-system/ contains gotk-*.yaml bootstrap artifacts.
+## Architecture
 
-Workflow
-- Bootstrap: flux bootstrap github ... --path=./clusters/k3s-lab (see README for exact command).
-- Changes: edit manifests in a feature branch; preview with flux diff kustomization <name> -n flux-system; open a PR.
-- Verification: flux get all; kubectl get all -l app.kubernetes.io/part-of=gitops; flux reconcile kustomization <name> -n flux-system.
+- `apps/` — one dir per application (namespace, kustomization, manifests)
+- `infrastructure/` — cluster infrastructure (Traefik, cert-manager, Longhorn, JuiceFS, authentik, monitoring)
+- `clusters/k3s-lab/` — Flux Kustomization resources wiring the repo to the cluster
 
-Conventions
-- No secrets in Git. Create Kubernetes Secrets in-cluster and reference them via envFrom.secretRef.
-- Label resources with app.kubernetes.io/part-of: gitops.
-- Ingress uses Traefik (ingressClassName: traefik). TLS via cert-manager ClusterIssuers in infrastructure/cert-manager-config/.
+## Conventions
 
-Integration notes
-- Traefik: infrastructure/traefik/helmrelease.yaml (DaemonSet + LoadBalancer). UDP entrypoint used by apps/minecraft-bedrock/.
-- Cert-manager: ClusterIssuers in infrastructure/cert-manager-config/clusterissuer.yaml (HTTP01 via Traefik). Update ACME email/domains for your environment.
-- NFS: infrastructure/nfs-provisioner/helmrelease.yaml sets storageClass nfs-provisioner; some PVs reference openmediavault.home.dcxxiv.com. Replace with your NFS server as needed.
+- **Ingress:** Traefik `IngressRoute` CRDs throughout. Never use standard `Ingress` objects.
+- **TLS:** cert-manager, ClusterIssuer `letsencrypt-prod` (Vultr DNS01). Each app needs a `Certificate` resource — IngressRoute does not support cert-manager annotations.
+- **Storage:** Longhorn is the default StorageClass. Use JuiceFS for ReadWriteMany / shared access.
+- **Secrets:** Never in Git. Create in-cluster; reference via `envFrom.secretRef` or `secretKeyRef`.
+- **Labels:** Tag resources with `app.kubernetes.io/part-of: gitops`.
 
-Common tasks
-- Add an app: create apps/<name>/ kustomization and manifests; include it under clusters/k3s-lab/kustomization.yaml as a Kustomization (see existing -kustomization.yaml files).
-- Update Traefik/cert-manager: edit infra manifests then flux reconcile kustomization <name> -n flux-system.
+## Authentication
 
-PR etiquette for AI agents
-- Never push to main. Create a feature branch, commit focused changes, and open a draft PR unless told otherwise.
-- Do not add plaintext secrets, large binaries, or build artifacts. Respect .gitignore.
-- Keep changes minimal and aligned with current repo structure.
+Every app is protected by authentik forward auth. Each app namespace needs a `Middleware`:
 
-Debug quick refs
-- kubectl get pods -n flux-system; flux get kustomizations -n flux-system
-- flux logs --follow; flux events
-- kubectl describe kustomization <name> -n flux-system
+```yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: authentik
+  namespace: <app-namespace>
+spec:
+  forwardAuth:
+    address: http://ak-outpost-<outpost-name>.authentik:9000/outpost.goauthentik.io/auth/traefik
+    trustForwardHeader: true
+    authResponseHeaders:
+      - X-authentik-username
+      - X-authentik-groups
+      - X-authentik-email
+      - X-authentik-name
+      - X-authentik-uid
+      - X-authentik-jwt
+      - X-authentik-meta-jwks
+      - X-authentik-meta-outpost
+      - X-authentik-meta-provider
+      - X-authentik-meta-app
+      - X-authentik-meta-version
+```
+
+The IngressRoute references `name: authentik`. No bypass routes needed. The outpost must be configured in authentik as **domain-level forward auth** with `authentik_host_browser: https://auth.home.dcxxiv.com/` and the app's provider assigned to it. See `apps/openhands/` for the reference implementation.
+
+## Node Notes
+
+- k3s02 has taint `node-role=storage-ingress:NoSchedule` — add an explicit toleration for workloads that must schedule there.
+- k3s04 is the current control plane (OVH VPS). It does not have a cloud-init file in `bootstrap/` yet.
+
+## Removed Apps
+
+jellyfin, jellyseerr, sonarr, radarr, lidarr, deluge, prowlarr, flaresolverr, dashy are in the `media-apps` branch, not in main.
+
+## Workflow
+
+- Never push directly to main. Feature branch → PR.
+- Preview changes: `flux diff kustomization <name> -n flux-system`
+- Force reconcile: `flux reconcile kustomization <name> -n flux-system`
+- Adding an app: `apps/<name>/` + `clusters/k3s-lab/<name>-kustomization.yaml` + entry in `clusters/k3s-lab/kustomization.yaml` + Middleware for auth.
