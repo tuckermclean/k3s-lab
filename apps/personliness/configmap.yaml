@@ -20,7 +20,7 @@ data:
   CORS_ALLOWED_ORIGINS: "https://personliness.dcxxiv.com,https://personliness.home.dcxxiv.com"
   nginx.conf: |
     upstream django {
-        server localhost:8000;
+        server 127.0.0.1:8000;
     }
 
     server {
