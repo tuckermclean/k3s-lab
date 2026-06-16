@@ -21,18 +21,21 @@ spec:
         - op: replace
           path: /spec/storageClassName
           value: local-path
-    # Single public hostname on this cluster.
+    # Both hostnames: sslip.io works now; dcxxiv.com auto-activates once its
+    # Cloudflare A record resolves. Drop the sslip.io entries once dcxxiv.com
+    # is confirmed.
     - target:
         kind: ConfigMap
         name: personliness-config
       patch: |
         - op: replace
           path: /data/DJANGO_ALLOWED_HOSTS
-          value: personliness.15-204-73-15.sslip.io
+          value: personliness.15-204-73-15.sslip.io,personliness.dcxxiv.com
         - op: replace
           path: /data/CORS_ALLOWED_ORIGINS
-          value: https://personliness.15-204-73-15.sslip.io
-    # HTTP01 issuer (no Vultr) and one host.
+          value: https://personliness.15-204-73-15.sslip.io,https://personliness.dcxxiv.com
+    # HTTP01 issuer (no Vultr). Two hosts, two independent certs so a pending
+    # dcxxiv.com cert can't block the working sslip.io one.
     - target:
         kind: Ingress
         name: personliness
@@ -53,9 +56,22 @@ spec:
                         name: personliness
                         port:
                           number: 80
+            - host: personliness.dcxxiv.com
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: personliness
+                        port:
+                          number: 80
         - op: replace
           path: /spec/tls
           value:
             - hosts:
                 - personliness.15-204-73-15.sslip.io
+              secretName: personliness-tls-sslip
+            - hosts:
+                - personliness.dcxxiv.com
               secretName: personliness-tls
