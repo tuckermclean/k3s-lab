@@ -1,0 +1,31 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Same philosophy as the
+# repo's ${PLACEHOLDER} cloud-init: nothing secret is committed.
+
+# --- OCI API key auth (Identity > Users > your user > API Keys > Add API Key) ---
+tenancy_ocid         = "ocid1.tenancy.oc1..xxxx"
+user_ocid            = "ocid1.user.oc1..xxxx"
+fingerprint          = "aa:bb:cc:dd:ee:ff:..."
+api_private_key_path = "~/.oci/oci_api_key.pem"
+region               = "us-ashburn-1"
+compartment_ocid     = "ocid1.tenancy.oc1..xxxx" # root tenancy OCID is fine for a lab
+
+# --- SSH access ---
+ssh_public_key       = "ssh-ed25519 AAAA... you@host"
+ssh_private_key_path = "~/.ssh/id_ed25519"
+
+# --- Topology (defaults give 3x 1 OCPU / 8 GB = 3 OCPU / 24 GB, 1 OCPU spare) ---
+# server_count        = 3
+# ocpus_per_node      = 1
+# memory_gbs_per_node = 8
+
+# --- Access scoping ---
+# Lock the API to your IP. Default is 0.0.0.0/0 (open to the internet).
+api_allowed_cidr = "203.0.113.4/32"
+# enable_http_ingress = false
+# api_dns_name        = "oci-k3s.example.com"
+
+# --- Flux GitOps bootstrap (also export GITHUB_TOKEN before apply) ---
+bootstrap_flux    = true
+github_owner      = "your-github-username"
+github_repository = "k3s-lab"
+github_branch     = "main"

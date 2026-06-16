@@ -1,0 +1,12 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Secrets / rendered artifacts
+*.tfvars
+!*.tfvars.example
+kubeconfig
