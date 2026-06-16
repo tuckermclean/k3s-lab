@@ -1,0 +1,43 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+# Auth is NOT set here: download the OpenRC v3 file from the OVH manager
+# (Public Cloud > Users & Roles > your user > Download OpenStack RC) and
+# `source` it in your shell before running terraform. Alternatively put a
+# clouds.yaml entry in place and set os_cloud below.
+
+# OVH US (us.ovhcloud.com) — Oregon. Source the US OpenStack RC, not the EU one.
+region = "US-WEST-OR-1"
+# os_cloud = "ovh-us"   # only if using clouds.yaml instead of a sourced OpenRC
+
+# --- SSH access (reuse your OCI keypair if you like) ---
+ssh_public_key       = "ssh-rsa AAAA... you@host"
+ssh_private_key_path = "~/.ssh/id_rsa"
+
+# --- Topology / sizing ---
+# VERIFY the flavor name: `openstack flavor list` (US catalog differs from EU).
+# Pick the cheapest flavor with >=4GB RAM for 3 nodes with headroom.
+node_count  = 3
+flavor_name = "d2-4"
+# image_name      = "Ubuntu 24.04"
+# flannel_backend = "wireguard-native"   # required for multi-node on OVH
+
+# --- Access scoping (default 0.0.0.0/0 = open to the internet) ---
+# api_allowed_cidr    = "203.0.113.4/32"
+# enable_http_ingress = false
+
+# --- OVH managed DNS (optional) ---
+# Create the dcxxiv.com DNS zone in the OVH US manager first; OVH shows the
+# nameservers to set at your registrar. Then make an API token at
+# api.us.ovhcloud.com/createToken (GET/POST/PUT/DELETE on /domain/zone/*).
+# manage_dns             = true
+# ovh_endpoint           = "ovh-us"
+# ovh_application_key    = "xxxx"
+# ovh_application_secret = "xxxx"
+# ovh_consumer_key       = "xxxx"
+# dns_zone               = "dcxxiv.com"
+# dns_subdomains         = ["personliness"]
+
+# --- Flux GitOps bootstrap (also export GITHUB_TOKEN before apply) ---
+bootstrap_flux    = true
+github_owner      = "tuckermclean"
+github_repository = "k3s-lab"
+github_branch     = "main"
