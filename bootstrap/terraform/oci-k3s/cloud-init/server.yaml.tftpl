@@ -1,0 +1,43 @@
+#cloud-config
+# Rendered by Terraform (templatefile). role = ${role}
+#
+# Two OCI gotchas handled here:
+#  1. The stock Ubuntu image ships restrictive iptables (REJECT in INPUT and
+#     FORWARD) that silently breaks flannel/etcd/apiserver. We insert ACCEPT
+#     rules at the top of both chains BEFORE installing k3s, then persist them.
+#  2. The VCN security list (separate from the host firewall) is opened in
+#     Terraform's network.tf, not here.
+
+write_files:
+  - path: /etc/rancher/k3s/config.yaml
+    permissions: "0600"
+    content: |
+      write-kubeconfig-mode: "0644"
+      tls-san:
+        - ${lb_ip}
+%{ if api_dns_name != "" ~}
+        - ${api_dns_name}
+%{ endif ~}
+
+runcmd:
+  # --- open the host firewall before k3s starts ---
+  - iptables -I INPUT 1 -p tcp --dport 6443 -j ACCEPT
+  - iptables -I INPUT 1 -p tcp --dport 2379:2380 -j ACCEPT
+  - iptables -I INPUT 1 -p tcp --dport 10250 -j ACCEPT
+  - iptables -I INPUT 1 -p udp --dport 8472 -j ACCEPT
+  - iptables -I INPUT 1 -s 10.0.0.0/16 -j ACCEPT
+  - iptables -I INPUT 1 -s 10.42.0.0/16 -j ACCEPT
+  - iptables -I INPUT 1 -s 10.43.0.0/16 -j ACCEPT
+  - iptables -I FORWARD 1 -s 10.42.0.0/16 -j ACCEPT
+  - iptables -I FORWARD 1 -d 10.42.0.0/16 -j ACCEPT
+  - netfilter-persistent save
+  # --- install k3s for this node's role ---
+%{ if role == "server-first" ~}
+  - curl -sfL https://get.k3s.io | sh -s - server --cluster-init --token "${k3s_token}"
+%{ endif ~}
+%{ if role == "server-join" ~}
+  - curl -sfL https://get.k3s.io | sh -s - server --server "https://${first_ip}:6443" --token "${k3s_token}"
+%{ endif ~}
+%{ if role == "agent" ~}
+  - curl -sfL https://get.k3s.io | K3S_URL="https://${lb_ip}:6443" K3S_TOKEN="${k3s_token}" sh -
+%{ endif ~}

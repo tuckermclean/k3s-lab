@@ -51,6 +51,14 @@ node_modules/
 
 # Helm charts (if downloaded)
 charts/
-*.tgz 
+*.tgz
+
+# Terraform (backstop; see bootstrap/terraform/oci-k3s/.gitignore)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+**/oci-k3s/kubeconfig
 
 .specstory/

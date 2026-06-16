@@ -27,6 +27,10 @@ The WireGuard misconfiguration on k3s03 (missing pod CIDRs in `AllowedIPs`) took
 | k3s02 | Vultr VPS | `bootstrap/cloud-init/k3s02-vultr.yaml` + `envsubst` → Vultr user-data |
 | k3s03 | Hetzner VPS | `bootstrap/cloud-init/k3s03-hetzner.yaml` + `envsubst` → Hetzner user-data |
 
+> The separate Oracle Cloud HA cluster is provisioned end-to-end (nodes + Flux) by the
+> Terraform module in `bootstrap/terraform/oci-k3s/`, not by the manual flow above. See
+> that directory's `README.md`.
+
 ### What Cloud-Init Must Configure
 
 **Packages:** `wireguard-tools`, `nfs-common`, `open-iscsi`

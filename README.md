@@ -12,6 +12,22 @@ GitOps-managed k3s cluster across three cloud providers. Everything declarative,
 
 k3s02 has the `node-role=storage-ingress:NoSchedule` taint. Add a toleration explicitly if you need to schedule something there.
 
+## OCI Lab Cluster (separate)
+
+A second, standalone HA cluster on Oracle Cloud's Always Free ARM pool, fully
+Terraform-provisioned. It is **not** part of the home mesh above — own control plane, own
+kubeconfig, reconciled by Flux from `clusters/oci-lab/`.
+
+| Node | Role | Provider | Shape |
+|------|------|----------|-------|
+| k3s-server-1 | server / etcd | OCI Ampere A1 | 1 OCPU / 8 GB |
+| k3s-server-2 | server / etcd | OCI Ampere A1 | 1 OCPU / 8 GB |
+| k3s-server-3 | server / etcd | OCI Ampere A1 | 1 OCPU / 8 GB |
+
+3-server embedded-etcd HA behind an OCI Network Load Balancer (reserved static IP) on the
+API port. Provision and bootstrap with `bootstrap/terraform/oci-k3s/` — see that
+directory's `README.md`.
+
 ## Stack
 
 **GitOps:** Flux v2, watching `clusters/k3s-lab/`
