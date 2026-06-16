@@ -4,3 +4,6 @@ resources:
   # `flux bootstrap` (run by bootstrap/terraform/ovh-k3s) populates flux-system/.
   # Add infrastructure/app Flux Kustomizations here the same way clusters/k3s-lab does.
   - flux-system/
+  - cert-manager-kustomization.yaml
+  - cert-manager-http01-kustomization.yaml
+  - personliness-kustomization.yaml

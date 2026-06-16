@@ -1,0 +1,61 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: personliness
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/personliness
+  prune: true
+  dependsOn:
+    - name: cert-manager-http01
+  # Per-cluster adaptations of the shared apps/personliness manifests:
+  patches:
+    # This cluster has only k3s local-path, not longhorn.
+    - target:
+        kind: PersistentVolumeClaim
+      patch: |
+        - op: replace
+          path: /spec/storageClassName
+          value: local-path
+    # Single public hostname on this cluster.
+    - target:
+        kind: ConfigMap
+        name: personliness-config
+      patch: |
+        - op: replace
+          path: /data/DJANGO_ALLOWED_HOSTS
+          value: personliness.15-204-73-15.sslip.io
+        - op: replace
+          path: /data/CORS_ALLOWED_ORIGINS
+          value: https://personliness.15-204-73-15.sslip.io
+    # HTTP01 issuer (no Vultr) and one host.
+    - target:
+        kind: Ingress
+        name: personliness
+      patch: |
+        - op: replace
+          path: /metadata/annotations/cert-manager.io~1cluster-issuer
+          value: letsencrypt-http01
+        - op: replace
+          path: /spec/rules
+          value:
+            - host: personliness.15-204-73-15.sslip.io
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: personliness
+                        port:
+                          number: 80
+        - op: replace
+          path: /spec/tls
+          value:
+            - hosts:
+                - personliness.15-204-73-15.sslip.io
+              secretName: personliness-tls

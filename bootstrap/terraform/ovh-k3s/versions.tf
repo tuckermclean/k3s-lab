@@ -6,6 +6,10 @@ terraform {
       source  = "terraform-provider-openstack/openstack"
       version = "~> 3.0"
     }
+    ovh = {
+      source  = "ovh/ovh"
+      version = "~> 1.5"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.6"

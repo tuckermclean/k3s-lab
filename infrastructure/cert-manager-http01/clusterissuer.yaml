@@ -1,0 +1,19 @@
+# HTTP01 issuer for clusters without a DNS-API solver (e.g. ovh-lab).
+# No DNS provider integration needed: cert-manager serves the ACME challenge
+# over HTTP via the bundled Traefik ingress. Requires the hostname's A record
+# to resolve to the cluster and ports 80/443 to be reachable from the internet.
+# Cannot issue wildcard certs (that needs DNS01).
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-http01
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: me@tuckermclean.com
+    privateKeySecretRef:
+      name: letsencrypt-http01
+    solvers:
+      - http01:
+          ingress:
+            class: traefik

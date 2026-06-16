@@ -24,6 +24,18 @@ flavor_name = "d2-4"
 # api_allowed_cidr    = "203.0.113.4/32"
 # enable_http_ingress = false
 
+# --- OVH managed DNS (optional) ---
+# Create the dcxxiv.com DNS zone in the OVH US manager first; OVH shows the
+# nameservers to set at your registrar. Then make an API token at
+# api.us.ovhcloud.com/createToken (GET/POST/PUT/DELETE on /domain/zone/*).
+# manage_dns             = true
+# ovh_endpoint           = "ovh-us"
+# ovh_application_key    = "xxxx"
+# ovh_application_secret = "xxxx"
+# ovh_consumer_key       = "xxxx"
+# dns_zone               = "dcxxiv.com"
+# dns_subdomains         = ["personliness"]
+
 # --- Flux GitOps bootstrap (also export GITHUB_TOKEN before apply) ---
 bootstrap_flux    = true
 github_owner      = "tuckermclean"

@@ -81,6 +81,52 @@ variable "enable_http_ingress" {
   default     = false
 }
 
+# --- OVH managed DNS (optional) ---
+
+variable "manage_dns" {
+  type        = bool
+  description = "If true, create A records (one per node) in an OVH-hosted zone and output the zone's nameservers. Requires the OVH API token vars below and the zone to already exist at OVH."
+  default     = false
+}
+
+variable "ovh_endpoint" {
+  type        = string
+  description = "OVH API endpoint: ovh-us, ovh-eu, or ovh-ca."
+  default     = "ovh-us"
+}
+
+variable "ovh_application_key" {
+  type        = string
+  description = "OVH API application key (api.us.ovhcloud.com/createToken)."
+  default     = ""
+}
+
+variable "ovh_application_secret" {
+  type        = string
+  description = "OVH API application secret."
+  default     = ""
+  sensitive   = true
+}
+
+variable "ovh_consumer_key" {
+  type        = string
+  description = "OVH API consumer key."
+  default     = ""
+  sensitive   = true
+}
+
+variable "dns_zone" {
+  type        = string
+  description = "OVH-hosted DNS zone to create records in."
+  default     = "dcxxiv.com"
+}
+
+variable "dns_subdomains" {
+  type        = list(string)
+  description = "Subdomains to point at the cluster nodes (one A record per node each)."
+  default     = ["personliness"]
+}
+
 # --- Flux GitOps bootstrap ---
 
 variable "bootstrap_flux" {
