@@ -7,3 +7,4 @@ resources:
   - cert-manager-kustomization.yaml
   - cert-manager-http01-kustomization.yaml
   - personliness-kustomization.yaml
+  - hero-kustomization.yaml

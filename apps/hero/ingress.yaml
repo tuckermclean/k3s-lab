@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hero
+  namespace: hero
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: "letsencrypt-http01"
+spec:
+  rules:
+    - host: hero.dcxxiv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hero
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - hero.dcxxiv.com
+      secretName: hero-tls
