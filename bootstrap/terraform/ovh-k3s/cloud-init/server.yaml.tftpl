@@ -1,0 +1,39 @@
+#cloud-config
+# Rendered by Terraform (templatefile). role = ${role}
+#
+# OVH Public Cloud notes:
+#  - Instances get a routable public IP directly on the interface; we discover
+#    it at boot from the metadata service and bind k3s to it.
+#  - Multi-node uses flannel ${flannel_backend}: OVH anti-spoofing blocks plain
+#    VXLAN between nodes, so wireguard-native is the working backend.
+#  - No restrictive host firewall ships on the OVH Ubuntu image (unlike OCI).
+
+write_files:
+  - path: /etc/rancher/k3s/config.yaml
+    permissions: "0600"
+    content: |
+      write-kubeconfig-mode: "0644"
+
+runcmd:
+  - |
+    set -e
+    PUBIP=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 || true)
+    [ -z "$PUBIP" ] && PUBIP=$(ip -4 route get 1.1.1.1 | awk '{print $7; exit}')
+%{ if role == "server-first" ~}
+    curl -sfL https://get.k3s.io | sh -s - server \
+      --cluster-init \
+      --flannel-backend=${flannel_backend} \
+      --node-ip "$PUBIP" --node-external-ip "$PUBIP" --tls-san "$PUBIP" \
+      --token "${k3s_token}"
+%{ endif ~}
+%{ if role == "server-join" ~}
+    curl -sfL https://get.k3s.io | sh -s - server \
+      --server "https://${first_ip}:6443" \
+      --flannel-backend=${flannel_backend} \
+      --node-ip "$PUBIP" --node-external-ip "$PUBIP" --tls-san "$PUBIP" \
+      --token "${k3s_token}"
+%{ endif ~}
+%{ if role == "agent" ~}
+    curl -sfL https://get.k3s.io | K3S_URL="https://${first_ip}:6443" K3S_TOKEN="${k3s_token}" \
+      INSTALL_K3S_EXEC="--node-ip $PUBIP --node-external-ip $PUBIP" sh -
+%{ endif ~}

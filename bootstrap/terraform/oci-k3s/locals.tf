@@ -3,7 +3,9 @@ data "oci_identity_availability_domains" "ads" {
 }
 
 locals {
-  availability_domain = var.availability_domain != "" ? var.availability_domain : data.oci_identity_availability_domains.ads.availability_domains[0].name
+  # All ADs in the region. Instances are spread across these to dodge
+  # AD-specific "Out of host capacity" on the free A1 pool (and for HA).
+  ad_names = data.oci_identity_availability_domains.ads.availability_domains[*].name
 
   vcn_cidr    = "10.0.0.0/16"
   subnet_cidr = "10.0.1.0/24"

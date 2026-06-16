@@ -1,6 +1,6 @@
 resource "oci_core_instance" "server" {
   count               = var.server_count
-  availability_domain = local.availability_domain
+  availability_domain = var.availability_domain != "" ? var.availability_domain : local.ad_names[count.index % length(local.ad_names)]
   compartment_id      = var.compartment_ocid
   display_name        = "k3s-server-${count.index + 1}"
   shape               = "VM.Standard.A1.Flex"
@@ -33,7 +33,7 @@ resource "oci_core_instance" "server" {
 
 resource "oci_core_instance" "agent" {
   count               = var.agent_count
-  availability_domain = local.availability_domain
+  availability_domain = var.availability_domain != "" ? var.availability_domain : local.ad_names[count.index % length(local.ad_names)]
   compartment_id      = var.compartment_ocid
   display_name        = "k3s-agent-${count.index + 1}"
   shape               = "VM.Standard.A1.Flex"
