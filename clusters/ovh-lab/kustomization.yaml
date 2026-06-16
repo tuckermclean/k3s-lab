@@ -8,3 +8,4 @@ resources:
   - cert-manager-http01-kustomization.yaml
   - personliness-kustomization.yaml
   - hero-kustomization.yaml
+  - dcxxiv-home-kustomization.yaml
