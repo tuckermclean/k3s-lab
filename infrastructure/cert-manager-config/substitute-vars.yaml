@@ -1,0 +1,11 @@
+---
+# Non-secret cluster-wide substitution variables for use with Flux postBuild.substituteFrom.
+# This replaces the manual kubectl-created cluster-config-vars Secret; LETSENCRYPT_EMAIL
+# is not sensitive so a ConfigMap is appropriate.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-config-vars
+  namespace: flux-system
+data:
+  LETSENCRYPT_EMAIL: me@tuckermclean.com

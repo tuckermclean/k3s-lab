@@ -10,13 +10,10 @@ spec:
       name: letsencrypt-staging
     solvers:
       - dns01:
-          webhook:
-            groupName: acme.vultr.com
-            solverName: vultr
-            config:
-              apiKeySecretRef:
-                name: vultr-credentials
-                key: apiKey
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-credentials
+              key: api-token
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -30,13 +27,10 @@ spec:
       name: letsencrypt-prod
     solvers:
       - dns01:
-          webhook:
-            groupName: acme.vultr.com
-            solverName: vultr
-            config:
-              apiKeySecretRef:
-                name: vultr-credentials
-                key: apiKey
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-credentials
+              key: api-token
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer

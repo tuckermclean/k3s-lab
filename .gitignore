@@ -8,9 +8,11 @@ secrets-backup.yaml
 secrets-backup.yaml.gpg
 /tmp/secrets-backup.yaml*
 
-# Kubernetes secrets
+# Kubernetes secrets (unencrypted — do not commit)
 *-secret.yaml
 *-secrets.yaml
+# SOPS-encrypted secrets ARE committed
+!*.sops.yaml
 
 # Environment files
 .env

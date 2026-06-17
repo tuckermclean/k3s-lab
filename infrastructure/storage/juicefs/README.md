@@ -29,8 +29,8 @@ To create another JuiceFS-backed storage class/volume set:
 Alternatively, use `subdir` mount option (via ConfigMap or StorageClass/PV for legacy) to isolate application data within a single filesystem.
 
 ## Rotating credentials
-- Update the Secret (based on `secret-juicefs-aws.example.yaml`) with new `access-key` / `secret-key`.
-- Apply it out-of-band (kubectl or SOPS-encrypted secret) and let Flux reconcile the rest of the stack.
+- Edit the SOPS-encrypted secret: `make recover-age-key && make edit-secret FILE=infrastructure/storage/juicefs/secret.sops.yaml`
+- Commit and push. Flux will reconcile and Kubernetes will update the Secret automatically.
 - Safest approach: roll the CSI controller and application pods so Mount Pods pick up new credentials.
 
 ## Home-lab caveats
@@ -43,10 +43,11 @@ Alternatively, use `subdir` mount option (via ConfigMap or StorageClass/PV for l
 - Then the Secret & PVC & StorageClass
 - Then the CSI driver (which mounts `/var/lib/juicefs`)
 
-## Placeholders to fill
-Replace these in `secret-juicefs-aws.yaml` before committing:
-- `<JUICEFS_VOLUME_NAME>`
-- `<S3_BUCKET_NAME>`
-- `<AWS_ACCESS_KEY_ID>`
-- `<AWS_SECRET_ACCESS_KEY>`
-- `<AWS_REGION>`
+## Filling in credentials
+The secret is stored encrypted in `secret.sops.yaml`. To set the real values:
+```bash
+make recover-age-key
+make edit-secret FILE=infrastructure/storage/juicefs/secret.sops.yaml
+make clean-age-key
+```
+Replace the `CHANGEME_*` placeholder values with actual S3 credentials.

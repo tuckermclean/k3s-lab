@@ -71,38 +71,97 @@ Paste `/tmp/k3s02-userdata.yaml` into the Vultr/Hetzner user-data field when cre
 
 ## Secrets Backup & Restore
 
-### Why Some Secrets Cannot Be Regenerated
+### How secrets are stored (SOPS + age)
 
-| Namespace | Secret | Contents | Risk if lost |
-|-----------|--------|----------|--------------|
-| authentik | `authentik-secret` | `secretKey` | All sessions/OIDC invalidated |
-| authentik | `authentik-db-secret` | `postgres-password` | Must update DB too |
-| cert-manager | `vultr-credentials` | Vultr API key | cert-manager DNS01 stops working |
-| flux-system | `flux-system` | GitHub deploy key | Flux loses repo access |
-| kube-system | `juicefs-secret` | S3 access key, secret key, bucket, metaurl | All JuiceFS PVCs fail to mount |
-| monitoring | `grafana-oidc-secret` | Grafana → authentik OIDC credentials | Grafana SSO broken |
-| monitoring | `grafana-admin-secret` | Grafana admin password | No local admin fallback |
-| weave-gitops | `oidc-auth` | Weave GitOps → authentik OIDC credentials | Weave GitOps SSO broken |
-| weave-gitops | `cluster-user-auth` | Weave GitOps local admin password | No local admin fallback |
-| personliness | `personliness-secret` | App secrets | App non-functional |
-| (node) | `/etc/wireguard/*.conf` | WireGuard private keys | Must renegotiate with all peers |
-| (node) | `/var/lib/rancher/k3s/server/node-token` | k3s join token | Must re-join all agents |
+Kubernetes Secrets are **encrypted in Git** using [SOPS](https://github.com/getsops/sops) +
+[age](https://github.com/FiloSottile/age). Each secret lives as a `secret.sops.yaml` file alongside the
+app that uses it. Flux's kustomize-controller decrypts them at apply time using the `sops-age` Secret in
+`flux-system`.
 
-The bulk backup below captures all of these in one shot. This list exists so you know what you're missing if a restore is partial or a single secret needs rotating.
+**The human root of trust is `~/.ssh/id_rsa`** (synced between desktop and laptop).
+The age private key is encrypted to that SSH key and committed at `bootstrap/age.agekey.age`.
+This means: **`git clone` + your SSH key = recover the entire cluster.**
 
-### Backup Procedure
+### Kubernetes secrets in Git
 
-**There is no automated backup.** Run this manually after any secret rotation and at least monthly. Verify the output file exists and is non-zero before closing the terminal.
+| Location | Secret | Contents |
+|---|---|---|
+| `infrastructure/authentik/secret.sops.yaml` | `authentik-secret` | secretKey (sessions/OIDC) |
+| `infrastructure/authentik/secret.sops.yaml` | `authentik-db-secret` | postgres-password |
+| `infrastructure/cert-manager-config/secret.sops.yaml` | `cloudflare-credentials` | Cloudflare API token |
+| `infrastructure/storage/juicefs/secret.sops.yaml` | `juicefs-secret` | S3 access/secret key, metaurl |
+| `infrastructure/monitoring/secret.sops.yaml` | `grafana-admin-secret` | Grafana admin password |
+| `infrastructure/monitoring/secret.sops.yaml` | `grafana-oidc-secret` | Grafana ↔ authentik OIDC |
+| `infrastructure/weave-gitops/secret.sops.yaml` | `cluster-user-auth` | Weave local admin (bcrypt) |
+| `infrastructure/weave-gitops/secret.sops.yaml` | `oidc-auth` | Weave GitOps ↔ authentik OIDC |
+| `apps/personliness/secret.sops.yaml` | `personliness-secret` | App secrets |
+| `apps/openhands/secret.sops.yaml` | `openhands-env` | LLM API key |
 
-**Kubernetes secrets:**
+### Secrets NOT in Git (bootstrap chicken-and-egg)
+
+These two must be created manually on every fresh cluster **before** Flux can reconcile:
+
+| Secret | How to create |
+|---|---|
+| `flux-system/flux-system` (GitHub deploy key) | Created automatically by `flux bootstrap`; re-run bootstrap |
+| `flux-system/sops-age` (age private key) | See restore procedure below |
+
+Node-level secrets (WireGuard, k3s join token) are outside Kubernetes — see below.
+
+### DR restore procedure
+
 ```bash
-kubectl get secrets -A -o yaml \
-  | gpg --symmetric --cipher-algo AES256 \
-  -o ~/secrets-backup-$(date +%Y%m%d).yaml.gpg
-```
-Store in Bitwarden (file attachment) or an encrypted offline location. Never store unencrypted.
+# 1. Recover the age private key from the repo using your SSH key
+make recover-age-key
 
-**Node WireGuard keys** — dump from each node and store encrypted:
+# 2. Install it into the fresh cluster
+make install-sops-age
+
+# 3. Bootstrap Flux (also creates the flux-system deploy key)
+export GITHUB_TOKEN=<your-PAT>
+make flux-bootstrap-k3s-lab   # or ovh-lab / oci-lab
+
+# Flux will now reconcile all secrets from the encrypted git files automatically.
+# Watch progress:
+flux get kustomizations --watch
+
+# 4. Clean up the temporary plaintext age key
+make clean-age-key
+```
+
+**Before running Flux**, verify the age key decrypts all secrets:
+```bash
+make verify-roundtrip
+```
+
+### Editing a secret
+
+```bash
+make recover-age-key
+make edit-secret FILE=infrastructure/authentik/secret.sops.yaml
+make clean-age-key
+git add infrastructure/authentik/secret.sops.yaml
+git commit -m "chore: rotate authentik secretKey"
+git push
+```
+
+### If you rotate your SSH key
+
+The age key backup is encrypted to your `id_rsa.pub`. After generating a new SSH keypair:
+```bash
+make recover-age-key          # with the OLD key while you still have it
+# (replace ~/.ssh/id_rsa.pub with the new public key)
+make rotate-ssh-key
+git add bootstrap/age.agekey.age
+git commit -m "chore: re-encrypt age key for new SSH key"
+make clean-age-key
+```
+
+### Node-level secrets (outside Kubernetes)
+
+These are handled by cloud-init / Terraform and are not in Kubernetes secrets:
+
+**Node WireGuard keys** — dump from each node and store encrypted offline:
 ```bash
 # k3s01
 sudo cat /etc/wireguard/wg-vultr.conf
@@ -122,15 +181,7 @@ sudo cat /etc/wireguard/wg-vultr.conf
 sudo cat /var/lib/rancher/k3s/server/node-token   # on k3s01 only
 ```
 
-### Restore Procedure
-
-**Kubernetes secrets:**
-```bash
-# Apply BEFORE letting Flux reconcile, so HelmReleases find their Secrets
-gpg -d ~/secrets-backup-YYYYMMDD.yaml.gpg | kubectl apply -f -
-```
-
-**WireGuard keys:** Write back to `/etc/wireguard/*.conf` on each node, then:
+**Restore:** Write back to `/etc/wireguard/*.conf` on each node, then:
 ```bash
 systemctl restart wg-quick@wg-home
 systemctl restart wg-quick@wg-hetzner   # or wg-vultr, depending on node
@@ -221,7 +272,7 @@ Before destroying k3s02 or k3s03:
 - [ ] Confirm Longhorn replicas for all volumes have replica on k3s01 (check Longhorn UI)
 - [ ] Drain the node: `kubectl drain <node> --ignore-daemonsets --delete-emptydir-data`
 - [ ] Export current WireGuard configs from the node
-- [ ] Export Kubernetes secrets backup
+- [ ] Verify secrets are encrypted in git (`make verify-encryption`) and age key backup is current
 - [ ] Render cloud-init with `envsubst`
 - [ ] Destroy and recreate the VPS with rendered user-data
 - [ ] Verify node joins: `kubectl get nodes`

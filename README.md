@@ -139,15 +139,29 @@ This matters because without `authentik_host_browser` set correctly, the browser
 
 ## Secrets
 
-Nothing sensitive goes in Git. No SOPS is set up yet. Create Secret objects directly in-cluster via kubectl and reference them in workloads with `envFrom.secretRef` or `secretKeyRef`. Keep a backup of secrets somewhere offline — if the cluster dies, secrets are gone.
+Secrets are encrypted in Git using [SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age).
+Each secret lives as a `secret.sops.yaml` file alongside the app that uses it.
+Flux's kustomize-controller decrypts them at apply time using the `sops-age` Secret in `flux-system`.
 
+**The human root of trust is `~/.ssh/id_rsa`** (already synced between machines). The age private key is
+encrypted to that SSH key and committed at `bootstrap/age.agekey.age` — so the repo is self-contained.
+
+DR = two manual steps, then `flux bootstrap`:
 ```bash
-kubectl create secret generic <name> \
-  --namespace <namespace> \
-  --from-literal=KEY=value
+make recover-age-key   # decrypt age key from git using ~/.ssh/id_rsa
+make install-sops-age  # push into flux-system; Flux can now decrypt secrets
+make flux-bootstrap-k3s-lab   # (or ovh-lab / oci-lab)
 ```
 
-See `bootstrap/BOOTSTRAP.md` for the secrets backup and restore procedure.
+To edit an existing secret:
+```bash
+make recover-age-key
+make edit-secret FILE=infrastructure/authentik/secret.sops.yaml
+make clean-age-key
+```
+
+See `bootstrap/BOOTSTRAP.md` for the full DR sequence including node provisioning and
+node-level secrets (WireGuard, k3s join token) which live outside Kubernetes.
 
 ## Bootstrapping / DR
 
@@ -155,7 +169,7 @@ See `bootstrap/BOOTSTRAP.md`. It covers node provisioning, WireGuard mesh setup,
 
 Cloud-init files are in `bootstrap/cloud-init/` for k3s01–k3s03. k3s04 (OVH, current control plane) does not have a cloud-init file yet.
 
-Quick reference for bootstrapping Flux onto a fresh cluster:
+Quick reference for bootstrapping Flux onto a fresh cluster (or use `make flux-bootstrap-k3s-lab`):
 ```bash
 flux bootstrap github \
   --owner=<github-username> \
@@ -165,7 +179,9 @@ flux bootstrap github \
   --personal
 ```
 
-Flux will not successfully reconcile infrastructure or apps until their dependencies (storage, DNS, load balancer) exist in the cluster. Bootstrap order matters — see `bootstrap/BOOTSTRAP.md` for the sequence.
+Flux will not successfully reconcile infrastructure or apps until the `sops-age` Secret is in place
+and their dependencies (storage, DNS, load balancer) exist in the cluster. Bootstrap order matters —
+see `bootstrap/BOOTSTRAP.md` for the sequence.
 
 ## Useful Commands
 

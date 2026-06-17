@@ -11,6 +11,10 @@ spec:
     name: flux-system
   path: "./apps/openhands"
   prune: true
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   dependsOn:
     - name: traefik
     - name: cert-manager-config

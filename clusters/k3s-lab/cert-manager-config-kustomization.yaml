@@ -10,9 +10,13 @@ spec:
     name: flux-system
   path: "./infrastructure/cert-manager-config"
   prune: true
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   postBuild:
     substituteFrom:
-      - kind: Secret
+      - kind: ConfigMap
         name: cluster-config-vars
         optional: false
   dependsOn:

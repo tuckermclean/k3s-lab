@@ -10,6 +10,10 @@ spec:
     name: flux-system
   path: ./infrastructure/storage/juicefs
   prune: true
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   dependsOn:
     - name: longhorn
     - name: storage-redis-juicefs

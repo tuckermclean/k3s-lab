@@ -9,3 +9,4 @@ resources:
   - certificate.yaml
   - ingress.yaml
   - configmap.yaml
+  - secret.sops.yaml

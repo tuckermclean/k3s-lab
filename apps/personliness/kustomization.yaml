@@ -12,3 +12,4 @@ resources:
   - redis.yaml
   - deployment.yaml
   - ingress.yaml
+  - secret.sops.yaml

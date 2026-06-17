@@ -6,3 +6,4 @@ resources:
   - pvc.yaml
   - helmrepository.yaml
   - helmrelease.yaml
+  - secret.sops.yaml

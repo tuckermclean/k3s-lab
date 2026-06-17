@@ -3,6 +3,5 @@ kind: Kustomization
 resources:
   - helmrepository.yaml
   - helmrelease.yaml
-  # NOTE: Secrets are not committed. Create your own secret based on secret-juicefs-aws.example.yaml
-  # - secret-juicefs-aws.yaml
+  - secret.sops.yaml
   - storageclass.yaml
