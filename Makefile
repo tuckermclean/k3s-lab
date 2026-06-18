@@ -37,7 +37,8 @@ help:
 	@echo "                             (only needed once; resets encryption — see warning)"
 	@echo ""
 	@echo "  Authentik (run after Flux deploys Authentik)"
-	@echo "    apply-authentik            Apply OIDC apps/groups via Terraform"
+	@echo "    store-authentik-token      Encrypt and store Authentik API token: make store-authentik-token TOKEN=<value>"
+	@echo "    apply-authentik            Apply OIDC apps/groups via Terraform (reads all secrets from SOPS)"
 	@echo "    plan-authentik             Preview Terraform changes without applying"
 	@echo "    dr-authentik               DR: nuke stale state and re-apply after DB restore"
 	@echo ""
@@ -145,20 +146,40 @@ flux-bootstrap-oci-lab: ## Bootstrap Flux on the OCI cluster
 
 AUTHENTIK_TF_DIR := bootstrap/terraform/authentik
 
+.PHONY: store-authentik-token
+store-authentik-token: recover-age-key ## Encrypt and store Authentik API token: make store-authentik-token TOKEN=<value>
+	@test -n "$(TOKEN)" || \
+	  (echo "Usage: make store-authentik-token TOKEN=<your-authentik-api-token>"; \
+	   echo "Get a token from: Authentik admin → Directory → Tokens → Create token"; exit 1)
+	@printf -- '---\ntoken: %s\n' '$(TOKEN)' > "$(AUTHENTIK_TF_DIR)/token.sops.yaml"
+	@SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -e -i "$(AUTHENTIK_TF_DIR)/token.sops.yaml"
+	$(MAKE) clean-age-key
+	@echo "Token encrypted. Run: git add $(AUTHENTIK_TF_DIR)/token.sops.yaml && git commit"
+
 .PHONY: apply-authentik
-apply-authentik: ## Apply Authentik config via Terraform (run after Flux deploys Authentik)
-	@test -f "$(AUTHENTIK_TF_DIR)/terraform.tfvars" || \
-	  (echo "ERROR: $(AUTHENTIK_TF_DIR)/terraform.tfvars not found."; \
-	   echo "Copy $(AUTHENTIK_TF_DIR)/terraform.tfvars.example and fill in values."; exit 1)
-	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade
-	terraform -chdir="$(AUTHENTIK_TF_DIR)" apply
+apply-authentik: recover-age-key ## Apply Authentik config via Terraform (all secrets read from SOPS — no tfvars needed)
+	@test -f "$(AUTHENTIK_TF_DIR)/token.sops.yaml" || \
+	  (echo "ERROR: $(AUTHENTIK_TF_DIR)/token.sops.yaml not found."; \
+	   echo "After Authentik is running, create it with: make store-authentik-token TOKEN=<api-token>"; exit 1)
+	@set -e; \
+	export TF_VAR_authentik_token=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d "$(AUTHENTIK_TF_DIR)/token.sops.yaml" | python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['token'])"); \
+	export TF_VAR_grafana_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/monitoring/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='grafana-oidc-secret'); print(d['stringData']['GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET'])"); \
+	export TF_VAR_weave_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/weave-gitops/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='oidc-auth'); print(d['stringData']['clientSecret'])"); \
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade -input=false; \
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" apply -input=false
+	$(MAKE) clean-age-key
 
 .PHONY: plan-authentik
-plan-authentik: ## Preview Authentik Terraform changes without applying
-	@test -f "$(AUTHENTIK_TF_DIR)/terraform.tfvars" || \
-	  (echo "ERROR: $(AUTHENTIK_TF_DIR)/terraform.tfvars not found."; exit 1)
-	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade
-	terraform -chdir="$(AUTHENTIK_TF_DIR)" plan
+plan-authentik: recover-age-key ## Preview Authentik Terraform changes without applying
+	@test -f "$(AUTHENTIK_TF_DIR)/token.sops.yaml" || \
+	  (echo "ERROR: $(AUTHENTIK_TF_DIR)/token.sops.yaml not found."; exit 1)
+	@set -e; \
+	export TF_VAR_authentik_token=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d "$(AUTHENTIK_TF_DIR)/token.sops.yaml" | python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['token'])"); \
+	export TF_VAR_grafana_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/monitoring/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='grafana-oidc-secret'); print(d['stringData']['GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET'])"); \
+	export TF_VAR_weave_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/weave-gitops/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='oidc-auth'); print(d['stringData']['clientSecret'])"); \
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade -input=false; \
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" plan -input=false
+	$(MAKE) clean-age-key
 
 .PHONY: dr-authentik
 dr-authentik: ## DR: nuke stale Terraform state and re-apply (use after DB restore)
@@ -166,7 +187,7 @@ dr-authentik: ## DR: nuke stale Terraform state and re-apply (use after DB resto
 	rm -f "$(AUTHENTIK_TF_DIR)/terraform.tfstate" "$(AUTHENTIK_TF_DIR)/terraform.tfstate.backup"
 	$(MAKE) apply-authentik
 	@echo ""
-	@echo "Done. OIDC client secrets were pinned in tfvars — no k8s Secret rotation needed."
+	@echo "Done. OIDC client secrets are pinned in SOPS — no k8s Secret rotation needed."
 
 # ---------------------------------------------------------------------------
 # Secrets day-to-day

@@ -96,6 +96,11 @@ This means: **`git clone` + your SSH key = recover the entire cluster.**
 | `infrastructure/weave-gitops/secret.sops.yaml` | `oidc-auth` | Weave GitOps ↔ authentik OIDC |
 | `apps/personliness/secret.sops.yaml` | `personliness-secret` | App secrets |
 | `apps/openhands/secret.sops.yaml` | `openhands-env` | LLM API key |
+| `bootstrap/terraform/authentik/token.sops.yaml` | *(Terraform only)* | Authentik API token for Terraform |
+
+> `token.sops.yaml` is created after first Authentik deploy via `make store-authentik-token`. It is not
+> a Kubernetes Secret — it is read at `make apply-authentik` time and passed as `TF_VAR_*` environment
+> variables to Terraform. No `terraform.tfvars` file is ever written or kept.
 
 ### Secrets NOT in Git (bootstrap chicken-and-egg)
 
@@ -107,6 +112,32 @@ These two must be created manually on every fresh cluster **before** Flux can re
 | `flux-system/sops-age` (age private key) | See restore procedure below |
 
 Node-level secrets (WireGuard, k3s join token) are outside Kubernetes — see below.
+
+### Authentik bootstrap (first time only, after Flux deploys Authentik)
+
+The `bootstrap/terraform/authentik/` Terraform module manages OIDC apps and groups in Authentik.
+It reads **all secrets from SOPS** — no `terraform.tfvars` file is needed or kept.
+
+```bash
+# 1. Let Flux deploy Authentik fully, then get the initial admin setup token from logs:
+kubectl logs -n authentik -l app.kubernetes.io/component=server | grep -i "token\|password" | tail -5
+
+# 2. Log in at https://auth.dcxxiv.com/if/flow/initial-setup/
+#    Set an admin password, then: Admin → Directory → Tokens → Create token (type: API)
+#    Copy the token value.
+
+# 3. Encrypt and store the token (only file created; all OIDC secrets are read from existing SOPS files)
+make store-authentik-token TOKEN=<paste-token-here>
+git add bootstrap/terraform/authentik/token.sops.yaml
+git commit -m "chore: add authentik api token"
+git push
+
+# 4. Apply OIDC apps (Grafana + Weave GitOps), groups, and scope mappings
+make apply-authentik
+```
+
+**After a PostgreSQL DB restore**, the OIDC client secrets in the k8s Secrets are unchanged
+(they come from SOPS). Run `make dr-authentik` to nuke stale state and re-apply; no secret rotation needed.
 
 ### DR restore procedure
 
