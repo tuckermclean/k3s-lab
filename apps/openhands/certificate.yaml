@@ -9,4 +9,4 @@ spec:
     kind: ClusterIssuer
     name: letsencrypt-prod
   dnsNames:
-    - openhands.home.dcxxiv.com
+    - openhands.dcxxiv.com

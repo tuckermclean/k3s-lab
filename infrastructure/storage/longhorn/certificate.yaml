@@ -9,4 +9,4 @@ spec:
     kind: ClusterIssuer
     name: letsencrypt-prod
   dnsNames:
-    - longhorn.home.dcxxiv.com
+    - longhorn.dcxxiv.com

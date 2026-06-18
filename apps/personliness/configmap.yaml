@@ -16,8 +16,8 @@ data:
   CREATE_SUPERUSER: "true"
   DJANGO_SUPERUSER_USERNAME: "admin"
   DJANGO_SUPERUSER_EMAIL: "me@tuckermclean.com"
-  DJANGO_ALLOWED_HOSTS: "personliness.dcxxiv.com,personliness.home.dcxxiv.com"
-  CORS_ALLOWED_ORIGINS: "https://personliness.dcxxiv.com,https://personliness.home.dcxxiv.com"
+  DJANGO_ALLOWED_HOSTS: "personliness.dcxxiv.com,personliness.dcxxiv.com"
+  CORS_ALLOWED_ORIGINS: "https://personliness.dcxxiv.com,https://personliness.dcxxiv.com"
   nginx.conf: |
     upstream django {
         server 127.0.0.1:8000;

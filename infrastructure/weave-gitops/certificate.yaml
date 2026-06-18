@@ -9,4 +9,4 @@ spec:
     kind: ClusterIssuer
     name: letsencrypt-prod
   dnsNames:
-    - flux.home.dcxxiv.com
+    - flux.dcxxiv.com

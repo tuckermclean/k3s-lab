@@ -29,11 +29,11 @@ spec:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-prod
       hosts:
-        - host: flux.home.dcxxiv.com
+        - host: flux.dcxxiv.com
           paths:
             - path: /
               pathType: Prefix
       tls:
         - secretName: weave-gitops-tls
           hosts:
-            - flux.home.dcxxiv.com
+            - flux.dcxxiv.com

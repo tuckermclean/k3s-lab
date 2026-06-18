@@ -212,7 +212,7 @@ Add to `infrastructure/storage/longhorn/helmrelease.yaml`:
 ```yaml
 values:
   defaultSettings:
-    backupTarget: nfs://openmediavault.home.dcxxiv.com:/export/Backup/longhorn
+    backupTarget: nfs://openmediavault.dcxxiv.com:/export/Backup/longhorn
 ```
 
 NFS is preferred over S3 here — no AWS cost, openmediavault is already on the network.
@@ -240,7 +240,7 @@ These PVs live in `/var/lib/rancher/k3s/storage/` on k3s01. Add to `bootstrap/sc
 # /etc/cron.d/k3s-local-path-backup
 0 3 * * * root rsync -av --delete \
   /var/lib/rancher/k3s/storage/ \
-  openmediavault.home.dcxxiv.com:/export/Backup/k3s01-local-path/
+  openmediavault.dcxxiv.com:/export/Backup/k3s01-local-path/
 ```
 
 ### Restore Procedures
@@ -253,7 +253,7 @@ These PVs live in `/var/lib/rancher/k3s/storage/` on k3s01. Add to `bootstrap/sc
 **Local-path PV:**
 1. Rsync back from openmediavault:
    ```bash
-   rsync -av openmediavault.home.dcxxiv.com:/export/Backup/k3s01-local-path/ \
+   rsync -av openmediavault.dcxxiv.com:/export/Backup/k3s01-local-path/ \
      /var/lib/rancher/k3s/storage/
    ```
 2. Ensure PV/PVC still exists with correct `volumeName` binding

@@ -15,7 +15,7 @@ spec:
       version: "4.x"
   values:
     nfs:
-      server: openmediavault.home.dcxxiv.com
+      server: openmediavault.dcxxiv.com
       path: /export/Media
     storageClass:
       name: nfs-provisioner

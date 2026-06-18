@@ -36,6 +36,11 @@ help:
 	@echo "    bootstrap-age-key        Generate a NEW age keypair and back it up to ~/.ssh/id_rsa.pub"
 	@echo "                             (only needed once; resets encryption — see warning)"
 	@echo ""
+	@echo "  Authentik (run after Flux deploys Authentik)"
+	@echo "    apply-authentik            Apply OIDC apps/groups via Terraform"
+	@echo "    plan-authentik             Preview Terraform changes without applying"
+	@echo "    dr-authentik               DR: nuke stale state and re-apply after DB restore"
+	@echo ""
 	@echo "  Flux bootstrap (run after install-sops-age + creating GitHub deploy key)"
 	@echo "    flux-bootstrap-k3s-lab   Bootstrap Flux on the home cluster"
 	@echo "    flux-bootstrap-ovh-lab   Bootstrap Flux on the OVH cluster"
@@ -133,6 +138,35 @@ flux-bootstrap-oci-lab: ## Bootstrap Flux on the OCI cluster
 	  --branch=main \
 	  --path=./clusters/oci-lab \
 	  --personal
+
+# ---------------------------------------------------------------------------
+# Authentik Terraform
+# ---------------------------------------------------------------------------
+
+AUTHENTIK_TF_DIR := bootstrap/terraform/authentik
+
+.PHONY: apply-authentik
+apply-authentik: ## Apply Authentik config via Terraform (run after Flux deploys Authentik)
+	@test -f "$(AUTHENTIK_TF_DIR)/terraform.tfvars" || \
+	  (echo "ERROR: $(AUTHENTIK_TF_DIR)/terraform.tfvars not found."; \
+	   echo "Copy $(AUTHENTIK_TF_DIR)/terraform.tfvars.example and fill in values."; exit 1)
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" apply
+
+.PHONY: plan-authentik
+plan-authentik: ## Preview Authentik Terraform changes without applying
+	@test -f "$(AUTHENTIK_TF_DIR)/terraform.tfvars" || \
+	  (echo "ERROR: $(AUTHENTIK_TF_DIR)/terraform.tfvars not found."; exit 1)
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" plan
+
+.PHONY: dr-authentik
+dr-authentik: ## DR: nuke stale Terraform state and re-apply (use after DB restore)
+	@echo "Removing stale Terraform state for Authentik..."
+	rm -f "$(AUTHENTIK_TF_DIR)/terraform.tfstate" "$(AUTHENTIK_TF_DIR)/terraform.tfstate.backup"
+	$(MAKE) apply-authentik
+	@echo ""
+	@echo "Done. OIDC client secrets were pinned in tfvars — no k8s Secret rotation needed."
 
 # ---------------------------------------------------------------------------
 # Secrets day-to-day

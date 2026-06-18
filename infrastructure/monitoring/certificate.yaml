@@ -9,4 +9,4 @@ spec:
     kind: ClusterIssuer
     name: letsencrypt-prod
   dnsNames:
-    - grafana.home.dcxxiv.com
+    - grafana.dcxxiv.com

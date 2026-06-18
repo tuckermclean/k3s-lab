@@ -5,4 +5,4 @@ metadata:
   namespace: kube-system
 data:
   authentik.override: |
-    rewrite name auth.home.dcxxiv.com traefik.traefik.svc.cluster.local
+    rewrite name auth.dcxxiv.com traefik.traefik.svc.cluster.local

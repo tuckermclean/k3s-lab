@@ -8,7 +8,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`longhorn.home.dcxxiv.com`)
+      match: Host(`longhorn.dcxxiv.com`)
       middlewares:
         - name: authentik
       services:

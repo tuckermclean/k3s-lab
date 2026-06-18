@@ -39,7 +39,7 @@ spec:
       targetPath: authentik.postgresql.password
   values:
     global:
-      host: https://auth.home.dcxxiv.com
+      host: https://auth.dcxxiv.com
     authentik:
       errorReporting:
         enabled: false
@@ -58,14 +58,14 @@ spec:
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-prod
         hosts:
-          - auth.home.dcxxiv.com
+          - auth.dcxxiv.com
         tls:
           - secretName: authentik-tls
             hosts:
-              - auth.home.dcxxiv.com
+              - auth.dcxxiv.com
           - secretName: authentik-outpost-tls
             hosts:
-              - auth.home.dcxxiv.com
+              - auth.dcxxiv.com
     postgresql:
       enabled: true
       auth:

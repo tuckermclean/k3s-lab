@@ -34,19 +34,19 @@ directory's `README.md`.
 
 **Ingress:** Traefik, deployed as DaemonSet + LoadBalancer. Uses IngressRoute CRDs throughout — there are no standard Ingress objects in this cluster. Do not add them.
 
-**TLS:** cert-manager with Vultr DNS01 challenge. ClusterIssuer is `letsencrypt-prod`. Certs are issued for `*.home.dcxxiv.com`.
+**TLS:** cert-manager with Vultr DNS01 challenge. ClusterIssuer is `letsencrypt-prod`. Certs are issued for `*.dcxxiv.com`.
 
 **Storage:**
 - Longhorn — replicated block storage, 2 replicas, default StorageClass. Use this for anything that needs a PVC and doesn't need to be shared across pods.
 - JuiceFS — S3-backed shared filesystem. Use for ReadWriteMany workloads or media-style shared access.
 
-**Auth:** authentik at `auth.home.dcxxiv.com`. Every app sits behind forward auth. See the auth section below.
+**Auth:** authentik at `auth.dcxxiv.com`. Every app sits behind forward auth. See the auth section below.
 
 **Monitoring:** Prometheus + Grafana
 
 **GitOps UI:** Weave GitOps
 
-**DNS:** CoreDNS custom ConfigMap for internal rewrites. This is why `auth.home.dcxxiv.com` resolves correctly inside the cluster even though it's a public domain — without the rewrite, the outpost callback loop breaks.
+**DNS:** CoreDNS custom ConfigMap for internal rewrites. This is why `auth.dcxxiv.com` resolves correctly inside the cluster even though it's a public domain — without the rewrite, the outpost callback loop breaks.
 
 ## Repo Layout
 
@@ -122,7 +122,7 @@ The IngressRoute references it:
 
 ```yaml
 routes:
-  - match: Host(`myapp.home.dcxxiv.com`)
+  - match: Host(`myapp.dcxxiv.com`)
     kind: Rule
     middlewares:
       - name: authentik
@@ -132,7 +132,7 @@ routes:
 ```
 
 The outpost in authentik must be configured with:
-- `authentik_host_browser: https://auth.home.dcxxiv.com/`
+- `authentik_host_browser: https://auth.dcxxiv.com/`
 - Domain-level forward auth mode
 
 This matters because without `authentik_host_browser` set correctly, the browser gets redirected to the internal outpost address after login, which does not work.

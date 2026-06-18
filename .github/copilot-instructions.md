@@ -44,7 +44,7 @@ spec:
       - X-authentik-meta-version
 ```
 
-The IngressRoute references `name: authentik`. No bypass routes needed. The outpost must be configured in authentik as **domain-level forward auth** with `authentik_host_browser: https://auth.home.dcxxiv.com/` and the app's provider assigned to it. See `apps/openhands/` for the reference implementation.
+The IngressRoute references `name: authentik`. No bypass routes needed. The outpost must be configured in authentik as **domain-level forward auth** with `authentik_host_browser: https://auth.dcxxiv.com/` and the app's provider assigned to it. See `apps/openhands/` for the reference implementation.
 
 ## Node Notes
 

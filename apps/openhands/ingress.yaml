@@ -10,7 +10,7 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`openhands.home.dcxxiv.com`)
+      match: Host(`openhands.dcxxiv.com`)
       middlewares:
         - name: authentik
       services:
