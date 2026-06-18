@@ -42,7 +42,8 @@ help:
 	@echo "    flux-bootstrap-oci-lab   Bootstrap Flux on the OCI cluster"
 	@echo ""
 	@echo "  Secrets"
-	@echo "    edit-secret FILE=<path>    Decrypt, open in \$$EDITOR, re-encrypt"
+	@echo "    fill-secrets               Recover key, edit every secret.sops.yaml in sequence, clean up"
+	@echo "    edit-secret FILE=<path>    Decrypt, open in \$$EDITOR, re-encrypt (key must be recovered first)"
 	@echo "    decrypt-secret FILE=<path> Print decrypted content to stdout (pipe to less)"
 	@echo "    rotate-ssh-key             Re-encrypt age key backup for a new ~/.ssh/id_rsa.pub"
 	@echo ""
@@ -136,6 +137,16 @@ flux-bootstrap-oci-lab: ## Bootstrap Flux on the OCI cluster
 # ---------------------------------------------------------------------------
 # Secrets day-to-day
 # ---------------------------------------------------------------------------
+
+.PHONY: fill-secrets
+fill-secrets: recover-age-key ## Recover key then open every *.sops.yaml in $EDITOR in sequence, then clean up
+	@echo "Opening all secret files for editing. Fill in CHANGEME_* placeholders."
+	@for f in $$(find . -name 'secret.sops.yaml' -not -path './.git/*' | sort); do \
+	  echo ""; \
+	  echo "=== $$f ==="; \
+	  SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops "$$f"; \
+	done
+	$(MAKE) clean-age-key
 
 .PHONY: edit-secret
 edit-secret: ## Decrypt, open in $$EDITOR, re-encrypt: make edit-secret FILE=infrastructure/authentik/secret.sops.yaml
