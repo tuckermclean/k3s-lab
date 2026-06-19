@@ -20,5 +20,15 @@ spec:
         kind: IngressRoute
         name: longhorn-frontend
       patch: |
-        - op: remove
-          path: /spec/routes/0/middlewares
+        apiVersion: traefik.io/v1alpha1
+        kind: IngressRoute
+        metadata:
+          name: longhorn-frontend
+          namespace: longhorn-system
+        spec:
+          routes:
+            - kind: Rule
+              match: Host(`longhorn.dcxxiv.com`)
+              services:
+                - name: longhorn-frontend
+                  port: 80
