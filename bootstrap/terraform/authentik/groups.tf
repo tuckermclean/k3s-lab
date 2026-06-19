@@ -9,12 +9,19 @@ import {
 resource "authentik_group" "admins" {
   name         = "authentik Admins"
   is_superuser = true
+  users        = [data.authentik_user.akadmin.id]
+}
+
+# Default admin user — added to both admin groups below
+data "authentik_user" "akadmin" {
+  username = "akadmin"
 }
 
 # Kubernetes admins group — members get cluster-admin via ClusterRoleBinding in infrastructure/weave-gitops/rbac.yaml
 resource "authentik_group" "k8s_admins" {
   name         = "k8s Admins"
   is_superuser = false
+  users        = [data.authentik_user.akadmin.id]
 }
 
 # Custom scope mapping that injects 'groups' into the profile scope response.
