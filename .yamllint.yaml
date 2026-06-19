@@ -8,3 +8,4 @@ rules:
   truthy: disable
   line-length: disable
   new-line-at-end-of-file: disable
+  comments: disable
