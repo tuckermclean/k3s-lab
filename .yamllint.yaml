@@ -1,7 +1,7 @@
 extends: default
 
 ignore: |
-  clusters/k3s-lab/flux-system/gotk-components.yaml
+  clusters/*/flux-system/
 
 rules:
   document-start: disable
