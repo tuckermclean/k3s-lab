@@ -8,5 +8,5 @@ roleRef:
   name: cluster-admin
 subjects:
   - kind: Group
-    name: "authentik Admins"
+    name: "k8s Admins"
     apiGroup: rbac.authorization.k8s.io

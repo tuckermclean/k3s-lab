@@ -11,6 +11,12 @@ resource "authentik_group" "admins" {
   is_superuser = true
 }
 
+# Kubernetes admins group — members get cluster-admin via ClusterRoleBinding in infrastructure/weave-gitops/rbac.yaml
+resource "authentik_group" "k8s_admins" {
+  name         = "k8s Admins"
+  is_superuser = false
+}
+
 # Custom scope mapping that injects 'groups' into the profile scope response.
 # Authentik's built-in profile scope does not include groups by default; this
 # mapping runs when a client requests 'profile' and adds the groups list so
