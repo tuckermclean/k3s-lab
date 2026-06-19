@@ -9,8 +9,6 @@ spec:
   routes:
     - kind: Rule
       match: Host(`longhorn.dcxxiv.com`)
-      middlewares:
-        - name: authentik
       services:
         - name: longhorn-frontend
           port: 80

@@ -12,23 +12,3 @@ spec:
   prune: true
   dependsOn:
     - name: cert-manager-config
-  patches:
-    # Authentik proxy outpost doesn't exist yet — remove the forwardAuth middleware
-    # so the UI is reachable. Re-add once the 'infrastructure' outpost is deployed.
-    - target:
-        apiVersion: traefik.io/v1alpha1
-        kind: IngressRoute
-        name: longhorn-frontend
-      patch: |
-        apiVersion: traefik.io/v1alpha1
-        kind: IngressRoute
-        metadata:
-          name: longhorn-frontend
-          namespace: longhorn-system
-        spec:
-          routes:
-            - kind: Rule
-              match: Host(`longhorn.dcxxiv.com`)
-              services:
-                - name: longhorn-frontend
-                  port: 80
