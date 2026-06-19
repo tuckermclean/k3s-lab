@@ -24,12 +24,16 @@ resource "authentik_group" "k8s_admins" {
   users        = [data.authentik_user.akadmin.id]
 }
 
-# Custom scope mapping that injects 'groups' into the profile scope response.
-# Authentik's built-in profile scope does not include groups by default; this
-# mapping runs when a client requests 'profile' and adds the groups list so
-# Grafana's role_attribute_path JMESPath expression can find it.
-resource "authentik_property_mapping_provider_scope" "groups" {
-  name       = "OAuth Mapping: groups"
+# Groups injected into 'profile' scope — Grafana requests 'openid email profile'
+resource "authentik_property_mapping_provider_scope" "groups_profile" {
+  name       = "OAuth Mapping: groups (profile)"
   scope_name = "profile"
+  expression = "return [group.name for group in request.user.ak_groups.all()]"
+}
+
+# Groups injected into 'groups' scope — Weave GitOps requests 'openid email groups'
+resource "authentik_property_mapping_provider_scope" "groups_scope" {
+  name       = "OAuth Mapping: groups (groups)"
+  scope_name = "groups"
   expression = "return [group.name for group in request.user.ak_groups.all()]"
 }
