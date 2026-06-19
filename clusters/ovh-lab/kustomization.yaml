@@ -2,10 +2,22 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   # `flux bootstrap` (run by bootstrap/terraform/ovh-k3s) populates flux-system/.
-  # Add infrastructure/app Flux Kustomizations here the same way clusters/k3s-lab does.
   - flux-system/
+
+  # Foundation: certs (DNS01/Cloudflare, defines letsencrypt-prod) + storage
   - cert-manager-kustomization.yaml
   - cert-manager-http01-kustomization.yaml
+  - cert-manager-config-kustomization.yaml
+  - longhorn-kustomization.yaml
+  - redis-juicefs-kustomization.yaml
+  - juicefs-kustomization.yaml
+
+  # Core infrastructure
+  - authentik-kustomization.yaml
+  - monitoring-kustomization.yaml
+  - weave-gitops-kustomization.yaml
+
+  # Applications
   - personliness-kustomization.yaml
   - hero-kustomization.yaml
   - dcxxiv-home-kustomization.yaml
