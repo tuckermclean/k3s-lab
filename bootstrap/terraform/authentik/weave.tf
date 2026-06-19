@@ -16,6 +16,7 @@ resource "authentik_provider_oauth2" "weave_gitops" {
     data.authentik_property_mapping_provider_scope.openid.id,
     data.authentik_property_mapping_provider_scope.email.id,
     data.authentik_property_mapping_provider_scope.profile.id,
+    authentik_property_mapping_provider_scope.groups.id,
   ]
 
   sub_mode               = "hashed_user_id"
