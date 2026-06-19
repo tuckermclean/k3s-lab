@@ -11,9 +11,9 @@ resource "authentik_provider_oauth2" "weave_gitops" {
   redirect_uris = ["https://flux.dcxxiv.com/oauth2/callback"]
 
   property_mappings = [
-    data.authentik_scope_mapping.openid.id,
-    data.authentik_scope_mapping.email.id,
-    data.authentik_scope_mapping.profile.id,
+    data.authentik_property_mapping_provider_scope.openid.id,
+    data.authentik_property_mapping_provider_scope.email.id,
+    data.authentik_property_mapping_provider_scope.profile.id,
   ]
 
   sub_mode               = "hashed_user_id"

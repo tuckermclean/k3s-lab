@@ -8,10 +8,10 @@ resource "authentik_provider_oauth2" "grafana" {
   redirect_uris      = ["https://grafana.dcxxiv.com/login/generic_oauth"]
 
   property_mappings = [
-    data.authentik_scope_mapping.openid.id,
-    data.authentik_scope_mapping.email.id,
-    data.authentik_scope_mapping.profile.id,
-    authentik_scope_mapping.groups.id,
+    data.authentik_property_mapping_provider_scope.openid.id,
+    data.authentik_property_mapping_provider_scope.email.id,
+    data.authentik_property_mapping_provider_scope.profile.id,
+    authentik_property_mapping_provider_scope.groups.id,
   ]
 
   sub_mode                   = "hashed_user_id"
