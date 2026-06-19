@@ -5,7 +5,9 @@ resource "authentik_provider_oauth2" "grafana" {
   authorization_flow = data.authentik_flow.default_authorization.id
   invalidation_flow  = data.authentik_flow.default_invalidation.id
   signing_key        = data.authentik_certificate_key_pair.default.id
-  redirect_uris      = ["https://grafana.dcxxiv.com/login/generic_oauth"]
+  allowed_redirect_uris = [
+    { url = "https://grafana.dcxxiv.com/login/generic_oauth", matching_mode = "strict" },
+  ]
 
   property_mappings = [
     data.authentik_property_mapping_provider_scope.openid.id,

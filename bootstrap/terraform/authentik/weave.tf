@@ -8,7 +8,9 @@ resource "authentik_provider_oauth2" "weave_gitops" {
 
   # issuerURL in oidc-auth Secret uses the application slug: /application/o/weave-gitops/
   # The slug on authentik_application below must stay "weave-gitops" to match.
-  redirect_uris = ["https://flux.dcxxiv.com/oauth2/callback"]
+  allowed_redirect_uris = [
+    { url = "https://flux.dcxxiv.com/oauth2/callback", matching_mode = "strict" },
+  ]
 
   property_mappings = [
     data.authentik_property_mapping_provider_scope.openid.id,
