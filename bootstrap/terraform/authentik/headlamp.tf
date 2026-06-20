@@ -22,10 +22,28 @@ import {
   id = "d0ed7129-8741-4d8d-84d1-12304d0f2a26"
 }
 
+resource "authentik_provider_proxy" "longhorn" {
+  name               = "Longhorn"
+  authorization_flow = data.authentik_flow.default_authorization.id
+  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  mode               = "forward_single"
+  external_host      = "https://longhorn.dcxxiv.com"
+}
+
+resource "authentik_application" "longhorn" {
+  name              = "Longhorn"
+  slug              = "longhorn"
+  protocol_provider = authentik_provider_proxy.longhorn.id
+  meta_launch_url   = "https://longhorn.dcxxiv.com"
+}
+
 resource "authentik_outpost" "embedded" {
   name               = "authentik Embedded Outpost"
   type               = "proxy"
-  protocol_providers = [authentik_provider_proxy.headlamp.id]
+  protocol_providers = [
+    authentik_provider_proxy.headlamp.id,
+    authentik_provider_proxy.longhorn.id,
+  ]
 
   lifecycle {
     # Authentik owns the outpost config and service_connection; don't overwrite.
