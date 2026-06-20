@@ -15,13 +15,6 @@ resource "authentik_application" "headlamp" {
   meta_launch_url   = "https://headlamp.dcxxiv.com"
 }
 
-# Import the Authentik-created embedded outpost so we can assign proxy providers to it.
-# UUID is looked up dynamically via the API so this survives cluster rebuilds.
-import {
-  to = authentik_outpost.embedded
-  id = local.embedded_outpost_id
-}
-
 resource "authentik_provider_proxy" "longhorn" {
   name               = "Longhorn"
   authorization_flow = data.authentik_flow.default_authorization.id
@@ -67,18 +60,3 @@ resource "authentik_application" "juicefs_s3" {
   meta_launch_url   = "https://s3.dcxxiv.com"
 }
 
-resource "authentik_outpost" "embedded" {
-  name               = "authentik Embedded Outpost"
-  type               = "proxy"
-  protocol_providers = [
-    authentik_provider_proxy.headlamp.id,
-    authentik_provider_proxy.longhorn.id,
-    authentik_provider_proxy.juicefs_dashboard.id,
-    authentik_provider_proxy.juicefs_s3.id,
-  ]
-
-  lifecycle {
-    # Authentik owns the outpost config and service_connection; don't overwrite.
-    ignore_changes = [config, service_connection]
-  }
-}
