@@ -27,3 +27,4 @@ resources:
   - personliness-kustomization.yaml
   - hero-kustomization.yaml
   - dcxxiv-home-kustomization.yaml
+  - wordpress-kustomization.yaml
