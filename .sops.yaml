@@ -1,9 +1,8 @@
 creation_rules:
-  - path_regex: token\.sops\.yaml$
+  # Fully-encrypted credential files (Terraform tokens + bootstrap secrets)
+  - path_regex: (token|secrets)\.sops\.yaml$
     age: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+  # Kubernetes Secrets — only data/stringData keys are encrypted
   - path_regex: \.sops\.yaml$
     encrypted_regex: ^(data|stringData)$
-    age: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
-  # Terraform bootstrap secrets (dotenv format, fully encrypted)
-  - path_regex: secrets\.sops\.env$
     age: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg

@@ -1,37 +1,39 @@
 #!/usr/bin/env bash
-# tf.sh — Terraform wrapper that decrypts secrets.sops.env before running.
+# tf.sh — Terraform wrapper that decrypts secrets.sops.yaml before running.
+# Prefer using top-level make targets (make plan-ovh, make apply-ovh, etc.)
+# which handle age key recovery automatically.
 #
-# Usage: ./tf.sh <terraform subcommand> [args...]
+# Direct usage:
+#   export SOPS_AGE_KEY_FILE=/tmp/k3s-lab-age.agekey  # from: make recover-age-key
 #   ./tf.sh plan
 #   ./tf.sh apply -auto-approve
-#   ./tf.sh destroy -auto-approve
-#
-# Bootstrap from scratch:
-#   1. cp secrets.env.example secrets.env
-#   2. Fill in all values (OpenStack creds from OVH manager OpenRC v3, GitHub PAT)
-#   3. sops --encrypt --input-type dotenv --output-type dotenv secrets.env > secrets.sops.env
-#   4. rm secrets.env
-#   5. git add secrets.sops.env && git commit
-#   6. ./tf.sh init && ./tf.sh apply -auto-approve
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SOPS_ENV="$SCRIPT_DIR/secrets.sops.env"
+SOPS_FILE="$SCRIPT_DIR/secrets.sops.yaml"
 
-if [[ ! -f "$SOPS_ENV" ]]; then
-  echo "ERROR: $SOPS_ENV not found." >&2
+if [[ ! -f "$SOPS_FILE" ]]; then
+  echo "ERROR: $SOPS_FILE not found." >&2
   echo "" >&2
-  echo "  cp secrets.env.example secrets.env" >&2
-  echo "  # fill in your credentials" >&2
-  echo "  sops --encrypt --input-type dotenv --output-type dotenv secrets.env > secrets.sops.env" >&2
-  echo "  rm secrets.env && git add secrets.sops.env" >&2
+  echo "  cp $SCRIPT_DIR/secrets.yaml.example $SCRIPT_DIR/secrets.yaml" >&2
+  echo "  # fill in OpenStack creds + GitHub PAT" >&2
+  echo "  cp $SCRIPT_DIR/secrets.yaml $SCRIPT_DIR/secrets.sops.yaml" >&2
+  echo "  sops -e -i $SCRIPT_DIR/secrets.sops.yaml" >&2
+  echo "  rm $SCRIPT_DIR/secrets.yaml" >&2
+  echo "  git add $SCRIPT_DIR/secrets.sops.yaml && git commit" >&2
   exit 1
 fi
 
-# Decrypt and export all vars into this process, then hand off to terraform.
-set -a
-eval "$(sops -d --input-type dotenv --output-type dotenv "$SOPS_ENV")"
-set +a
+# Use age key from env if set; fall back to the temp path from 'make recover-age-key'
+: "${SOPS_AGE_KEY_FILE:=/tmp/k3s-lab-age.agekey}"
+export SOPS_AGE_KEY_FILE
+
+# Decrypt YAML and export each key as an env var
+eval "$(sops -d "$SOPS_FILE" | python3 -c "
+import yaml, sys, shlex
+for k, v in yaml.safe_load(sys.stdin).items():
+    print(f'export {k}={shlex.quote(str(v))}')
+")"
 
 exec terraform "$@"

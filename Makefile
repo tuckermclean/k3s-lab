@@ -3,10 +3,7 @@
 #
 # Prerequisites (already installed on Arch): age, sops, kubectl, flux
 #
-# Quick-start for a fresh cluster (DR path):
-#   make recover-age-key          # decrypt age key from git using your SSH key
-#   make install-sops-age         # push age key into flux-system as sops-age Secret
-#   make flux-bootstrap-k3s-lab   # or flux-bootstrap-ovh-lab / flux-bootstrap-oci-lab
+# DR quick-start: see README.md → "Bootstrapping / DR"
 #
 # Day-to-day:
 #   make edit-secret FILE=infrastructure/authentik/secret.sops.yaml
@@ -36,16 +33,24 @@ help:
 	@echo "    bootstrap-age-key        Generate a NEW age keypair and back it up to ~/.ssh/id_rsa.pub"
 	@echo "                             (only needed once; resets encryption — see warning)"
 	@echo ""
+	@echo "  OVH cluster (Terraform)"
+	@echo "    init-ovh                 One-time setup: create secrets if needed, then terraform init"
+	@echo "    plan-ovh                 Preview changes to the OVH cluster"
+	@echo "    apply-ovh                Provision or update the OVH cluster"
+	@echo "    destroy-ovh              Destroy the OVH cluster (stops billing)"
+	@echo "    kubeconfig-ovh           Print path to the OVH kubeconfig"
+	@echo ""
 	@echo "  Authentik (run after Flux deploys Authentik)"
 	@echo "    store-authentik-token      Encrypt and store Authentik API token: make store-authentik-token TOKEN=<value>"
 	@echo "    apply-authentik            Apply OIDC apps/groups via Terraform (reads all secrets from SOPS)"
 	@echo "    plan-authentik             Preview Terraform changes without applying"
 	@echo "    dr-authentik               DR: nuke stale state and re-apply after DB restore"
 	@echo ""
-	@echo "  Flux bootstrap (run after install-sops-age + creating GitHub deploy key)"
-	@echo "    flux-bootstrap-k3s-lab   Bootstrap Flux on the home cluster"
+	@echo "  Flux bootstrap (run after install-sops-age)"
 	@echo "    flux-bootstrap-ovh-lab   Bootstrap Flux on the OVH cluster"
+	@echo "    flux-bootstrap-k3s-lab   Bootstrap Flux on the home cluster"
 	@echo "    flux-bootstrap-oci-lab   Bootstrap Flux on the OCI cluster"
+	@echo "    (GitHub PAT read from SOPS automatically for all three)"
 	@echo ""
 	@echo "  Secrets"
 	@echo "    fill-secrets               Recover key, edit every secret.sops.yaml in sequence, clean up"
@@ -105,14 +110,15 @@ bootstrap-age-key: ## DANGER: Generate a new age keypair — only run on first s
 # Flux bootstrap
 # ---------------------------------------------------------------------------
 
-# Common check: GITHUB_TOKEN must be set before flux bootstrap
-define check-github-token
-	@test -n "$(GITHUB_TOKEN)" || (echo "ERROR: export GITHUB_TOKEN=<your-PAT> first"; exit 1)
+
+define flux-github-token
+$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d "$(OVH_TF_DIR)/secrets.sops.yaml" | \
+  python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['GITHUB_TOKEN'])")
 endef
 
 .PHONY: flux-bootstrap-k3s-lab
-flux-bootstrap-k3s-lab: ## Bootstrap Flux on the home (k3s-lab) cluster
-	$(call check-github-token)
+flux-bootstrap-k3s-lab: recover-age-key ## Bootstrap Flux on the home (k3s-lab) cluster
+	@GITHUB_TOKEN=$(flux-github-token) \
 	flux bootstrap github \
 	  --owner="$(GITHUB_OWNER)" \
 	  --repository="$(GITHUB_REPO)" \
@@ -121,8 +127,8 @@ flux-bootstrap-k3s-lab: ## Bootstrap Flux on the home (k3s-lab) cluster
 	  --personal
 
 .PHONY: flux-bootstrap-ovh-lab
-flux-bootstrap-ovh-lab: ## Bootstrap Flux on the OVH cluster
-	$(call check-github-token)
+flux-bootstrap-ovh-lab: recover-age-key ## Bootstrap Flux on the OVH cluster
+	@GITHUB_TOKEN=$(flux-github-token) \
 	flux bootstrap github \
 	  --owner="$(GITHUB_OWNER)" \
 	  --repository="$(GITHUB_REPO)" \
@@ -131,14 +137,49 @@ flux-bootstrap-ovh-lab: ## Bootstrap Flux on the OVH cluster
 	  --personal
 
 .PHONY: flux-bootstrap-oci-lab
-flux-bootstrap-oci-lab: ## Bootstrap Flux on the OCI cluster
-	$(call check-github-token)
+flux-bootstrap-oci-lab: recover-age-key ## Bootstrap Flux on the OCI cluster
+	@GITHUB_TOKEN=$(flux-github-token) \
 	flux bootstrap github \
 	  --owner="$(GITHUB_OWNER)" \
 	  --repository="$(GITHUB_REPO)" \
 	  --branch=main \
 	  --path=./clusters/oci-lab \
 	  --personal
+
+# ---------------------------------------------------------------------------
+# OVH Terraform
+# ---------------------------------------------------------------------------
+
+OVH_TF_DIR := bootstrap/terraform/ovh-k3s
+
+.PHONY: init-ovh
+init-ovh: recover-age-key ## One-time setup: create secrets if needed, then terraform init
+	@if [ ! -f "$(OVH_TF_DIR)/secrets.sops.yaml" ]; then \
+	  echo "No secrets.sops.yaml found — opening example in $$EDITOR to fill in credentials."; \
+	  cp "$(OVH_TF_DIR)/secrets.yaml.example" "$(OVH_TF_DIR)/secrets.yaml"; \
+	  $${EDITOR:-vi} "$(OVH_TF_DIR)/secrets.yaml"; \
+	  cp "$(OVH_TF_DIR)/secrets.yaml" "$(OVH_TF_DIR)/secrets.sops.yaml"; \
+	  SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -e -i "$(OVH_TF_DIR)/secrets.sops.yaml"; \
+	  rm "$(OVH_TF_DIR)/secrets.yaml"; \
+	  echo "Secrets encrypted. Commit with: git add $(OVH_TF_DIR)/secrets.sops.yaml && git commit"; \
+	fi
+	terraform -chdir="$(OVH_TF_DIR)" init
+
+.PHONY: plan-ovh
+plan-ovh: recover-age-key ## Preview OVH cluster changes
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(OVH_TF_DIR) plan
+
+.PHONY: apply-ovh
+apply-ovh: recover-age-key ## Provision or update the OVH cluster
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(OVH_TF_DIR) apply
+
+.PHONY: destroy-ovh
+destroy-ovh: recover-age-key ## Destroy the OVH cluster (stops billing)
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(OVH_TF_DIR) destroy
+
+.PHONY: kubeconfig-ovh
+kubeconfig-ovh: recover-age-key ## Print path to the OVH kubeconfig
+	@SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -s -C $(OVH_TF_DIR) kubeconfig
 
 # ---------------------------------------------------------------------------
 # Authentik Terraform

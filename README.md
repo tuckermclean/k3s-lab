@@ -146,13 +146,6 @@ Flux's kustomize-controller decrypts them at apply time using the `sops-age` Sec
 **The human root of trust is `~/.ssh/id_rsa`** (already synced between machines). The age private key is
 encrypted to that SSH key and committed at `bootstrap/age.agekey.age` — so the repo is self-contained.
 
-DR = two manual steps, then `flux bootstrap`:
-```bash
-make recover-age-key   # decrypt age key from git using ~/.ssh/id_rsa
-make install-sops-age  # push into flux-system; Flux can now decrypt secrets
-make flux-bootstrap-k3s-lab   # (or ovh-lab / oci-lab)
-```
-
 To edit an existing secret:
 ```bash
 make recover-age-key
@@ -160,28 +153,25 @@ make edit-secret FILE=infrastructure/authentik/secret.sops.yaml
 make clean-age-key
 ```
 
-See `bootstrap/BOOTSTRAP.md` for the full DR sequence including node provisioning and
-node-level secrets (WireGuard, k3s join token) which live outside Kubernetes.
-
 ## Bootstrapping / DR
 
-See `bootstrap/BOOTSTRAP.md`. It covers node provisioning, WireGuard mesh setup, Flux installation, and how to get back to a running state from scratch.
+**OVH cluster (Terraform-managed — this is the primary HA cluster):**
 
-Cloud-init files are in `bootstrap/cloud-init/` for k3s01–k3s03. k3s04 (OVH, current control plane) does not have a cloud-init file yet.
-
-Quick reference for bootstrapping Flux onto a fresh cluster (or use `make flux-bootstrap-k3s-lab`):
 ```bash
-flux bootstrap github \
-  --owner=<github-username> \
-  --repository=k3s-lab \
-  --branch=main \
-  --path=./clusters/k3s-lab \
-  --personal
+make init-ovh                              # download providers (one-time after clone)
+make apply-ovh                             # provision 3-node cluster (~5 min)
+export KUBECONFIG=$(make kubeconfig-ovh)   # aim kubectl at the new cluster
+make install-sops-age                      # push age key into flux-system
+make flux-bootstrap-ovh-lab               # bootstrap Flux (GitHub PAT read from SOPS)
 ```
 
-Flux will not successfully reconcile infrastructure or apps until the `sops-age` Secret is in place
-and their dependencies (storage, DNS, load balancer) exist in the cluster. Bootstrap order matters —
-see `bootstrap/BOOTSTRAP.md` for the sequence.
+All credentials come from `bootstrap/terraform/ovh-k3s/secrets.sops.yaml` (encrypted in git).
+The only thing you need outside the repo is `~/.ssh/id_rsa`.
+
+**Home / OCI clusters:** See `bootstrap/BOOTSTRAP.md` for node provisioning details.
+Once nodes exist: `make install-sops-age && make flux-bootstrap-k3s-lab` (or `oci-lab`).
+
+Run `make help` from the repo root to see all available targets.
 
 ## Useful Commands
 

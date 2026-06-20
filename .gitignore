@@ -63,7 +63,7 @@ charts/
 !*.tfvars.example
 **/oci-k3s/kubeconfig
 **/ovh-k3s/kubeconfig
-# Unencrypted terraform secrets — the encrypted *.sops.env IS committed
-secrets.env
+# Unencrypted terraform secrets — the encrypted *.sops.yaml IS committed
+secrets.yaml
 
 .specstory/

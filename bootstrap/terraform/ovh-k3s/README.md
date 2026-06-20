@@ -35,39 +35,41 @@ stops billing.
 
 ## Bootstrap from scratch
 
-Everything you need to recover the cluster lives in this repo + your age key.
+Everything you need to recover the cluster lives in this repo + your `~/.ssh/id_rsa`.
 
 ### 1. One-time: create the encrypted secrets file
 
 ```bash
 cd bootstrap/terraform/ovh-k3s
-cp secrets.env.example secrets.env
-$EDITOR secrets.env   # fill in OpenStack creds + GitHub PAT (see comments)
+cp secrets.yaml.example secrets.yaml
+$EDITOR secrets.yaml   # fill in OpenStack creds + GitHub PAT (see comments)
 
-sops --encrypt --input-type dotenv --output-type dotenv secrets.env > secrets.sops.env
-rm secrets.env
-git add secrets.sops.env && git commit -m "chore(ovh-k3s): add encrypted bootstrap secrets"
+cp secrets.yaml secrets.sops.yaml
+sops -e -i secrets.sops.yaml
+rm secrets.yaml
+git add secrets.sops.yaml && git commit -m "chore(ovh-k3s): add encrypted bootstrap secrets"
 git push
 ```
 
-The OpenStack credentials come from the OVH US manager:
-**Public Cloud → Users & Roles → (your user) → Download OpenStack RC v3**.
+OpenStack credentials: OVH US manager → **Public Cloud → Users & Roles → (your user) → Download OpenStack RC v3**.
 The password is the OpenStack user password, not your OVH account password.
 
-Your age key must be in `~/.config/sops/age/keys.txt` (or `$SOPS_AGE_KEY_FILE`).
-The public key is committed in `.sops.yaml` at the repo root.
+The age private key is stored encrypted in the repo at `bootstrap/age.agekey.age` and recovered
+automatically from `~/.ssh/id_rsa` — no separate key file to manage.
 
 ### 2. Deploy
 
+All operations go through top-level make targets from the repo root:
+
 ```bash
-make init   # terraform init (one-time)
-make apply  # decrypts secrets, runs terraform apply -auto-approve
+make init-ovh   # terraform init (one-time, no secrets needed)
+make apply-ovh  # recovers age key, decrypts secrets, runs terraform apply -auto-approve
 ```
 
-`make apply` takes ~5 minutes. When done:
+`make apply-ovh` takes ~5 minutes. When done:
 
 ```bash
-export KUBECONFIG=$(make kubeconfig)
+export KUBECONFIG=$(make kubeconfig-ovh)
 kubectl get nodes -o wide
 ```
 
@@ -88,14 +90,15 @@ kubectl -n longhorn-system get nodes.longhorn.io
 
 ## Day-to-day
 
+From the repo root:
+
 ```bash
-make plan     # terraform plan (shows what would change)
-make apply    # terraform apply -auto-approve
-make destroy  # terraform destroy -auto-approve — STOPS BILLING
+make plan-ovh     # terraform plan (shows what would change)
+make apply-ovh    # terraform apply -auto-approve
+make destroy-ovh  # terraform destroy -auto-approve — STOPS BILLING
 ```
 
-All Make targets go through `tf.sh`, which decrypts `secrets.sops.env` and injects
-the env vars before calling Terraform. Never need to manually source an OpenRC file.
+Age key recovery and SOPS decryption happen automatically. No OpenRC file to source.
 
 ## Teardown
 
