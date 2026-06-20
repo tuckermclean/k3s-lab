@@ -5,6 +5,10 @@ terraform {
       source  = "goauthentik/authentik"
       version = "~> 2025.12.0"
     }
+    http = {
+      source  = "hashicorp/http"
+      version = "~> 3.0"
+    }
   }
 }
 

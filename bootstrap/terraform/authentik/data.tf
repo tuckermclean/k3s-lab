@@ -1,3 +1,25 @@
+# Dynamic lookups for Authentik auto-created singletons (UUIDs change on every fresh install).
+# The http provider queries the API at plan time so import blocks never need hardcoded UUIDs.
+
+data "http" "admins_group" {
+  url = "${var.authentik_url}/api/v3/core/groups/?name=authentik+Admins"
+  request_headers = {
+    Authorization = "Bearer ${var.authentik_token}"
+  }
+}
+
+data "http" "embedded_outpost" {
+  url = "${var.authentik_url}/api/v3/outposts/instances/?name=authentik+Embedded+Outpost"
+  request_headers = {
+    Authorization = "Bearer ${var.authentik_token}"
+  }
+}
+
+locals {
+  admins_group_id      = jsondecode(data.http.admins_group.response_body).results[0].pk
+  embedded_outpost_id  = jsondecode(data.http.embedded_outpost.response_body).results[0].pk
+}
+
 # Default flows — created automatically by Authentik on first boot
 data "authentik_flow" "default_authorization" {
   slug = "default-provider-authorization-implicit-consent"

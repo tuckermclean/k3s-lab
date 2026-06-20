@@ -1,9 +1,8 @@
-# Admin group — referenced by Grafana's role_attribute_path:
-#   contains(groups[*], 'authentik Admins') && 'Admin' || 'Viewer'
-# Authentik creates this group on first boot; import brings it under Terraform management.
+# Admin group — created automatically by Authentik on first boot.
+# UUID is looked up dynamically via the API so this survives cluster rebuilds.
 import {
   to = authentik_group.admins
-  id = "66e20b4d-aded-42e1-8ec3-561fb7e447ac"
+  id = local.admins_group_id
 }
 
 resource "authentik_group" "admins" {

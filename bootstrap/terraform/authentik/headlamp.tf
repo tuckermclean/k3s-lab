@@ -16,10 +16,10 @@ resource "authentik_application" "headlamp" {
 }
 
 # Import the Authentik-created embedded outpost so we can assign proxy providers to it.
-# UUID sourced from authentik-server pod logs: ak-outpost-d0ed712987414d8d84d112304d0f2a26
+# UUID is looked up dynamically via the API so this survives cluster rebuilds.
 import {
   to = authentik_outpost.embedded
-  id = "d0ed7129-8741-4d8d-84d1-12304d0f2a26"
+  id = local.embedded_outpost_id
 }
 
 resource "authentik_provider_proxy" "longhorn" {
