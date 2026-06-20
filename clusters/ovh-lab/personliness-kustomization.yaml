@@ -18,13 +18,6 @@ spec:
     - name: cert-manager-http01
   # Per-cluster adaptations of the shared apps/personliness manifests:
   patches:
-    # This cluster has only k3s local-path, not longhorn.
-    - target:
-        kind: PersistentVolumeClaim
-      patch: |
-        - op: replace
-          path: /spec/storageClassName
-          value: local-path
     # Both hostnames: sslip.io works now; dcxxiv.com auto-activates once its
     # Cloudflare A record resolves. Drop the sslip.io entries once dcxxiv.com
     # is confirmed.
