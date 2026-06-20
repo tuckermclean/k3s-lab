@@ -17,5 +17,6 @@ spec:
     replicaCount: 1
     clusterRoleBinding:
       create: true
-    extraArgs:
-      - "--unsafe-use-service-account-token"
+    config:
+      extraArgs:
+        - "--unsafe-use-service-account-token"
