@@ -68,13 +68,12 @@ help:
 
 .PHONY: recover-age-key
 recover-age-key: ## Decrypt age.agekey from git using your SSH key → /tmp/k3s-lab-age.agekey
-	@echo "Recovering age private key from $(AGE_KEY_ENC) using $(SSH_KEY) ..."
-	@test -f "$(SSH_KEY)" || (echo "ERROR: SSH key not found at $(SSH_KEY)"; exit 1)
-	@test -f "$(AGE_KEY_ENC)" || (echo "ERROR: $(AGE_KEY_ENC) not found in repo"; exit 1)
-	age -d -i "$(SSH_KEY)" -o "$(AGE_KEY_TMP)" "$(AGE_KEY_ENC)"
+	@echo "Recovering age private key from $(AGE_KEY_ENC) using $(SSH_KEY) ..." >&2
+	@test -f "$(SSH_KEY)" || (echo "ERROR: SSH key not found at $(SSH_KEY)" >&2; exit 1)
+	@test -f "$(AGE_KEY_ENC)" || (echo "ERROR: $(AGE_KEY_ENC) not found in repo" >&2; exit 1)
+	@age -d -i "$(SSH_KEY)" -o "$(AGE_KEY_TMP)" "$(AGE_KEY_ENC)"
 	@chmod 600 "$(AGE_KEY_TMP)"
-	@echo "Age key written to $(AGE_KEY_TMP)"
-	@echo "Run 'make install-sops-age' to push it into the cluster, then 'make clean-age-key' when done."
+	@echo "Age key recovered." >&2
 
 .PHONY: install-sops-age
 install-sops-age: ## Install the age private key as sops-age Secret in flux-system
@@ -178,8 +177,8 @@ destroy-ovh: recover-age-key ## Destroy the OVH cluster (stops billing)
 	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(OVH_TF_DIR) destroy
 
 .PHONY: kubeconfig-ovh
-kubeconfig-ovh: recover-age-key ## Print path to the OVH kubeconfig
-	@SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -s -C $(OVH_TF_DIR) kubeconfig
+kubeconfig-ovh: recover-age-key ## Print absolute path to the OVH kubeconfig
+	@echo "$(CURDIR)/$(OVH_TF_DIR)/kubeconfig"
 
 # ---------------------------------------------------------------------------
 # Authentik Terraform

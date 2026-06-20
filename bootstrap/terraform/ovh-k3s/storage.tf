@@ -19,10 +19,6 @@ resource "openstack_blockstorage_volume_v3" "first" {
   name        = "k3s-ovh-1-data"
   size        = var.data_volume_size_gb
   volume_type = var.data_volume_type
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "openstack_blockstorage_volume_v3" "rest" {
@@ -30,10 +26,6 @@ resource "openstack_blockstorage_volume_v3" "rest" {
   name        = "k3s-ovh-${count.index + 2}-data"
   size        = var.data_volume_size_gb
   volume_type = var.data_volume_type
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "openstack_blockstorage_volume_v3" "agent" {
@@ -41,10 +33,6 @@ resource "openstack_blockstorage_volume_v3" "agent" {
   name        = "k3s-ovh-agent-${count.index + 1}-data"
   size        = var.data_volume_size_gb
   volume_type = var.data_volume_type
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # --- Volume attachments (separate resources — do not recreate instances) ---
