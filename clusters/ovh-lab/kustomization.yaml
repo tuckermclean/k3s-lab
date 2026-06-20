@@ -4,6 +4,9 @@ resources:
   # `flux bootstrap` (run by bootstrap/terraform/ovh-k3s) populates flux-system/.
   - flux-system/
 
+  # k3s built-in Traefik configuration
+  - traefik-config-kustomization.yaml
+
   # Foundation: certs (DNS01/Cloudflare, defines letsencrypt-prod) + storage
   - cert-manager-kustomization.yaml
   - cert-manager-http01-kustomization.yaml
