@@ -18,6 +18,14 @@ spec:
       defaultDataPath: /var/lib/longhorn
       defaultReplicaCount: 2        # cluster-wide “normal” volumes
       allowRecurringJobWhileVolumeDetached: true
+      # Backup target — configure before storing any data you care about.
+      # Longhorn backups are the only recovery path when ALL replicas are
+      # corrupted (block-level replication propagates filesystem corruption).
+      # Example (AWS S3):
+      #   backupTarget: s3://your-bucket@us-east-1/longhorn-backups
+      #   backupTargetCredentialSecret: longhorn-backup-secret
+      # The secret needs AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY keys
+      # in namespace longhorn-system.
     persistence:
       defaultClass: true
       defaultClassReplicaCount: 2

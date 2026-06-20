@@ -17,6 +17,40 @@ write_files:
 runcmd:
   - |
     set -e
+%{ if data_volume_size_gb > 0 ~}
+    # ── Data disk setup (runs before k3s so storage paths are on the new disk) ──
+    # The data volume is attached by the Terraform null_resource on a running
+    # cluster; on a fresh rebuild it is pre-attached and set up here via cloud-init.
+    MOUNT="${data_mount_point}"
+    echo "==> Setting up data disk at $MOUNT..."
+
+    # Find the first unformatted, unmounted block device (virtio serial unknown at
+    # cloud-init time; rely on it being the only blank device).
+    DEV=""
+    for d in $(lsblk -nd --output NAME,TYPE 2>/dev/null | awk '$2=="disk"{print "/dev/"$1}'); do
+      findmnt "$d" &>/dev/null && continue
+      lsblk -n "$d" 2>/dev/null | grep -q 'part' && continue
+      blkid "$d" &>/dev/null && continue
+      DEV="$d"
+      break
+    done
+
+    if [ -n "$DEV" ]; then
+      mkfs.ext4 -L data -m 1 "$DEV"
+      mkdir -p "$MOUNT" "$MOUNT/longhorn" "$MOUNT/local-path"
+      echo "LABEL=data $MOUNT ext4 defaults,nofail 0 2" >> /etc/fstab
+      echo "$MOUNT/longhorn /var/lib/longhorn none bind,nofail,x-systemd.requires=local-fs.target 0 0" >> /etc/fstab
+      echo "$MOUNT/local-path /var/lib/rancher/k3s/storage none bind,nofail,x-systemd.requires=local-fs.target 0 0" >> /etc/fstab
+      mount "$MOUNT"
+      mkdir -p /var/lib/longhorn /var/lib/rancher/k3s/storage
+      mount --bind "$MOUNT/longhorn" /var/lib/longhorn
+      mount --bind "$MOUNT/local-path" /var/lib/rancher/k3s/storage
+      echo "==> Data disk ready at $MOUNT; storage paths bind-mounted."
+    else
+      echo "WARNING: No blank data disk found; Longhorn and local-path will use root disk." >&2
+    fi
+    # ─────────────────────────────────────────────────────────────────────────
+%{ endif ~}
     PUBIP=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 || true)
     [ -z "$PUBIP" ] && PUBIP=$(ip -4 route get 1.1.1.1 | awk '{print $7; exit}')
 %{ if role == "server-first" ~}

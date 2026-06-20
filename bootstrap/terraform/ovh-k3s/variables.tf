@@ -127,6 +127,26 @@ variable "dns_subdomains" {
   default     = ["personliness"]
 }
 
+# --- Per-node data disk ---
+
+variable "data_volume_size_gb" {
+  type        = number
+  description = "Size in GB of the per-node Cinder data disk. The disk is mounted and bind-mounted over /var/lib/longhorn and /var/lib/rancher/k3s/storage so existing StorageClasses gain the capacity. Set to 0 to disable."
+  default     = 100
+}
+
+variable "data_volume_type" {
+  type        = string
+  description = "OVH Cinder volume type. Verify available types with 'openstack volume type list' after sourcing the OVH US OpenRC. Common values: classic, high-speed, high-speed-gen2."
+  default     = "classic"
+}
+
+variable "data_mount_point" {
+  type        = string
+  description = "Host path where the data disk is mounted. Bind mounts for Longhorn and local-path are anchored here."
+  default     = "/mnt/data"
+}
+
 # --- Flux GitOps bootstrap ---
 
 variable "bootstrap_flux" {

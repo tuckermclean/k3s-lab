@@ -3,7 +3,19 @@ kind: StorageClass
 metadata:
   name: longhorn
 provisioner: driver.longhorn.io
-allowVolumeExpansion: true
+# allowVolumeExpansion is intentionally OMITTED (defaults to false).
+#
+# Incident 2026-06-20: all four stateful volumes were corrupted simultaneously
+# when resize2fs was interrupted mid-run (node disruption during a PVC expand).
+# Longhorn replication is block-level, so the partial write propagated to both
+# replicas instantly — there was no clean replica to recover from. No backups
+# were configured, so data was unrecoverable.
+#
+# To safely resize a volume:
+#   1. Patch this StorageClass to add `allowVolumeExpansion: true`
+#   2. Edit the PVC (one at a time, not all at once)
+#   3. Wait for Longhorn to report the volume healthy before continuing
+#   4. Remove allowVolumeExpansion from this StorageClass when done
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:
@@ -14,7 +26,7 @@ kind: StorageClass
 metadata:
   name: longhorn-local-home
 provisioner: driver.longhorn.io
-allowVolumeExpansion: true
+# allowVolumeExpansion omitted — see comment on the longhorn StorageClass above.
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 parameters:

@@ -10,6 +10,12 @@ resource "openstack_compute_instance_v2" "first" {
   network {
     name = data.openstack_networking_network_v2.ext.name
   }
+
+  # user_data is only consumed at first boot; changing the cloud-init template
+  # should not recreate a running node.
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }
 
 # node-2..n: join node-1.
@@ -27,6 +33,10 @@ resource "openstack_compute_instance_v2" "rest" {
   }
 
   depends_on = [openstack_compute_instance_v2.first]
+
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }
 
 # Optional agents (worker-only).
@@ -44,4 +54,8 @@ resource "openstack_compute_instance_v2" "agent" {
   }
 
   depends_on = [openstack_compute_instance_v2.first]
+
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }
