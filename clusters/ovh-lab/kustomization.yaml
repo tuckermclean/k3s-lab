@@ -17,6 +17,9 @@ resources:
   - monitoring-kustomization.yaml
   - weave-gitops-kustomization.yaml
 
+  # Infrastructure tools
+  - headlamp-kustomization.yaml
+
   # Applications
   - personliness-kustomization.yaml
   - hero-kustomization.yaml
