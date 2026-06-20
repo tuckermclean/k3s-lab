@@ -46,6 +46,10 @@ spec:
       valuesKey: secret-key
       targetPath: secret.secretKey
   values:
+    # --force allows format to proceed even though the S3 bucket is non-empty
+    # (data from the previous cluster). Redis is fresh on the reprovisioned
+    # cluster so the filesystem needs to be re-registered.
+    formatOptions: "--force"
     # MinIO browser (web file manager) is enabled by default in the JuiceFS
     # gateway build. Log in with the S3 access-key / secret-key.
     service:
