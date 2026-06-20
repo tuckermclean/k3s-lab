@@ -52,7 +52,10 @@ spec:
               name: authentik-secret
               key: bootstrapToken
         - name: AUTHENTIK_BOOTSTRAP_EMAIL
-          value: me@tuckermclean.com
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: bootstrapEmail
     authentik:
       errorReporting:
         enabled: false
