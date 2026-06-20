@@ -21,8 +21,8 @@ spec:
         - name: db
           image: mysql:8
           imagePullPolicy: IfNotPresent
-          args:
-            - --default-authentication-plugin=caching_sha2_password
+          # NB: mysql:8 -> 8.4 LTS, where --default-authentication-plugin was
+          # removed. caching_sha2_password is already the default; no arg needed.
           env:
             - name: MYSQL_DATABASE
               valueFrom:
