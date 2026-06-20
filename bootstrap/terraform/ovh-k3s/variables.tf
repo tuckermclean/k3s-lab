@@ -81,50 +81,18 @@ variable "enable_http_ingress" {
   default     = false
 }
 
-# --- OVH managed DNS (optional) ---
+# --- Cloudflare DNS ---
 
 variable "manage_dns" {
   type        = bool
-  description = "If true, create A records (one per node) in an OVH-hosted zone and output the zone's nameservers. Requires the OVH API token vars below and the zone to already exist at OVH."
-  default     = false
-}
-
-variable "ovh_endpoint" {
-  type        = string
-  description = "OVH API endpoint: ovh-us, ovh-eu, or ovh-ca."
-  default     = "ovh-us"
-}
-
-variable "ovh_application_key" {
-  type        = string
-  description = "OVH API application key (api.us.ovhcloud.com/createToken)."
-  default     = ""
-}
-
-variable "ovh_application_secret" {
-  type        = string
-  description = "OVH API application secret."
-  default     = ""
-  sensitive   = true
-}
-
-variable "ovh_consumer_key" {
-  type        = string
-  description = "OVH API consumer key."
-  default     = ""
-  sensitive   = true
+  description = "If true, create round-robin A records in Cloudflare for each subdomain across all nodes. API token comes from CLOUDFLARE_API_TOKEN env var (exported by tf.sh from secrets.sops.yaml)."
+  default     = true
 }
 
 variable "dns_zone" {
   type        = string
-  description = "OVH-hosted DNS zone to create records in."
+  description = "Cloudflare DNS zone. Apex A records (one per node) are created here; subdomain CNAMEs are unmanaged and resolve via the apex."
   default     = "dcxxiv.com"
-}
-
-variable "dns_subdomains" {
-  type        = list(string)
-  description = "Subdomains to point at the cluster nodes (one A record per node each)."
-  default     = ["personliness"]
 }
 
 # --- Per-node data disk ---

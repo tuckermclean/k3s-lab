@@ -18,7 +18,7 @@ output "agent_public_ips" {
   value       = openstack_compute_instance_v2.agent[*].access_ip_v4
 }
 
-output "dns_nameservers" {
-  description = "Nameservers OVH assigned to the zone — set these at your registrar. Empty unless manage_dns=true and the zone exists at OVH."
-  value       = var.manage_dns ? data.ovh_domain_zone.this[0].name_servers : []
+output "dns_records" {
+  description = "Cloudflare apex A records managed by Terraform. Empty unless manage_dns=true."
+  value       = [for k, r in cloudflare_record.apex : "${var.dns_zone} -> ${r.content != null ? r.content : "(pending)"}"]
 }

@@ -6,9 +6,9 @@ terraform {
       source  = "terraform-provider-openstack/openstack"
       version = "~> 3.0"
     }
-    ovh = {
-      source  = "ovh/ovh"
-      version = "~> 1.5"
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
