@@ -37,25 +37,21 @@ spec:
       name: authentik-db-secret
       valuesKey: postgres-password
       targetPath: authentik.postgresql.password
+    - kind: Secret
+      name: authentik-secret
+      valuesKey: bootstrapPassword
+      targetPath: authentik.bootstrap.password
+    - kind: Secret
+      name: authentik-secret
+      valuesKey: bootstrapToken
+      targetPath: authentik.bootstrap.token
+    - kind: Secret
+      name: authentik-secret
+      valuesKey: bootstrapEmail
+      targetPath: authentik.bootstrap.email
   values:
     global:
       host: https://auth.dcxxiv.com
-      env:
-        - name: AUTHENTIK_BOOTSTRAP_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: authentik-secret
-              key: bootstrapPassword
-        - name: AUTHENTIK_BOOTSTRAP_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: authentik-secret
-              key: bootstrapToken
-        - name: AUTHENTIK_BOOTSTRAP_EMAIL
-          valueFrom:
-            secretKeyRef:
-              name: authentik-secret
-              key: bootstrapEmail
     authentik:
       errorReporting:
         enabled: false
