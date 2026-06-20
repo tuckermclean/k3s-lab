@@ -40,6 +40,19 @@ spec:
   values:
     global:
       host: https://auth.dcxxiv.com
+      env:
+        - name: AUTHENTIK_BOOTSTRAP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: bootstrapPassword
+        - name: AUTHENTIK_BOOTSTRAP_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secret
+              key: bootstrapToken
+        - name: AUTHENTIK_BOOTSTRAP_EMAIL
+          value: me@tuckermclean.com
     authentik:
       errorReporting:
         enabled: false
