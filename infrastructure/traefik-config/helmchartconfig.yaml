@@ -5,6 +5,5 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    providers:
-      kubernetesCRD:
-        allowCrossNamespaceMiddleware: true
+    additionalArguments:
+      - "--providers.kubernetescrd.allowCrossNamespaceMiddleware=true"
