@@ -8,7 +8,10 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 20Gi
+      # 10Gi (not 20): Longhorn disks are ~47Gi/node with a 25% free floor and
+      # no over-provisioning, so a 20Gi x2-replica volume can't be scheduled.
+      # allowVolumeExpansion is on; grow this (or add a data disk) if needed.
+      storage: 10Gi
   storageClassName: longhorn
 ---
 apiVersion: v1
