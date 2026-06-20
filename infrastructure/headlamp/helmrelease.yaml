@@ -18,5 +18,4 @@ spec:
     clusterRoleBinding:
       create: true
     config:
-      extraArgs:
-        - "--unsafe-use-service-account-token"
+      unsafeUseServiceAccountToken: true
