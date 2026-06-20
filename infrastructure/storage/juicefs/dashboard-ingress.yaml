@@ -1,0 +1,32 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: juicefs-dashboard-tls
+  namespace: kube-system
+spec:
+  secretName: juicefs-dashboard-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  dnsNames:
+    - juicefs.dcxxiv.com
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: juicefs-dashboard
+  namespace: kube-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`juicefs.dcxxiv.com`)
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      services:
+        - name: juicefs-csi-dashboard
+          port: 8088
+  tls:
+    secretName: juicefs-dashboard-tls

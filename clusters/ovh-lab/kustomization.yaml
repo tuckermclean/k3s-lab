@@ -14,6 +14,7 @@ resources:
   - longhorn-kustomization.yaml
   - redis-juicefs-kustomization.yaml
   - juicefs-kustomization.yaml
+  - juicefs-s3-gateway-kustomization.yaml
 
   # Core infrastructure
   - authentik-kustomization.yaml

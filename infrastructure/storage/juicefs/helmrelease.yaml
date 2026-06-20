@@ -22,3 +22,7 @@ spec:
     # Use default CSIDriver name csi.juicefs.com
     driver:
       name: csi.juicefs.com
+
+    dashboard:
+      enabled: true
+      # No built-in auth — Authentik forwardAuth fronts the IngressRoute.
