@@ -245,24 +245,22 @@ is untouched; OVH-only wiring lives in a separate layer.
 
 **First-time setup (run once after cluster is up):**
 
+You will be provided an AWS access key ID, secret access key, bucket name, and region
+for a pre-created IAM user scoped to the backup bucket. Encrypt them into the cluster:
+
 ```bash
-# 1. Provision the S3 bucket + least-privilege IAM user
-make init-aws-backup      # creates secrets.sops.yaml + terraform.tfvars if missing
-make plan-aws-backup      # review
-make apply-aws-backup     # creates bucket + IAM user, prints outputs
+# 1. Encrypt the provided credentials into the cluster secret
+make store-longhorn-backup-secret
+# Opens infrastructure/storage/longhorn/backup/secret.example.yaml in $EDITOR.
+# Fill in AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_DEFAULT_REGION.
+# AWS_DEFAULT_REGION must match the @region in the backupTarget URL below.
 
-# 2. Encrypt the generated IAM keys into the cluster secret
-make output-aws-backup    # shows backup_target_url + access_key_id (secret_access_key needs -raw)
-# From the aws-backup module dir you can run:
-#   SOPS_AGE_KEY_FILE=/tmp/k3s-lab-age.agekey ./tf.sh output -raw secret_access_key
-make store-longhorn-backup-secret  # opens secret.example.yaml in $EDITOR — fill in keys, saves+encrypts
+# 2. If the bucket name differs from 'k3s-lab-longhorn-backups', update the
+#    backupTarget in clusters/ovh-lab/longhorn-kustomization.yaml:
+#      backupTarget: "s3://<bucket>@<region>/longhorn"
 
-# 3. If you changed the bucket name from the default 'k3s-lab-longhorn-backups',
-#    update backupTarget in clusters/ovh-lab/longhorn-kustomization.yaml to match.
-
-# 4. Commit and push — Flux picks it up within 10 minutes
-git add bootstrap/terraform/aws-backup/secrets.sops.yaml \
-        infrastructure/storage/longhorn/backup/secret.sops.yaml
+# 3. Commit and push — Flux picks it up within 10 minutes
+git add infrastructure/storage/longhorn/backup/secret.sops.yaml
 git commit -m "feat(longhorn): activate S3 backup target on OVH"
 git push
 ```
