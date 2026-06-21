@@ -13,6 +13,6 @@ spec:
   postBuild:
     substituteFrom:
       - kind: Secret
-        name: longhorn-backup-secret
+        name: longhorn-backup-target-vars
   dependsOn:
     - name: longhorn-backup

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: longhorn-backup-target-vars
+    namespace: flux-system
+stringData:
+    BACKUP_TARGET: ENC[AES256_GCM,data:JVnRQy4gA9qURvZhKi8e0tv+hZpneVyHNiIH+DMWLY1oEbkVpEIP,iv:LQCuTRjTUt8tfMLO1P8/aIoSZCXVMNHVsLdjTm7fuRw=,tag:71cwYOhAP07DvGAZMloiOQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBxVEFpcERiQis0ZnEvbjhC
+            RU5WQ1dvK3k2TzZwbm56NVFDMDlUUlFXeG5nCjdhL1pKTVBhd05yaEtkdkxtQlZo
+            bUMrZEw3UmRERndLTXhVanBxNTNVWncKLS0tIEVaTDU1bW1ncG1HM1NrcGc3Ym9T
+            ZXdpQWU5OGprT2xkMnVpQ1VlT2JNcmMKAEZwvYiANp5XpDtbg0vIXI3molBxpNay
+            lFN6Od4pEkbtz8ptE/lujLj2i2dvhZbjbycfgD0D4K3+Zz/tYzZH6Q==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-21T23:14:38Z"
+    mac: ENC[AES256_GCM,data:WjQYm+hQ5jZyQ0+f17znz365mMRR6MOywvhJtN6lIFS4K6YtOdB4bsxhUta35Etm3PsZBG3w1qD4JyRG8+xv7f3F0sYUdiEeMf3O4lnKGsUhLJGJAEiOsnHjQhkFxaltjW1D3GXmv0y8eJNsGrPhgcoS325Aie3oU/2PYFec9tU=,iv:OYdG52hVatp8pO+gSvwnhaNaqIKPPoMdUXfn4oxNHss=,tag:VHaYivvAIRwbR4FZWc9XKA==,type:str]
+    version: 3.13.1
