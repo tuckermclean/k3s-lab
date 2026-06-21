@@ -70,9 +70,14 @@ data:
     PHP
     fi
 
-    # 3) Wait for the database to accept authenticated connections.
+    # 3) Wait for the database. Use PHP/mysqli, NOT `wp db` — the MariaDB mysql
+    #    client in this Alpine image lacks caching_sha2_password and can't auth to
+    #    MySQL 8. WordPress itself (mysqli) connects fine.
     echo "[bootstrap] waiting for database"
-    until wp db query 'SELECT 1;' --allow-root >/dev/null 2>&1; do
+    until php -r '
+    list($h, $p) = array_pad(explode(":", getenv("WORDPRESS_DB_HOST")), 2, "3306");
+    exit(@mysqli_connect($h, getenv("WORDPRESS_DB_USER"), getenv("WORDPRESS_DB_PASSWORD"), getenv("WORDPRESS_DB_NAME"), (int) $p) ? 0 : 1);
+    '; do
       sleep 3
     done
 
