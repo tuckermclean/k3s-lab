@@ -237,31 +237,55 @@ systemctl restart wg-quick@wg-hetzner   # or wg-vultr, depending on node
 - *arr configs — quality profiles, indexer auth, custom formats, history
 - Jellyfin config — libraries, user preferences, plugin config
 
-### Longhorn Backup Configuration (TODO)
+### Longhorn Backup Configuration (OVH — S3)
 
-Add to `infrastructure/storage/longhorn/helmrelease.yaml`:
-```yaml
-values:
-  defaultSettings:
-    backupTarget: nfs://openmediavault.dcxxiv.com:/export/Backup/longhorn
+Backups are configured for the OVH cluster via a dedicated AWS S3 bucket.
+All secrets are SOPS-encrypted. The shared base (`infrastructure/storage/longhorn/`)
+is untouched; OVH-only wiring lives in a separate layer.
+
+**First-time setup (run once after cluster is up):**
+
+```bash
+# 1. Provision the S3 bucket + least-privilege IAM user
+make init-aws-backup      # creates secrets.sops.yaml + terraform.tfvars if missing
+make plan-aws-backup      # review
+make apply-aws-backup     # creates bucket + IAM user, prints outputs
+
+# 2. Encrypt the generated IAM keys into the cluster secret
+make output-aws-backup    # shows backup_target_url + access_key_id (secret_access_key needs -raw)
+# From the aws-backup module dir you can run:
+#   SOPS_AGE_KEY_FILE=/tmp/k3s-lab-age.agekey ./tf.sh output -raw secret_access_key
+make store-longhorn-backup-secret  # opens secret.example.yaml in $EDITOR — fill in keys, saves+encrypts
+
+# 3. If you changed the bucket name from the default 'k3s-lab-longhorn-backups',
+#    update backupTarget in clusters/ovh-lab/longhorn-kustomization.yaml to match.
+
+# 4. Commit and push — Flux picks it up within 10 minutes
+git add bootstrap/terraform/aws-backup/secrets.sops.yaml \
+        infrastructure/storage/longhorn/backup/secret.sops.yaml
+git commit -m "feat(longhorn): activate S3 backup target on OVH"
+git push
 ```
 
-NFS is preferred over S3 here — no AWS cost, openmediavault is already on the network.
+**What gets deployed by Flux:**
+- `longhorn-backup` Kustomization applies `infrastructure/storage/longhorn/backup/`:
+  - `Secret/longhorn-backup-secret` (namespace `longhorn-system`) — least-privilege IAM keys
+  - `RecurringJob/backup-daily` — daily S3 backup at 03:00, retain 7, `default` group
+  - `RecurringJob/snapshot-6h` — 6-hourly local snapshot, retain 8, `default` group
+- The `longhorn` Kustomization on OVH patches the shared HelmRelease to set
+  `defaultSettings.backupTarget` and `defaultSettings.backupTargetCredentialSecret`.
+- The `default` RecurringJob group auto-covers every volume with no per-volume labeling.
 
-Add `infrastructure/storage/longhorn/recurringjob.yaml`:
-```yaml
-apiVersion: longhorn.io/v1beta2
-kind: RecurringJob
-metadata:
-  name: daily-backup
-  namespace: longhorn-system
-spec:
-  cron: "0 2 * * *"
-  task: backup
-  retain: 28
-  concurrency: 1
+**Verify backup target is healthy:**
+```bash
+kubectl -n longhorn-system get backuptarget default -o yaml
+# status.available should be true; status.conditions shows any error detail
+# Most common failure: region mismatch between URL (@us-west-2) and AWS_DEFAULT_REGION
 ```
-Then label critical volumes to attach to this job (via Longhorn UI or volume annotations).
+
+**Trigger a manual test backup** (Longhorn UI → Volumes → select volume → Create Backup),
+then check `kubectl -n longhorn-system get backups` and
+`aws s3 ls s3://k3s-lab-longhorn-backups/longhorn/` to confirm the object exists.
 
 ### Local-Path PV Backup (TODO)
 
@@ -276,10 +300,21 @@ These PVs live in `/var/lib/rancher/k3s/storage/` on k3s01. Add to `bootstrap/sc
 
 ### Restore Procedures
 
-**Longhorn volume:**
-1. Longhorn UI → Backup → select snapshot → Restore to new PVC
-2. Update the app's PVC reference (or rename the PVC and recreate the PV binding)
-3. Restart the deployment
+**Longhorn volume (single volume, normal recovery):**
+1. Confirm backup target is reachable:
+   `kubectl -n longhorn-system get backuptarget default -o jsonpath='{.status.available}'` → `true`
+2. Longhorn UI → Backup → select volume → select backup → Restore to new PVC
+3. Update the app's PVC reference (or rename the PVC and recreate the PV binding)
+4. Restart the deployment
+
+**Longhorn — full cluster DR (all Longhorn data lost):**
+1. Redeploy Longhorn via Flux (the `backupTarget` + credential secret return automatically
+   from SOPS). Wait until the `default` BackupTarget shows `available: true`.
+2. For each volume to restore: Longhorn UI → Backup → select volume → Restore.
+   The backups listing is fetched live from S3, so all backups made before the incident appear.
+3. Rebind PVCs to the restored volumes, restart workloads.
+   (Restore is NOT put in Git — a `fromBackup` Volume reconciled by Flux would conflict
+   with the live PVC after recovery.)
 
 **Local-path PV:**
 1. Rsync back from openmediavault:

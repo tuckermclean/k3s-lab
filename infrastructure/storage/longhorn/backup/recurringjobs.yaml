@@ -1,0 +1,34 @@
+---
+# Daily backup to S3. The 'default' group automatically covers every volume that
+# is not explicitly assigned to another group, so all existing and future volumes
+# are protected without per-volume labeling.
+# allowRecurringJobWhileVolumeDetached: true is set in the base HelmRelease, so
+# detached PVCs (e.g. stopped apps) still get backed up on schedule.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-daily
+  namespace: longhorn-system
+spec:
+  cron: "0 3 * * *"
+  task: backup
+  groups:
+    - default
+  retain: 7
+  concurrency: 1
+---
+# 6-hourly local snapshot for fast, low-cost point-in-time recovery within the node.
+# Backups (above) already include a snapshot step, but this finer cadence gives
+# intra-day rollback without touching S3.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: snapshot-6h
+  namespace: longhorn-system
+spec:
+  cron: "0 */6 * * *"
+  task: snapshot
+  groups:
+    - default
+  retain: 8
+  concurrency: 2

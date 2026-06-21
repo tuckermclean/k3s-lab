@@ -40,6 +40,13 @@ help:
 	@echo "    destroy-ovh              Destroy the OVH cluster (stops billing)"
 	@echo "    kubeconfig-ovh           Print path to the OVH kubeconfig"
 	@echo ""
+	@echo "  Longhorn S3 backup (Terraform — run once to create bucket + IAM user)"
+	@echo "    init-aws-backup          One-time setup: create secrets if needed, then terraform init"
+	@echo "    plan-aws-backup          Preview AWS backup infrastructure changes"
+	@echo "    apply-aws-backup         Create/update the S3 bucket and longhorn-backup IAM user"
+	@echo "    output-aws-backup        Print Terraform outputs (bucket URL, access keys)"
+	@echo "    store-longhorn-backup-secret  Encrypt Longhorn backup AWS keys into SOPS secret"
+	@echo ""
 	@echo "  Authentik (run after Flux deploys Authentik)"
 	@echo "    store-authentik-token      Encrypt and store Authentik API token: make store-authentik-token TOKEN=<value>"
 	@echo "    apply-authentik            Apply OIDC apps/groups via Terraform (reads all secrets from SOPS)"
@@ -179,6 +186,61 @@ destroy-ovh: recover-age-key ## Destroy the OVH cluster (stops billing)
 .PHONY: kubeconfig-ovh
 kubeconfig-ovh: recover-age-key ## Print absolute path to the OVH kubeconfig
 	@echo "$(CURDIR)/$(OVH_TF_DIR)/kubeconfig"
+
+# ---------------------------------------------------------------------------
+# Longhorn S3 backup (AWS Terraform)
+# ---------------------------------------------------------------------------
+
+AWS_BACKUP_TF_DIR := bootstrap/terraform/aws-backup
+LONGHORN_BACKUP_SECRET := infrastructure/storage/longhorn/backup/secret.sops.yaml
+LONGHORN_BACKUP_EXAMPLE := infrastructure/storage/longhorn/backup/secret.example.yaml
+
+.PHONY: init-aws-backup
+init-aws-backup: recover-age-key ## One-time setup: create secrets if needed, then terraform init
+	@if [ ! -f "$(AWS_BACKUP_TF_DIR)/secrets.sops.yaml" ]; then \
+	  echo "No secrets.sops.yaml found — opening example in $$EDITOR to fill in AWS provisioning credentials."; \
+	  cp "$(AWS_BACKUP_TF_DIR)/secrets.yaml.example" "$(AWS_BACKUP_TF_DIR)/secrets.yaml"; \
+	  $${EDITOR:-vi} "$(AWS_BACKUP_TF_DIR)/secrets.yaml"; \
+	  cp "$(AWS_BACKUP_TF_DIR)/secrets.yaml" "$(AWS_BACKUP_TF_DIR)/secrets.sops.yaml"; \
+	  SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -e -i "$(AWS_BACKUP_TF_DIR)/secrets.sops.yaml"; \
+	  rm "$(AWS_BACKUP_TF_DIR)/secrets.yaml"; \
+	  echo "Secrets encrypted. Commit with: git add $(AWS_BACKUP_TF_DIR)/secrets.sops.yaml && git commit"; \
+	fi
+	@if [ ! -f "$(AWS_BACKUP_TF_DIR)/terraform.tfvars" ]; then \
+	  echo "No terraform.tfvars found — opening example in $$EDITOR to set bucket_name."; \
+	  cp "$(AWS_BACKUP_TF_DIR)/terraform.tfvars.example" "$(AWS_BACKUP_TF_DIR)/terraform.tfvars"; \
+	  $${EDITOR:-vi} "$(AWS_BACKUP_TF_DIR)/terraform.tfvars"; \
+	fi
+	terraform -chdir="$(AWS_BACKUP_TF_DIR)" init
+
+.PHONY: plan-aws-backup
+plan-aws-backup: recover-age-key ## Preview AWS backup infrastructure changes
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(AWS_BACKUP_TF_DIR) plan
+
+.PHONY: apply-aws-backup
+apply-aws-backup: recover-age-key ## Create/update the S3 bucket and longhorn-backup IAM user
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(AWS_BACKUP_TF_DIR) apply
+	@echo ""
+	@echo "Next: run 'make output-aws-backup' and then 'make store-longhorn-backup-secret'"
+	@echo "      to encrypt the generated keys into $(LONGHORN_BACKUP_SECRET)"
+
+.PHONY: output-aws-backup
+output-aws-backup: recover-age-key ## Print Terraform outputs: bucket URL, access key ID, backup_target_url
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(AWS_BACKUP_TF_DIR) output
+
+.PHONY: store-longhorn-backup-secret
+store-longhorn-backup-secret: recover-age-key ## Encrypt Longhorn backup AWS keys into SOPS secret (run after apply-aws-backup)
+	@echo "Opening secret template in $$EDITOR. Fill in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"
+	@echo "from 'make output-aws-backup'. AWS_DEFAULT_REGION must match the backupTarget URL."
+	@cp "$(LONGHORN_BACKUP_EXAMPLE)" /tmp/longhorn-backup-secret.yaml
+	@$${EDITOR:-vi} /tmp/longhorn-backup-secret.yaml
+	@cp /tmp/longhorn-backup-secret.yaml "$(LONGHORN_BACKUP_SECRET)"
+	@SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -e -i "$(LONGHORN_BACKUP_SECRET)"
+	@rm /tmp/longhorn-backup-secret.yaml
+	$(MAKE) clean-age-key
+	@echo ""
+	@echo "Secret encrypted at $(LONGHORN_BACKUP_SECRET)"
+	@echo "Commit with: git add $(LONGHORN_BACKUP_SECRET) && git commit"
 
 # ---------------------------------------------------------------------------
 # Authentik Terraform

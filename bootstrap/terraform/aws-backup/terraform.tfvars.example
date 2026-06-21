@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+# S3 bucket names must be globally unique across all AWS accounts.
+# Auth credentials are NOT here — they live in secrets.sops.yaml (see secrets.yaml.example).
+
+bucket_name = "k3s-lab-longhorn-backups"
+# region    = "us-west-2"   # default; change if your bucket is in a different region

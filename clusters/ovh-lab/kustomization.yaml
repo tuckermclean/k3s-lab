@@ -12,6 +12,7 @@ resources:
   - cert-manager-http01-kustomization.yaml
   - cert-manager-config-kustomization.yaml
   - longhorn-kustomization.yaml
+  - longhorn-backup-kustomization.yaml
   - redis-juicefs-kustomization.yaml
   - juicefs-kustomization.yaml
   - juicefs-s3-gateway-kustomization.yaml
