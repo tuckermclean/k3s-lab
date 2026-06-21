@@ -76,7 +76,7 @@ spec:
                 # Parse Redis host/port/db from metaurl
                 # e.g. redis://juicefs-redis-master.kube-system.svc.cluster.local:6379/2
                 REDIS_HOST=$(echo "$metaurl" | sed 's|redis://||' | cut -d/ -f1 | cut -d: -f1)
-                REDIS_PORT=$(echo "$metaurl" | sed 's|redis://||' | cut -d/ -f1 | rev | cut -d: -f1 | rev)
+                REDIS_PORT=$(echo "$metaurl" | sed 's|redis://||' | cut -d/ -f1 | sed 's/.*://')
                 REDIS_DB=$(echo "$metaurl" | sed 's|.*/||')
                 REDIS_HOST="${REDIS_HOST:-juicefs-redis-master.kube-system.svc.cluster.local}"
                 REDIS_PORT="${REDIS_PORT:-6379}"
