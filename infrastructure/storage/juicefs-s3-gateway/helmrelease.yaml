@@ -46,10 +46,11 @@ spec:
       valuesKey: secret-key
       targetPath: secret.secretKey
   values:
-    # --no-update: exit 0 if the filesystem is already registered in Redis;
-    # fail if not (prevents silently regenerating a new UUID on restart).
-    # The one-time bootstrap format was done via a kubectl Job.
-    formatOptions: "--no-update"
+    # --no-update: exit 0 if already registered in Redis (safe on restart, no UUID churn).
+    # --force: allow format even when S3 prefix is non-empty; needed on repave because
+    # Redis is fresh but the bucket still has stale blocks from the previous cluster
+    # (those blocks are already inaccessible without the old metadata anyway).
+    formatOptions: "--no-update --force"
     # MinIO browser (web file manager) is enabled by default in the JuiceFS
     # gateway build. Log in with the S3 access-key / secret-key.
     service:
