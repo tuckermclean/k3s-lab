@@ -15,8 +15,8 @@ spec:
   # OVH-only: activate the S3 backup target. The shared base HelmRelease leaves
   # backupTarget commented out so the home cluster is unaffected. Longhorn seeds
   # the auto-created 'default' BackupTarget from these defaultSettings values.
-  # The credential secret is applied by the longhorn-backup Kustomization.
-  # Update bucket name to match the output of 'make output-aws-backup'.
+  # backupTarget is read from the SOPS-encrypted secret (BACKUP_TARGET key) via
+  # valuesFrom — the bucket name never appears in any plain YAML file.
   patches:
     - patch: |
         apiVersion: helm.toolkit.fluxcd.io/v2
@@ -25,9 +25,13 @@ spec:
           name: longhorn
           namespace: longhorn-system
         spec:
+          valuesFrom:
+            - kind: Secret
+              name: longhorn-backup-secret
+              valuesKey: BACKUP_TARGET
+              targetPath: defaultSettings.backupTarget
           values:
             defaultSettings:
-              backupTarget: "s3://k3s-lab-longhorn-backups@us-west-2/longhorn"
               backupTargetCredentialSecret: "longhorn-backup-secret"
       target:
         kind: HelmRelease

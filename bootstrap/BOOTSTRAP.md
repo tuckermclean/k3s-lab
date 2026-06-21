@@ -255,11 +255,7 @@ make store-longhorn-backup-secret
 # Fill in AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_DEFAULT_REGION.
 # AWS_DEFAULT_REGION must match the @region in the backupTarget URL below.
 
-# 2. If the bucket name differs from 'k3s-lab-longhorn-backups', update the
-#    backupTarget in clusters/ovh-lab/longhorn-kustomization.yaml:
-#      backupTarget: "s3://<bucket>@<region>/longhorn"
-
-# 3. Commit and push — Flux picks it up within 10 minutes
+# 2. Commit and push — Flux picks it up within 10 minutes
 git add infrastructure/storage/longhorn/backup/secret.sops.yaml
 git commit -m "feat(longhorn): activate S3 backup target on OVH"
 git push
