@@ -94,12 +94,31 @@ data:
       wp rewrite structure '/%postname%/' --allow-root
     fi
 
-    # 5) Login brute-force protection (best-effort; never block startup on it).
+    # 5) Pretty-permalink rewrites. Apache here uses AllowOverride All but the
+    #    image ships no .htaccess, and `wp rewrite flush` won't write one from the
+    #    CLI, so posts/pages 404. Create the standard WordPress .htaccess if absent.
+    if [ ! -f .htaccess ]; then
+      echo "[bootstrap] writing .htaccess"
+      cat > .htaccess <<'HTACCESS'
+    # BEGIN WordPress
+    <IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    RewriteRule ^index\.php$ - [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /index.php [L]
+    </IfModule>
+    # END WordPress
+    HTACCESS
+    fi
+
+    # 6) Login brute-force protection (best-effort; never block startup on it).
     if ! wp plugin is-installed limit-login-attempts-reloaded --allow-root >/dev/null 2>&1; then
       wp plugin install limit-login-attempts-reloaded --activate --allow-root \
         || echo "[bootstrap] WARN: limit-login-attempts-reloaded install failed (egress?)"
     fi
 
-    # 6) Hand ownership to the Apache image's www-data (uid 33) so it can serve/write.
+    # 7) Hand ownership to the Apache image's www-data (uid 33) so it can serve/write.
     chown -R 33:33 /var/www/html
     echo "[bootstrap] done"
