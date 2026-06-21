@@ -14,5 +14,9 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: longhorn-backup-secret
   dependsOn:
     - name: longhorn

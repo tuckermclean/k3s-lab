@@ -4,4 +4,5 @@ commonLabels:
   app.kubernetes.io/part-of: gitops
 resources:
   - secret.sops.yaml
+  - backuptarget.yaml
   - recurringjobs.yaml
