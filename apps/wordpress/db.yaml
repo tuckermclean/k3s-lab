@@ -57,9 +57,12 @@ spec:
             limits:
               memory: 1Gi
       volumes:
+        # Fresh DB volume — the compromised "mysql-data" PVC is quarantined
+        # (see pvc.yaml). A new empty datadir lets wp-bootstrap install cleanly
+        # and initializes with the rotated credentials from the SOPS secret.
         - name: mysql-data
           persistentVolumeClaim:
-            claimName: mysql-data
+            claimName: mysql-data-v2
 ---
 apiVersion: v1
 kind: Service

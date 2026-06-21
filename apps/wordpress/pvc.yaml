@@ -1,7 +1,46 @@
+# NOTE: The original "wordpress-data" and "mysql-data" PVCs were compromised on
+# 2026-06-21 (webshell injection; see project memory / ~/wp-lol-forensics-*). They
+# are intentionally KEPT here — not renamed in place — so Flux's prune:true does
+# not delete the underlying Longhorn volumes (which also hold the forensic
+# snapshot `wp-lol-compromise-20260621`). The live app now uses the *-v2 volumes
+# below. Once forensics are no longer needed, delete the two quarantined stanzas
+# (and the Longhorn snapshot) to reclaim ~20Gi.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: wordpress-data
+  namespace: wordpress
+  labels:
+    quarantine: compromised-2026-06-21
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: wordpress
+  labels:
+    quarantine: compromised-2026-06-21
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: longhorn
+---
+# Clean rebuild volumes (provisioned fresh). The wp-bootstrap initContainer
+# installs WordPress into these from scratch.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-data-v2
   namespace: wordpress
 spec:
   accessModes:
@@ -17,7 +56,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mysql-data
+  name: mysql-data-v2
   namespace: wordpress
 spec:
   accessModes:

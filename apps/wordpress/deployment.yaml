@@ -17,10 +17,16 @@ spec:
       labels:
         app.kubernetes.io/name: wordpress
     spec:
-      containers:
-        - name: wordpress
-          image: wordpress:php8.3-apache
+      # Bootstrap WordPress non-interactively before Apache serves any traffic.
+      # The Service has no endpoints until this pod is Ready, so the install
+      # wizard is never publicly reachable (the prior compromise vector).
+      initContainers:
+        - name: wp-bootstrap
+          image: wordpress:cli
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+          command: ["sh", "/scripts/bootstrap.sh"]
           env:
             - name: WORDPRESS_DB_HOST
               valueFrom:
@@ -42,13 +48,65 @@ spec:
                 secretKeyRef:
                   name: wordpress-db
                   key: WORDPRESS_DB_PASSWORD
-            # Trust Traefik's X-Forwarded-Proto so WordPress knows it is on HTTPS
-            # (avoids redirect loops / mixed content), and pin the canonical URL.
-            - name: WORDPRESS_CONFIG_EXTRA
-              value: |
-                if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $_SERVER['HTTPS'] = 'on'; }
-                define('WP_HOME', 'https://lol.dcxxiv.com');
-                define('WP_SITEURL', 'https://lol.dcxxiv.com');
+            - name: WP_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: WP_URL
+            - name: WP_TITLE
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: WP_TITLE
+            - name: WP_ADMIN_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: WP_ADMIN_USER
+            - name: WP_ADMIN_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: WP_ADMIN_EMAIL
+            - name: WP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-db
+                  key: WP_ADMIN_PASSWORD
+          volumeMounts:
+            - name: wordpress-data
+              mountPath: /var/www/html
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+      containers:
+        - name: wordpress
+          image: wordpress:php8.3-apache
+          imagePullPolicy: IfNotPresent
+          # wp-config.php is created by the initContainer (with the proxy-HTTPS
+          # fix + hardening). The DB env below is only a self-heal fallback; when
+          # wp-config.php exists the official image ignores it.
+          env:
+            - name: WORDPRESS_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: WORDPRESS_DB_HOST
+            - name: WORDPRESS_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: WORDPRESS_DB_NAME
+            - name: WORDPRESS_DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: WORDPRESS_DB_USER
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-db
+                  key: WORDPRESS_DB_PASSWORD
           ports:
             - name: http
               containerPort: 80
@@ -66,12 +124,20 @@ spec:
             limits:
               memory: 768Mi
       volumes:
+        # Fresh volume — the 2026-06-21-compromised "wordpress-data" PVC is left
+        # quarantined (see pvc.yaml) and is never mounted here again.
         - name: wordpress-data
           persistentVolumeClaim:
-            claimName: wordpress-data
+            claimName: wordpress-data-v2
         - name: php-uploads
           configMap:
             name: wordpress-config
             items:
               - key: uploads.ini
                 path: uploads.ini
+        - name: scripts
+          configMap:
+            name: wordpress-config
+            items:
+              - key: bootstrap.sh
+                path: bootstrap.sh
