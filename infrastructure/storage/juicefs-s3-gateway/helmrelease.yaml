@@ -47,11 +47,94 @@ spec:
       targetPath: secret.secretKey
   values:
     # --no-update: exit 0 if already registered in Redis (safe on restart, no UUID churn).
-    # --force: allow format even when S3 prefix is non-empty; needed on repave because
-    # Redis is fresh but the bucket still has stale blocks from the previous cluster
-    # (those blocks are already inaccessible without the old metadata anyway).
-    formatOptions: "--no-update --force"
+    formatOptions: "--no-update"
     # MinIO browser (web file manager) is enabled by default in the JuiceFS
     # gateway build. Log in with the S3 access-key / secret-key.
     service:
       type: ClusterIP
+  # Inject a pre-flight init container (runs before the chart's "format" container).
+  # On repave: Redis is empty but S3 may still have stale objects from the old cluster.
+  # juicefs format refuses to create a new filesystem in a non-empty prefix, so this
+  # container detects that state and clears S3 first. On normal restarts Redis already
+  # has the metadata so the format container exits 0 immediately via --no-update.
+  postRenderers:
+  - kustomize:
+      patches:
+      - target:
+          kind: Deployment
+          name: juicefs-s3-gateway
+        patch: |-
+          - op: add
+            path: /spec/template/spec/initContainers/0
+            value:
+              name: check-redis-clear-s3
+              image: amazon/aws-cli:latest
+              command:
+              - sh
+              - -c
+              - |
+                # Parse Redis host/port/db from metaurl
+                # e.g. redis://juicefs-redis-master.kube-system.svc.cluster.local:6379/2
+                REDIS_HOST=$(echo "$metaurl" | sed 's|redis://||' | cut -d/ -f1 | cut -d: -f1)
+                REDIS_PORT=$(echo "$metaurl" | sed 's|redis://||' | cut -d/ -f1 | rev | cut -d: -f1 | rev)
+                REDIS_DB=$(echo "$metaurl" | sed 's|.*/||')
+                REDIS_HOST="${REDIS_HOST:-juicefs-redis-master.kube-system.svc.cluster.local}"
+                REDIS_PORT="${REDIS_PORT:-6379}"
+                REDIS_DB="${REDIS_DB:-2}"
+
+                echo "Checking Redis DBSIZE at $REDIS_HOST:$REDIS_PORT db=$REDIS_DB ..."
+                DBSIZE=$(python3 - <<PYEOF
+                import socket, sys
+                s = socket.socket()
+                s.settimeout(5)
+                try:
+                    s.connect(('$REDIS_HOST', int('$REDIS_PORT')))
+                    s.sendall(b"*2\r\n\$6\r\nSELECT\r\n\$1\r\n$REDIS_DB\r\n")
+                    s.recv(100)
+                    s.sendall(b"*1\r\n\$6\r\nDBSIZE\r\n")
+                    resp = s.recv(100).decode().strip()
+                    print(resp.lstrip(':'))
+                except Exception as e:
+                    print(f"redis error: {e}", file=sys.stderr)
+                    sys.exit(1)
+                PYEOF
+                )
+
+                if [ $? -ne 0 ]; then
+                  echo "Could not reach Redis — skipping S3 check (format container will handle it)."
+                  exit 0
+                fi
+
+                echo "Redis DB $REDIS_DB has $DBSIZE keys."
+                if [ "$DBSIZE" -eq 0 ]; then
+                  echo "Redis is empty (fresh repave). Checking S3 for stale objects ..."
+                  COUNT=$(aws s3 ls "s3://${bucket}/${name}/" --recursive 2>/dev/null | wc -l || echo 0)
+                  if [ "$COUNT" -gt 0 ]; then
+                    echo "Found $COUNT stale objects. Clearing s3://${bucket}/${name}/ ..."
+                    aws s3 rm "s3://${bucket}/${name}/" --recursive
+                    echo "S3 prefix cleared — format container will create a fresh filesystem."
+                  else
+                    echo "S3 prefix already empty."
+                  fi
+                else
+                  echo "Redis has existing metadata — skipping S3 cleanup."
+                fi
+              env:
+              - name: AWS_DEFAULT_REGION
+                valueFrom:
+                  secretKeyRef:
+                    name: juicefs-secret
+                    key: region
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: juicefs-secret
+                    key: access-key
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: juicefs-secret
+                    key: secret-key
+              envFrom:
+              - secretRef:
+                  name: juicefs-secret
