@@ -3,5 +3,4 @@ kind: Kustomization
 commonLabels:
   app.kubernetes.io/part-of: gitops
 resources:
-  - secret.sops.yaml
-  - recurringjobs.yaml
+  - backuptarget.yaml
