@@ -41,7 +41,7 @@ help:
 	@echo "    kubeconfig-ovh           Print path to the OVH kubeconfig"
 	@echo ""
 	@echo "  Longhorn S3 backup"
-	@echo "    store-longhorn-backup-secret  Encrypt provided AWS keys into SOPS secret"
+	@echo "    store-longhorn-backup-secret  Encrypt provided AWS keys into SOPS secrets (also derives backup-target-vars)"
 	@echo ""
 	@echo "  Authentik (run after Flux deploys Authentik)"
 	@echo "    store-authentik-token      Encrypt and store Authentik API token: make store-authentik-token TOKEN=<value>"
@@ -187,23 +187,39 @@ kubeconfig-ovh: recover-age-key ## Print absolute path to the OVH kubeconfig
 # Longhorn S3 backup
 # ---------------------------------------------------------------------------
 
-LONGHORN_BACKUP_SECRET := infrastructure/storage/longhorn/backup/secret.sops.yaml
-LONGHORN_BACKUP_EXAMPLE := infrastructure/storage/longhorn/backup/secret.example.yaml
+LONGHORN_BACKUP_SECRET      := infrastructure/storage/longhorn/backup/secret.sops.yaml
+LONGHORN_BACKUP_EXAMPLE     := infrastructure/storage/longhorn/backup/secret.example.yaml
+LONGHORN_BACKUP_TARGET_VARS := infrastructure/storage/longhorn/backup/backup-target-vars.sops.yaml
 
 .PHONY: store-longhorn-backup-secret
 store-longhorn-backup-secret: recover-age-key ## Encrypt provided AWS keys into the Longhorn backup SOPS secret
 	@echo "Opening secret template in $$EDITOR."
-	@echo "Fill in AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_DEFAULT_REGION."
-	@echo "AWS_DEFAULT_REGION must match the @region in the backupTarget URL."
+	@echo "Fill in AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, and BACKUP_TARGET."
+	@echo "AWS_DEFAULT_REGION must match the @region in the BACKUP_TARGET URL."
 	@cp "$(LONGHORN_BACKUP_EXAMPLE)" /tmp/longhorn-backup-secret.yaml
 	@$${EDITOR:-vi} /tmp/longhorn-backup-secret.yaml
 	@cp /tmp/longhorn-backup-secret.yaml "$(LONGHORN_BACKUP_SECRET)"
 	@SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -e -i "$(LONGHORN_BACKUP_SECRET)"
 	@rm /tmp/longhorn-backup-secret.yaml
+	@$(MAKE) _store-longhorn-backup-target-vars
 	$(MAKE) clean-age-key
 	@echo ""
-	@echo "Secret encrypted at $(LONGHORN_BACKUP_SECRET)"
-	@echo "Commit with: git add $(LONGHORN_BACKUP_SECRET) && git commit"
+	@echo "Secrets encrypted. Commit both:"
+	@echo "  git add $(LONGHORN_BACKUP_SECRET) $(LONGHORN_BACKUP_TARGET_VARS) && git commit"
+
+# Internal: derive the flux-system substituteFrom secret from the already-encrypted backup secret.
+# Called automatically by store-longhorn-backup-secret — not intended to be run directly.
+.PHONY: _store-longhorn-backup-target-vars
+_store-longhorn-backup-target-vars:
+	@test -f "$(LONGHORN_BACKUP_SECRET)" || \
+	  (echo "ERROR: $(LONGHORN_BACKUP_SECRET) not found. Run store-longhorn-backup-secret first."; exit 1)
+	@set -e; \
+	BACKUP_TARGET=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d "$(LONGHORN_BACKUP_SECRET)" | \
+	  python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['stringData']['BACKUP_TARGET'])"); \
+	printf 'apiVersion: v1\nkind: Secret\nmetadata:\n  name: longhorn-backup-target-vars\n  namespace: flux-system\nstringData:\n  BACKUP_TARGET: "%s"\n' "$$BACKUP_TARGET" \
+	  > "$(LONGHORN_BACKUP_TARGET_VARS)"; \
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -e -i "$(LONGHORN_BACKUP_TARGET_VARS)"
+	@echo "Derived backup-target-vars secret encrypted at $(LONGHORN_BACKUP_TARGET_VARS)"
 
 # ---------------------------------------------------------------------------
 # Authentik Terraform

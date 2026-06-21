@@ -28,10 +28,6 @@ spec:
             runAsUser: 0
           command: ["sh", "/scripts/bootstrap.sh"]
           env:
-            # wp-cli's default 128M PHP memory_limit OOMs while extracting core
-            # during `wp core download`; raise it for the bootstrap.
-            - name: WP_CLI_PHP_ARGS
-              value: "-d memory_limit=512M"
             - name: WORDPRESS_DB_HOST
               valueFrom:
                 configMapKeyRef:
