@@ -32,6 +32,13 @@ data:
   bootstrap.sh: |
     #!/bin/sh
     set -eu
+
+    # wp-cli in this image is a phar run directly (#!/usr/bin/env php), so it
+    # inherits the image's 128M php memory_limit and `wp core download` OOMs while
+    # extracting core. Run wp through php with a higher limit. (WP_CLI_PHP_ARGS is
+    # ignored here because the image has no wp shell wrapper.)
+    wp() { php -d memory_limit=512M /usr/local/bin/wp "$@"; }
+
     cd /var/www/html
 
     # 1) WordPress core (only when the volume is fresh/empty).
