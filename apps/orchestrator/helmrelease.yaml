@@ -18,6 +18,21 @@ spec:
     crds: Skip
   upgrade:
     crds: Skip
+  # Upstream chart bug (v0.1.1): the Deployment's `migrate` init container runs
+  # `python -m src.db.migrate`, but that module does not exist in the v0.1.1
+  # image (src/db/ has no migrate.py). The schema is instead created at app
+  # startup — every store uses `CREATE TABLE IF NOT EXISTS` and the ASGI
+  # lifespan calls the init routines before serving traffic. So we drop the
+  # broken (and redundant) init container via a post-render patch.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: orchestrator
+            patch: |
+              - op: remove
+                path: /spec/template/spec/initContainers
   # Sensitive values (GitHub App key, Claude OAuth token, OPERATOR_SECRET_KEY,
   # VAPID private key) live in the out-of-band Secret `orchestrator-secrets`
   # (created with kubectl, NOT committed). The chart references it by name.
