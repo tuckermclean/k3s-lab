@@ -7,6 +7,7 @@ labels:
       app.kubernetes.io/part-of: gitops
 resources:
   - namespace.yaml
+  - secret.sops.yaml
   - gitrepository.yaml
   - helmrelease.yaml
   - certificate.yaml
