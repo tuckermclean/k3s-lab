@@ -33,6 +33,22 @@ spec:
             patch: |
               - op: remove
                 path: /spec/template/spec/initContainers
+          # Single replica on a ReadWriteOnce Longhorn volume: the default
+          # RollingUpdate surges a second pod that can't mount the still-attached
+          # RWO volume, deadlocking upgrades. Recreate terminates the old pod
+          # (detaching the volume) before starting the new one.
+          - target:
+              kind: Deployment
+              name: orchestrator
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: orchestrator
+              spec:
+                strategy:
+                  type: Recreate
+                  rollingUpdate: null
   # Sensitive values (GitHub App key, Claude OAuth token, OPERATOR_SECRET_KEY,
   # VAPID private key) live in the out-of-band Secret `orchestrator-secrets`
   # (created with kubectl, NOT committed). The chart references it by name.
