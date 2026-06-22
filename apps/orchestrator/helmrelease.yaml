@@ -14,6 +14,11 @@ spec:
         kind: GitRepository
         name: orchestrator
         namespace: flux-system
+      # The chart's Chart.yaml version is a frozen placeholder (0.0.0-dev) — the
+      # real version is the git tag. With the default ChartVersion strategy Flux
+      # would not re-pull the chart templates on a tag bump. Revision re-packages
+      # + upgrades whenever the GitRepository source revision changes.
+      reconcileStrategy: Revision
   install:
     crds: Skip
   upgrade:
