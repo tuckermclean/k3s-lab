@@ -41,14 +41,10 @@ spec:
               kind: Deployment
               name: orchestrator
             patch: |
-              apiVersion: apps/v1
-              kind: Deployment
-              metadata:
-                name: orchestrator
-              spec:
-                strategy:
+              - op: add
+                path: /spec/strategy
+                value:
                   type: Recreate
-                  rollingUpdate: null
   # Sensitive values (GitHub App key, Claude OAuth token, OPERATOR_SECRET_KEY,
   # VAPID private key) live in the out-of-band Secret `orchestrator-secrets`
   # (created with kubectl, NOT committed). The chart references it by name.
