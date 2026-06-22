@@ -15,9 +15,11 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # Public: GitHub webhook (HMAC-authenticated). No authentik middleware.
+    # Public, no authentik middleware:
+    #  - GitHub webhook (HMAC-authenticated, GitHub can't do SSO)
+    #  - health/readiness probes (status only; needed for external uptime checks)
     - kind: Rule
-      match: Host(`orch.dcxxiv.com`) && (PathPrefix(`/api/webhook`) || PathPrefix(`/webhook`))
+      match: Host(`orch.dcxxiv.com`) && (PathPrefix(`/api/webhook`) || PathPrefix(`/webhook`) || Path(`/healthz`) || Path(`/readyz`))
       priority: 20
       services:
         - name: orchestrator
