@@ -1,0 +1,36 @@
+# Two routes for orch.dcxxiv.com:
+#   1. The GitHub webhook endpoint is PUBLIC — GitHub authenticates via the
+#      OPERATOR_SECRET_KEY HMAC signature, not authentik SSO. Higher priority so
+#      it wins over the catch-all.
+#   2. Everything else (PWA UI, /api, /push) is gated by the shared authentik
+#      forwardAuth middleware (embedded outpost), same as longhorn.dcxxiv.com.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: orchestrator
+  namespace: orchestrator
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # Public: GitHub webhook (HMAC-authenticated). No authentik middleware.
+    - kind: Rule
+      match: Host(`orch.dcxxiv.com`) && (PathPrefix(`/api/webhook`) || PathPrefix(`/webhook`))
+      priority: 20
+      services:
+        - name: orchestrator
+          port: 8080
+    # Gated: PWA UI + API + push, behind authentik SSO.
+    - kind: Rule
+      match: Host(`orch.dcxxiv.com`)
+      priority: 10
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      services:
+        - name: orchestrator
+          port: 8080
+  tls:
+    secretName: orchestrator-tls
