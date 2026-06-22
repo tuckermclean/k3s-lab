@@ -17,6 +17,13 @@ data:
   WP_TITLE: "lol"
   WP_ADMIN_USER: "siteadmin"
   WP_ADMIN_EMAIL: "me@tuckermclean.com"
+  # Outbound mail via Mailgun SMTP (password/login come from the SOPS secret).
+  # Consumed by the smtp.php mu-plugin below.
+  SMTP_HOST: "smtp.mailgun.org"
+  SMTP_PORT: "587"
+  SMTP_SECURE: "tls"
+  SMTP_FROM: "noreply@mg.dcxxiv.com"
+  SMTP_FROM_NAME: "lol"
   # Raise PHP upload limits so large IbisPaint PNG exports upload cleanly.
   # Mounted at /usr/local/etc/php/conf.d/uploads.ini in the WordPress container.
   uploads.ini: |
@@ -119,6 +126,27 @@ data:
         || echo "[bootstrap] WARN: limit-login-attempts-reloaded install failed (egress?)"
     fi
 
-    # 7) Hand ownership to the Apache image's www-data (uid 33) so it can serve/write.
+    # 7) Ensure the mu-plugins dir exists so the apache container's subPath mount of
+    #    smtp.php (the Mailgun SMTP config) has a parent dir, then hand ownership to
+    #    the Apache image's www-data (uid 33) so it can serve/write.
+    mkdir -p wp-content/mu-plugins
     chown -R 33:33 /var/www/html
     echo "[bootstrap] done"
+  # Must-use plugin (auto-loaded) that routes wp_mail() through Mailgun SMTP.
+  # Mounted read-only at wp-content/mu-plugins/smtp.php in the apache container;
+  # reads its settings from env (SMTP_* configmap keys + SOPS secret).
+  smtp.php: |
+    <?php
+    add_action( 'phpmailer_init', function ( $phpmailer ) {
+        $host = getenv( 'SMTP_HOST' );
+        if ( ! $host ) { return; }
+        $phpmailer->isSMTP();
+        $phpmailer->Host       = $host;
+        $phpmailer->Port       = (int) ( getenv( 'SMTP_PORT' ) ?: 587 );
+        $phpmailer->SMTPAuth   = true;
+        $phpmailer->Username   = getenv( 'SMTP_USER' );
+        $phpmailer->Password   = getenv( 'SMTP_PASSWORD' );
+        $phpmailer->SMTPSecure = getenv( 'SMTP_SECURE' ) ?: 'tls';
+    } );
+    add_filter( 'wp_mail_from',      function ( $e ) { return getenv( 'SMTP_FROM' ) ?: $e; } );
+    add_filter( 'wp_mail_from_name', function ( $n ) { return getenv( 'SMTP_FROM_NAME' ) ?: $n; } );

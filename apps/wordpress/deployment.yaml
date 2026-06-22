@@ -107,6 +107,42 @@ spec:
                 secretKeyRef:
                   name: wordpress-db
                   key: WORDPRESS_DB_PASSWORD
+            # Mailgun SMTP — read by the smtp.php mu-plugin to route wp_mail().
+            - name: SMTP_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: SMTP_PORT
+            - name: SMTP_SECURE
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: SMTP_SECURE
+            - name: SMTP_FROM
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: SMTP_FROM
+            - name: SMTP_FROM_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: wordpress-config
+                  key: SMTP_FROM_NAME
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-db
+                  key: SMTP_USER
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-db
+                  key: SMTP_PASSWORD
           ports:
             - name: http
               containerPort: 80
@@ -116,6 +152,10 @@ spec:
             - name: php-uploads
               mountPath: /usr/local/etc/php/conf.d/uploads.ini
               subPath: uploads.ini
+              readOnly: true
+            - name: mu-plugins
+              mountPath: /var/www/html/wp-content/mu-plugins/smtp.php
+              subPath: smtp.php
               readOnly: true
           resources:
             requests:
@@ -141,3 +181,9 @@ spec:
             items:
               - key: bootstrap.sh
                 path: bootstrap.sh
+        - name: mu-plugins
+          configMap:
+            name: wordpress-config
+            items:
+              - key: smtp.php
+                path: smtp.php
