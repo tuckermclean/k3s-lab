@@ -55,8 +55,8 @@ spec:
   values:
     image:
       repository: ghcr.io/tuckermclean/orchestrator
-      # Pinned by digest for supply-chain control (v0.1.1 control-plane image).
-      digest: "sha256:5da4fff3fd78d22f709bdede6d9e684730382425e4c8e6e7497f74a5ae9206c5"
+      # Pinned by digest for supply-chain control (v0.1.2 control-plane image).
+      digest: "sha256:14b1e6b2ca88acc3635030f394bf368bd95ea17f17916de3eb98d20ae9fb2337"
       tag: ""
       pullPolicy: IfNotPresent
 
@@ -81,7 +81,7 @@ spec:
       PUSH_VAPID_PUBLIC_KEY: "BNNDph85ZypknCltjjrQxV_3H7jU99u2JTWRDBVlVTsCcIp5PAU9scdrNuZF2FQsAzLeNUHY1VaxDtM_leBcYds"
       # Each agent dispatch runs as an isolated K8s Job using the pinned agent-runner image.
       HARNESS_EXECUTION_BACKEND: "k8s"
-      HARNESS_K8S_IMAGE: "ghcr.io/tuckermclean/orchestrator-agent-runner@sha256:32065727952aba3b3c87fe31acbf6886a66d89125286dc1b513b4a4719563933"
+      HARNESS_K8S_IMAGE: "ghcr.io/tuckermclean/orchestrator-agent-runner@sha256:c05eec93d03cf25ee1ca5588174005586d7fdf704917c84b91126ec917ad7d46"
 
     # The chart's own Ingress is disabled: routing + TLS + authentik gating are
     # handled by a Traefik IngressRoute (ingressroute.yaml) and a cert-manager
