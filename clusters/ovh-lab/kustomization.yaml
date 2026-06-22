@@ -31,3 +31,4 @@ resources:
   - hero-kustomization.yaml
   - dcxxiv-home-kustomization.yaml
   - wordpress-kustomization.yaml
+  - orchestrator-kustomization.yaml

@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: orchestrator-cert
+  namespace: orchestrator
+spec:
+  secretName: orchestrator-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  dnsNames:
+    - orch.dcxxiv.com
