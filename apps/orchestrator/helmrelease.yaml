@@ -71,7 +71,11 @@ spec:
       SWARM_LIMITS_GLOBAL: "10"
       SWARM_LIMITS_PER_REPO: "4"
       SWARM_LIMITS_RECONCILES: "4"
-      DB_URL: "sqlite:///data/orchestrator.db"
+      # 4 slashes = ABSOLUTE path /data/orchestrator.db on the Longhorn PVC.
+      # 3 slashes parses to a path relative to the read-only /app workdir, which
+      # fails at boot in v0.1.4 (real SQLite-backed audit/counter/operator stores):
+      # sqlite3.OperationalError: unable to open database file.
+      DB_URL: "sqlite:////data/orchestrator.db"
       RECONCILE_MODE: "internal"
       # Non-sensitive VAPID public key (private half is in orchestrator-secrets).
       PUSH_VAPID_PUBLIC_KEY: "BNNDph85ZypknCltjjrQxV_3H7jU99u2JTWRDBVlVTsCcIp5PAU9scdrNuZF2FQsAzLeNUHY1VaxDtM_leBcYds"
