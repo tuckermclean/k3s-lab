@@ -1,0 +1,25 @@
+# Seeds Deluge's core.conf on first boot (copied into the config PVC by the
+# seed-config initContainer only if core.conf is absent). Deluge fills every
+# other key with its defaults, so a partial config is valid. This replaces the
+# manual web-UI steps: fixed incoming port (AirVPN-forwarded 26602-26606,
+# random_port off) and download location on the JuiceFS media volume (/data).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deluge-config-seed
+  namespace: media
+  labels:
+    app.kubernetes.io/part-of: gitops
+data:
+  core.conf: |
+    {
+        "file": 1,
+        "format": 1
+    }{
+        "random_port": false,
+        "listen_ports": [26602, 26606],
+        "download_location": "/data",
+        "move_completed_path": "/data",
+        "torrentfiles_location": "/data",
+        "autoadd_location": "/data"
+    }

@@ -32,3 +32,4 @@ resources:
   - dcxxiv-home-kustomization.yaml
   - wordpress-kustomization.yaml
   - orchestrator-kustomization.yaml
+  - deluge-kustomization.yaml

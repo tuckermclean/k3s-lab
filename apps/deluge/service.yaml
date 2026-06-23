@@ -1,0 +1,18 @@
+# Only the web UI is exposed cluster-side. Inbound BitTorrent peer traffic
+# arrives through the AirVPN tunnel into gluetun, not via this Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: deluge
+  namespace: media
+  labels:
+    app.kubernetes.io/name: deluge
+    app.kubernetes.io/part-of: gitops
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: deluge
+  ports:
+    - name: web
+      port: 8112
+      targetPort: 8112

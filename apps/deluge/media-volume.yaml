@@ -1,0 +1,18 @@
+# Shared media library on JuiceFS (dynamic provisioning via the `juicefs`
+# StorageClass + juicefs-secret wired in infrastructure/storage/juicefs/).
+# RWX so future media apps (Jellyfin / *arr) in the `media` namespace mount the
+# same claim. Deluge writes downloads here at /data.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: juicefs-media-bucket
+  namespace: media
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: juicefs
+  resources:
+    requests:
+      storage: 4096Gi
