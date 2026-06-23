@@ -1,0 +1,16 @@
+# Config for both containers, on Longhorn (portable, not node-pinned).
+# gluetun uses subPath gluetun/, deluge uses subPath deluge/.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deluge-config
+  namespace: media
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: longhorn

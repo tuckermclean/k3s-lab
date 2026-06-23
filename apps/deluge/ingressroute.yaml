@@ -1,0 +1,23 @@
+# Web UI gated by the shared authentik forwardAuth middleware (embedded outpost),
+# same pattern as orch.dcxxiv.com / longhorn.dcxxiv.com.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: deluge
+  namespace: media
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`deluge.dcxxiv.com`)
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      services:
+        - name: deluge
+          port: 8112
+  tls:
+    secretName: deluge-tls
