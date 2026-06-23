@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nodecast-tv
+  namespace: nodecast-tv
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: "letsencrypt-http01"
+spec:
+  rules:
+    - host: tv.dcxxiv.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nodecast-tv
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - tv.dcxxiv.com
+      secretName: nodecast-tv-tls

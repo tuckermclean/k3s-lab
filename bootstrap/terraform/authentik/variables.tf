@@ -33,3 +33,15 @@ variable "weave_client_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "nodecast_client_id" {
+  description = "OAuth2 client ID for NodeCast TV. Must match OIDC_CLIENT_ID in apps/nodecast-tv/secret.sops.yaml"
+  type        = string
+  default     = "nodecast-tv"
+}
+
+variable "nodecast_client_secret" {
+  description = "OAuth2 client secret for NodeCast TV. Must match OIDC_CLIENT_SECRET in apps/nodecast-tv/secret.sops.yaml"
+  type        = string
+  sensitive   = true
+}
