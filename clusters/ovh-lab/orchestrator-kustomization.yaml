@@ -17,7 +17,7 @@ spec:
   # ─────────────────────────────────────────────────────────────────────────
   postBuild:
     substitute:
-      ORCH_VERSION: "0.1.18"
+      ORCH_VERSION: "0.1.19"
   decryption:
     provider: sops
     secretRef:
