@@ -33,3 +33,4 @@ resources:
   - wordpress-kustomization.yaml
   - orchestrator-kustomization.yaml
   - deluge-kustomization.yaml
+  - nodecast-tv-kustomization.yaml

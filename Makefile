@@ -246,6 +246,7 @@ apply-authentik: recover-age-key ## Apply Authentik config via Terraform (all se
 	export TF_VAR_authentik_token=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d "$(AUTHENTIK_TF_DIR)/token.sops.yaml" | python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['token'])"); \
 	export TF_VAR_grafana_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/monitoring/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='grafana-oidc-secret'); print(d['stringData']['GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET'])"); \
 	export TF_VAR_weave_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/weave-gitops/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='oidc-auth'); print(d['stringData']['clientSecret'])"); \
+	export TF_VAR_nodecast_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d apps/nodecast-tv/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='nodecast-tv-env'); print(d['stringData']['OIDC_CLIENT_SECRET'])"); \
 	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade -input=false; \
 	terraform -chdir="$(AUTHENTIK_TF_DIR)" apply -input=false -auto-approve
 	$(MAKE) clean-age-key
@@ -258,6 +259,7 @@ plan-authentik: recover-age-key ## Preview Authentik Terraform changes without a
 	export TF_VAR_authentik_token=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d "$(AUTHENTIK_TF_DIR)/token.sops.yaml" | python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['token'])"); \
 	export TF_VAR_grafana_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/monitoring/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='grafana-oidc-secret'); print(d['stringData']['GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET'])"); \
 	export TF_VAR_weave_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/weave-gitops/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='oidc-auth'); print(d['stringData']['clientSecret'])"); \
+	export TF_VAR_nodecast_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d apps/nodecast-tv/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='nodecast-tv-env'); print(d['stringData']['OIDC_CLIENT_SECRET'])"); \
 	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade -input=false; \
 	terraform -chdir="$(AUTHENTIK_TF_DIR)" plan -input=false
 	$(MAKE) clean-age-key
