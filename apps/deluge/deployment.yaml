@@ -63,36 +63,11 @@ spec:
             runAsNonRoot: false
             capabilities:
               add: ["NET_ADMIN"]
+          # All VPN/gluetun settings (provider, keys, addresses, server, firewall
+          # ports, DNS, TZ) come from the SOPS-encrypted deluge-vpn-env Secret.
           envFrom:
             - secretRef:
                 name: deluge-vpn-env
-          env:
-            - name: VPN_SERVICE_PROVIDER
-              value: "airvpn"
-            - name: VPN_TYPE
-              value: "wireguard"
-            - name: WIREGUARD_ADDRESSES
-              value: "10.165.137.218/32"
-            # Auto-select an AirVPN US server (resilient). To pin the exact server
-            # from the config file, replace with SERVER_NAMES: "<america3 server>".
-            - name: SERVER_COUNTRIES
-              value: "United States"
-            # LAN-side inbound (web UI + daemon).
-            - name: FIREWALL_INPUT_PORTS
-              value: "8112,58846"
-            # AirVPN account-forwarded ports, allowed in through the tunnel.
-            - name: FIREWALL_VPN_INPUT_PORTS
-              value: "26602,26603,26604,26605,26606"
-            - name: HEALTH_TARGET_ADDRESS
-              value: "cloudflare.com:443"
-            - name: DOT
-              value: "on"
-            - name: DOT_PROVIDERS
-              value: "cloudflare"
-            - name: DNS_ADDRESS
-              value: "127.0.0.1"
-            - name: TZ
-              value: "America/Los_Angeles"
           volumeMounts:
             - name: dev-net-tun
               mountPath: /dev/net/tun
@@ -133,7 +108,10 @@ spec:
             - name: PGID
               value: "1000"
             - name: TZ
-              value: "America/Los_Angeles"
+              valueFrom:
+                secretKeyRef:
+                  name: deluge-vpn-env
+                  key: TZ
           volumeMounts:
             - name: config
               mountPath: /config
