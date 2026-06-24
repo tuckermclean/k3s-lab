@@ -1,0 +1,85 @@
+# Nightly mysqldump of the wordpress database → S3.
+# Runs at 03:00 UTC (after the postgres backup at 03:00 — both are nightly so
+# the 30-second scheduling jitter between cron firings is fine).
+#
+# Image: amazon/aws-cli includes Python + AWS CLI; we add the mariadb-client
+# package at runtime via a shell one-liner so the image stays small.
+# Alternative: use a custom image that bundles both — but this avoids a
+# registry maintenance burden for a low-frequency batch job.
+#
+# Dump pipeline:
+#   mysqldump --single-transaction --routines --triggers wordpress \
+#     | gzip \
+#     | aws s3 cp - s3://k3s-lab-backups/mysql/wordpress/YYYY-MM-DD-HHMM.sql.gz
+#
+# Note for PR4 cutover: rewrite mysqldump output with sed to:
+#   1. Strip DEFINER clauses (cross-user stored proc references)
+#   2. Convert ENGINE=MyISAM → ENGINE=InnoDB for Galera compatibility
+#   3. Ensure all tables have explicit PRIMARY KEY (Galera requirement)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: wordpress-db-backup
+  namespace: mariadb
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: amazon/aws-cli:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  # Install mariadb-client (mysqldump) at runtime
+                  yum install -y mariadb 2>/dev/null || apk add --no-cache mariadb-client 2>/dev/null || true
+                  TIMESTAMP=$(date +%F-%H%M)
+                  echo "[backup] starting dump of wordpress @ $(date)"
+                  mysqldump \
+                    --host=mariadb-galera \
+                    --port=3306 \
+                    --user=root \
+                    --password="${MYSQL_ROOT_PASSWORD}" \
+                    --single-transaction \
+                    --routines \
+                    --triggers \
+                    wordpress \
+                  | gzip \
+                  | aws s3 cp - "s3://k3s-lab-backups/mysql/wordpress/${TIMESTAMP}.sql.gz" \
+                      --region "${AWS_DEFAULT_REGION}"
+                  echo "[backup] done: s3://k3s-lab-backups/mysql/wordpress/${TIMESTAMP}.sql.gz"
+              env:
+                # DB credentials from the ns-local wordpress-db secret
+                - name: MYSQL_ROOT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: wordpress-db
+                      key: mariadb-root-password
+                # AWS credentials from the ns-local s3-backup-creds secret
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: s3-backup-creds
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: s3-backup-creds
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    secretKeyRef:
+                      name: s3-backup-creds
+                      key: AWS_DEFAULT_REGION
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: "64Mi"

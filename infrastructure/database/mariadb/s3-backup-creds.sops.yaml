@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: s3-backup-creds
+    namespace: mariadb
+type: Opaque
+stringData:
+    AWS_ACCESS_KEY_ID: ENC[AES256_GCM,data:fbQ+Y9fGp8hrH9hSFRMLYZpnWfA=,iv:QVwVUCSqFB+fP9YyvMSPKu2K/Iu/gXQLHBxL7QinQ9A=,tag:D+3aHOWwui95qeQimd7j+w==,type:str]
+    AWS_SECRET_ACCESS_KEY: ENC[AES256_GCM,data:h28EKDaKxs5VQBqpypVKEp/qCo9piKInB7d/i9vbrU2xLTi3w4VMtA==,iv:Ua6h161atkhC/XRhIuUrMkDgWCbg0KdwK14Ve71M4rM=,tag:OdDBCJ2wHP2B0yq+ME919Q==,type:str]
+    AWS_DEFAULT_REGION: ENC[AES256_GCM,data:+5C6LTP6NdJ1,iv:n9a1zEzzdQYgu98ycbysT/J4TxfFbcwabe8qhFStej8=,tag:cB7N725GMBBpbtxgeIFW2g==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA2dGZBdjhxTEpWZVJ3YnNF
+            VXNUMHU1NlptZTI3VWh0UDgrY2NxdTBxV25VCklHNFhTTmE2cGZXYVJpOUVob1Zz
+            ZlRyUm4yOXAycGFqZUh2d2taVjBXNGMKLS0tIHhOaVdHWGNzdHk0U0FrRllUQzdR
+            VEtuc3d3N08zTDlxcjNiYUV4dG1sd0EKyxGmnhikHMHsi2u4I/6C5NSxmGjhOhM8
+            ykKDpxOauskfBOVdYW4PGJmM1Q+uhqRL8cnxNWDxD80DzmqJ1yQ4kw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-24T18:33:33Z"
+    mac: ENC[AES256_GCM,data:3QG7P+St9Ze3ZRZ7khOFfl8JZJteXGzma0X0PE6z3HDW5wALvHYcBgzIiUtuc+iDZtAaYGWEG9/INHkrLpCkxaeW+89hlGuc4rRN91ctsMBzHKo4A2upjSAz79Jyg8uwdRZUfsi6Q3ODMvkxyxdPEZGwud+ExqOdeT6rxGNL2Ec=,iv:WW/Pb7jJBRN72u9gE6jHbYisQiU1/BCt3FcRlziMUEo=,tag:pgwleXsNP4NxfL5xjQ9xKw==,type:str]
+    version: 3.13.1

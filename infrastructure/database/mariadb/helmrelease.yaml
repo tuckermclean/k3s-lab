@@ -1,0 +1,75 @@
+# Chart version: 14.2.9 → mariadb-galera appVersion: 11.x (MariaDB 11 LTS)
+# Uses bitnami OCI HelmRepository (oci://registry-1.docker.io/bitnamicharts)
+# already present in flux-system (shared with redis/juicefs).
+#
+# existingSecret key mapping (wordpress-db Secret in ns mariadb):
+#   mariadb-root-password       ← wordpress MYSQL_ROOT_PASSWORD
+#   mariadb-password            ← wordpress MYSQL_PASSWORD (same value → no cred rotation at cutover)
+#   mariadb-galera-mariabackup-password ← fresh random password (IST/SST replication only)
+#
+# Galera requirement: ALL tables in the wordpress DB must use InnoDB engine with
+# an explicit PRIMARY KEY. MyISAM/MEMORY tables and tables without PKs cause
+# replication failures. Verify with:
+#   SELECT table_name, engine FROM information_schema.tables
+#   WHERE table_schema='wordpress' AND engine != 'InnoDB';
+# Fix at mysqldump + sed-rewrite stage (db-migration PR4 cutover).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mariadb-galera
+  namespace: mariadb
+spec:
+  interval: 30m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  chart:
+    spec:
+      chart: mariadb-galera
+      version: "14.2.9"
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux-system
+  values:
+    replicaCount: 3
+
+    # Credentials — the chart expects these three keys in the named secret:
+    #   mariadb-root-password / mariadb-password / mariadb-galera-mariabackup-password
+    existingSecret: wordpress-db
+
+    # Target database and user that WordPress will connect to after cutover
+    db:
+      name: wordpress
+      user: wordpress
+
+    galera:
+      mariabackup:
+        # Password key in existingSecret is mariadb-galera-mariabackup-password
+        forcePassword: false
+
+    persistence:
+      enabled: true
+      storageClass: local-path
+      size: 10Gi
+
+    # Hard pod anti-affinity: exactly one Galera node per k8s node.
+    # Prevents a single-node failure from taking down quorum (2-of-3 minimum).
+    podAntiAffinityPreset: ""
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: mariadb-galera
+            topologyKey: kubernetes.io/hostname
+
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+      # No hard limits — MariaDB OOMs badly under tight memory caps during SST
