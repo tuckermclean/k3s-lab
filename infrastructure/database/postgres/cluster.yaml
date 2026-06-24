@@ -56,6 +56,10 @@ spec:
         # means only POSTGRES_HOST changes at cutover, no credential rotation needed.
         passwordSecret:
           name: personliness-role-secret
+      - name: authentik
+        login: true
+        passwordSecret:
+          name: authentik-role-secret
 
 ---
 apiVersion: postgresql.cnpg.io/v1
@@ -66,6 +70,18 @@ metadata:
 spec:
   name: personliness
   owner: personliness
+  cluster:
+    name: pg
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: authentik
+  namespace: postgres
+spec:
+  name: authentik
+  owner: authentik
   cluster:
     name: pg
 
