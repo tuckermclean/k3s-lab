@@ -5,7 +5,7 @@ metadata:
   namespace: wordpress
 data:
   # WordPress -> MySQL connection (password comes from the SOPS secret)
-  WORDPRESS_DB_HOST: "db:3306"
+  WORDPRESS_DB_HOST: "mariadb-galera.mariadb.svc.cluster.local:3306"
   WORDPRESS_DB_NAME: "wordpress"
   WORDPRESS_DB_USER: "wordpress"
   # MySQL server bootstrap (root/app passwords come from the SOPS secret)
