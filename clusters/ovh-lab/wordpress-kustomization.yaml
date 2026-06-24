@@ -18,3 +18,4 @@ spec:
       name: sops-age
   dependsOn:
     - name: cert-manager-config
+    - name: mariadb
