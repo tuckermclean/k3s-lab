@@ -1,0 +1,49 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "timezone": "America/New_York",
+  "schedule": ["after 10pm every weekday", "before 6am every weekday", "every weekend"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "pinDigests": true,
+  "flux": {
+    "fileMatch": [
+      "(^|/)infrastructure/.+\\.ya?ml$",
+      "(^|/)apps/.+\\.ya?ml$",
+      "(^|/)clusters/.+\\.ya?ml$"
+    ]
+  },
+  "kubernetes": {
+    "fileMatch": [
+      "(^|/)infrastructure/.+\\.ya?ml$",
+      "(^|/)apps/.+\\.ya?ml$"
+    ]
+  },
+  "helm-values": {
+    "fileMatch": [
+      "(^|/)infrastructure/.+\\.ya?ml$",
+      "(^|/)apps/.+\\.ya?ml$"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Group non-major updates together to cut PR noise",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "all non-major dependencies"
+    },
+    {
+      "description": "Keep major bumps separate so breaking changes get individual review",
+      "matchUpdateTypes": ["major"],
+      "groupName": null
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    }
+  ]
+}
