@@ -11,4 +11,4 @@ spec:
   path: ./apps/hero
   prune: true
   dependsOn:
-    - name: cert-manager-http01
+    - name: cert-manager-config

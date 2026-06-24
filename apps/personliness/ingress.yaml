@@ -18,18 +18,7 @@ spec:
                 name: personliness
                 port:
                   number: 80
-    - host: personliness.dcxxiv.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: personliness
-                port:
-                  number: 80
   tls:
     - hosts:
-        - personliness.dcxxiv.com
         - personliness.dcxxiv.com
       secretName: personliness-tls
