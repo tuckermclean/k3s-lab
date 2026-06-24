@@ -33,14 +33,15 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: backup
-              image: amazon/aws-cli:latest
+              image: amazon/aws-cli:2.35.11@sha256:749bfaf91d690b9a1768083822d620f96c19defdf9ca2dc227eb3695281fda5b
               command:
                 - /bin/sh
                 - -c
                 - |
                   set -euo pipefail
-                  # Install mariadb-client (mysqldump) at runtime
-                  yum install -y mariadb 2>/dev/null || apk add --no-cache mariadb-client 2>/dev/null || true
+                  # Install mariadb-client (mysqldump) at runtime.
+                  # amazon/aws-cli is Amazon Linux 2023-based; mariadb1011 provides mysqldump.
+                  dnf install -y mariadb1011
                   TIMESTAMP=$(date +%F-%H%M)
                   echo "[backup] starting dump of wordpress @ $(date)"
                   mysqldump \
