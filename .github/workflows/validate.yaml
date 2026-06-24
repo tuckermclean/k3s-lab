@@ -20,9 +20,18 @@ jobs:
         with:
           kustomize-version: '5.3.0'
 
-      - name: Validate kustomizations
+      - name: Install kubeconform
         run: |
-          kustomize build clusters/ovh-lab >/dev/null
+          curl -sSfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+
+      - name: Validate kustomizations (build + schema)
+        run: |
+          kustomize build clusters/ovh-lab \
+            | kubeconform -strict -ignore-missing-schemas -summary \
+                -schema-location default \
+                -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 
       - name: Install yamllint
         run: |
