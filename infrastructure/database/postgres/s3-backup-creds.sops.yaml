@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: s3-backup-creds
+    namespace: postgres
+type: Opaque
+stringData:
+    AWS_ACCESS_KEY_ID: ENC[AES256_GCM,data:7ed1CENlBh1PcuEpW580h8xzFSM=,iv:mgSJNuFk4HtBaBY9zQRvnaORUPADPJ5tCiUpLb9Wmic=,tag:LCT2kZNs7IXRiPSuqbMALA==,type:str]
+    AWS_SECRET_ACCESS_KEY: ENC[AES256_GCM,data:yluBYbvgKQb1xQlf0ahkk/UKg6clibjEUaxYHUoiXO/CnvTSFE/Vhg==,iv:Sm+49fJDW4lqollbVFgK0e/sm+YAyRj/Yln6ogr6bCw=,tag:Ohp1x+NGJUDfQ6MZSOa/aA==,type:str]
+    AWS_DEFAULT_REGION: ENC[AES256_GCM,data:jxiru7unT9uT,iv:LKubFTjG8DLXV7uRkDe6QVE9vaQIUQzeOkSPBA9/RcU=,tag:XbTuq8b7pG3AHN21MHfWOQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBRd3FkQ2FiakNKbkpPdmNE
+            a2grbGZ0L0Z5MlBERDZMdjlPRmtLYURtL3pFCnZ1ME8rZGdZbXBFcDNXUTVmL1BP
+            aEk2dnByQWttQ3lBb1VZWEhXWlpmT2MKLS0tIFpHUklaYmRDVUM1YmZRTnBzams5
+            YVBFQURhN2Z5T0xJNlJWN09lM3JWKzgKMea7mCdIjBxbTGYquoPa6rZVhc4/5ttG
+            f1srjjYGEVfkvDO+7P/W/tLQjXcn4FLoshoNLE4dNZdndMFlbNT4YQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-24T18:18:48Z"
+    mac: ENC[AES256_GCM,data:LzbTI1m1Nj0tUgbAV+Ik9uA709PQJQfukOvVESL3XhcOGHtQn8m9LXHQjbEWQOjE+cNxGk62AZ8vbW3yQifpq+H4HLspoLH9yf5IodIvyc0eV8r2etCUAqE05SvRb4YVSAx1YbNO9PynS2LBSLbmMxWoZeyugckCjHJwAelovfM=,iv:Gd3hGtR6rJ3Q/ttj2qzmTaobYxpVDk5eio9z6BtFNjg=,tag:cmrhn73lGUnvWPdEY+3a6w==,type:str]
+    version: 3.13.1
