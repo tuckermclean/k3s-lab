@@ -58,14 +58,36 @@ spec:
           - secretName: grafana-tls
             hosts:
               - grafana.dcxxiv.com
+    alertmanager:
+      alertmanagerSpec:
+        replicas: 3
+        storage:
+          volumeClaimTemplate:
+            spec:
+              accessModes: ["ReadWriteOnce"]
+              storageClassName: local-path
+              resources:
+                requests:
+                  storage: 1Gi
     prometheus:
       prometheusSpec:
+        replicas: 2
         retention: 7d
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - prometheus
+                topologyKey: kubernetes.io/hostname
         storageSpec:
           volumeClaimTemplate:
             spec:
               accessModes: ["ReadWriteOnce"]
-              storageClassName: longhorn
+              storageClassName: local-path
               resources:
                 requests:
                   storage: 10Gi
