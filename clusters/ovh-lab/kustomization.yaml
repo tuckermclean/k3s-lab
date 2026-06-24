@@ -18,6 +18,7 @@ resources:
   - redis-juicefs-kustomization.yaml
   - juicefs-kustomization.yaml
   - juicefs-s3-gateway-kustomization.yaml
+  - cloudnative-pg-kustomization.yaml
 
   # Core infrastructure
   - authentik-kustomization.yaml
