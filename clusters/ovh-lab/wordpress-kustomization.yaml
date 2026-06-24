@@ -15,4 +15,4 @@ spec:
     secretRef:
       name: sops-age
   dependsOn:
-    - name: cert-manager-http01
+    - name: cert-manager-config

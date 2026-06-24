@@ -5,7 +5,7 @@ metadata:
   namespace: hero
   annotations:
     kubernetes.io/ingress.class: "traefik"
-    cert-manager.io/cluster-issuer: "letsencrypt-http01"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   rules:
     - host: hero.dcxxiv.com

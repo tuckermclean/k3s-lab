@@ -15,7 +15,7 @@ spec:
     secretRef:
       name: sops-age
   dependsOn:
-    # letsencrypt-http01 ClusterIssuer for the TLS certificate
-    - name: cert-manager-http01
+    # letsencrypt-prod (DNS01) ClusterIssuer for the TLS certificate
+    - name: cert-manager-config
     # longhorn StorageClass for the data PVC
     - name: longhorn
