@@ -5,26 +5,21 @@ metadata:
     namespace: mariadb
 type: Opaque
 stringData:
-    #ENC[AES256_GCM,data:ZCvB2XJ1jPsC85qe+7ZpSP6jp5rxEPbAIaiyI8Hv08BpfmbFiULZc3m/IOKeZfxpZH9ogD3cffnd91oiHLOealCq5vzCbAFVo58isr4JXDz0G9lXyw+rc2uqzRM=,iv:7Lf62c7xweotgZoAGdLBm2vITcz9F5tDUzDVs6Fi53U=,tag:qdUj9O8uJ0WhmDv/WEZPTA==,type:comment]
-    mariadb-root-password: ENC[AES256_GCM,data:ZO0hN7jfLEffr7RQMROWYcw8GQ0NA5ZmniLobHrrTikIRKPD2w4aoizrjEPr6kAg,iv:+reHtyHwRvcOzsQjBhiny/ZvTIH0psEnpUfD1YnGgaU=,tag:qwHVZD1XvHCHu5qMO7U0Vw==,type:str]
-    #ENC[AES256_GCM,data:sYf9haRlZG0vDRX3GjKiIJmUGe81G4lRqtgQ32JNfMlXoNrd9lERvfu6JNSBKnbOHEmGgyME6C4Semyqv02Dqq0c71B9JBCXez3r2AJL47yCBg==,iv:BgXD2WI88PLghGdAcgZ/mwvkh1WpUtii6HPZ2aEScCE=,tag:jp+zSnz0bKQ0jQnjFB/liw==,type:comment]
-    #ENC[AES256_GCM,data:eTkymQq80cOspVTtQ7AIc+t2BAqZkFehAe4WNpKUaYvHZ1qWglREQFmF5xzggZ/q7f5a+9KnHMXSOaokWvkts27wF9ybUTqJ1FKEYVlCz1yNZj/JJDgPxSC7,iv:UE9KbpNuSbKm78alcIAoOgAZk+tNayF/dYrM5658vD0=,tag:WJmsFDN6VGv0RNevUSavVg==,type:comment]
-    mariadb-password: ENC[AES256_GCM,data:Uk0srAjAkRxctLPixVDgseR0WqQo2nlxSJU/bLpkq+WIiPaQXafVLg==,iv:E2DohAqV8ZIzxZdPDK0fPj05VO28x91O4Bi8pDx0ZPY=,tag:KSBoZlmWbnn/pcI+P+6HNQ==,type:str]
-    #ENC[AES256_GCM,data:vkShnHJBjFRtaV2NcX98m5Etml6u3X0xF6liiYSKeQObkphlBbICdpbjQa37eQ+wb7u7ljmanEcyubEUzCPzXTQt2zRHjXaVcEYArHe0RUw+,iv:g2dli7dR+bZQxkHwMvCQEcT5+C5lTVaF1sjlBA2Z9I4=,tag:00BjSr/HQYISCfYNFszdPQ==,type:comment]
-    #ENC[AES256_GCM,data:BALcM0n5Ac241rvA/yapkzdIE4EUJoaEJhAZTnsSC2+3pg0gYT8tsi0bwD5rcHSJacK4s1wFqihLWGsQvi5sIXb6yEGv2kyRMjDH8U8=,iv:ceqnlZE0387FWsMkcpMZeiLokZyigaOUq5xMq0HDSGE=,tag:g97prpsgqXNR94svOmlT1w==,type:comment]
-    mariadb-galera-mariabackup-password: ENC[AES256_GCM,data:TLLlqOnJWQZdmWL685yDAyJb50xnDXixjQpAtD8jW4+sH+pzbDGPvce6tPJ+IhrrSQx93XpP4Reiux2Nrg94og==,iv:dETvk5Ek5ah5AEwrmaaZnAiETKsFHyC8Lsxk1/2JoHA=,tag:tZuNsuCGQ1VIQvi4w+6XHQ==,type:str]
+    mariadb-root-password: ENC[AES256_GCM,data:PW9Fuj0kO59ayrp/D7lu0JK4Oca31+u0cgapaw==,iv:5bViA0Jrwv1ygEqXAEFPtXosFkFEiBIB3L7iCz0Ht48=,tag:xzFS+ogwrWaWBvpAWp2j1g==,type:str]
+    mariadb-password: ENC[AES256_GCM,data:v2ZXm08N5hgeW+P7oyztvBlgaHL+guTUjQmQ0g==,iv:La+SCPNyvm15gzXodXdH9yNI6lXPkqvookT0oPx7XGQ=,tag:8W8VdjapPzc5ZFrNxnF//w==,type:str]
+    mariadb-galera-mariabackup-password: ENC[AES256_GCM,data:LcE2lE+xW0p15mrqudCjE5W3ikotuF91ez5h/w==,iv:GdAHfudDjKdyLoDPEcKPQ6EvetjJcC1SuC2sB72fA9A=,tag:oCtSGX8jzSccOrgLNnxreA==,type:str]
 sops:
     age:
         - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBlQlp6enVEYzJmckpzMHgz
-            SHdaKzFYVUdNMS9qODBESVhLeWRHMnNVTkZZCmVYcTZGNHNSd2JRNnhyYkZ6akwz
-            T0dFYjZEc2xJQTlFeEY2NHhWRUtZeTAKLS0tIGZpbkdSWVNFd2JKWnVmWmxlUmFw
-            bW9lQnhrNU5qUjFyQnVDUTFrdVpqT2MKclZ6D3fCbM6G5lmPxjcqE48upw9XHaFp
-            eR7u1ehtCXMJUF3aknlqnTMIfd9d/Qab0uMXEJeUeqFplfaa8lyYmw==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB2bHF1WFpUOFY5OHRYQ2Rv
+            cW1ZanVoSktFOHJBOUtXcC9OUUZ3UjlsNGlzClhLWXdxVWtmemZUcWJLdDJoZCsw
+            L0RKb09aZ1V5aU5iTVpSL2pXVDRMbVkKLS0tIDhwKzEwLzRHMlU3NnlPSzhVS2pF
+            QjA2WnR6WDZqVWl0Uk1VdVBSWEhrb0kKyBWWRS3G9K1fW7ya3vJZPpkXWyCgG3vV
+            VmC2pZbo7KS3JFouLT2SoiWwAXVa9naJzVbzf0CA9UuePJ/WW3wywA==
             -----END AGE ENCRYPTED FILE-----
           recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
     encrypted_regex: ^(data|stringData)$
-    lastmodified: "2026-06-24T18:33:06Z"
-    mac: ENC[AES256_GCM,data:kIgD1lelRWSijDlibnNdAYj9OHTgXkPGC4vZRfFCQzHm53CZHyBgUMKsuX+iT50I91aDAF18jvaHEL/r0OADoSXjp0gxgwtwAi9XmyRPUOnsX1SrbfNIbC5sgr58h2r1l/rTb7SThTUbnXe7wp3VTVf2LBc0xVzgMvj4ebwlu/Q=,iv:c/t9M8moCu8H48vi+7RvKc5LpFKwb6AbLZ19V37usNA=,tag:jAfsvlK2Pts+1JWMIG4xyg==,type:str]
+    lastmodified: "2026-06-24T19:32:39Z"
+    mac: ENC[AES256_GCM,data:V2sPCswebKcNMs7ozqoViM4XUCRGTcu1O98aBn2tasylv8/KAJ2Hyevl2bpfX3w55tgsV9swLEkp5CyFp02AWDtQl1NThVk0nu/P2T8rvzbPYLB/ygVd232Cb7TUjQSD4u8959vIPZLoO5jMR25H+e8pUmn9gEWewBPUozdRXWI=,iv:BbHlGNLux/sHTULPNgjEyN1jeJmZqAWo0tJ5XuZX9aM=,tag:zNgSBgvzmb17lNi/Nbtfxw==,type:str]
     version: 3.13.1
