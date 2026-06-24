@@ -22,11 +22,12 @@ spec:
         namespace: flux-system
 
   values:
-    # Use official Docker Hub redis image, pinned to a specific durable tag.
-    # Verified: docker buildx imagetools inspect docker.io/library/redis:7.4.5-alpine
+    # Use official Docker Hub redis image, pinned to a current durable tag.
+    # 8.x line (chart appVersion is 8.8); 7.4 would be a major behind.
+    # Verified: docker buildx imagetools inspect docker.io/library/redis:8.4.4-alpine
     image:
       repository: docker.io/library/redis
-      tag: "7.4.5-alpine"
+      tag: "8.4.4-alpine"
 
     replicas: 3
 
