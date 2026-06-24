@@ -10,3 +10,5 @@ spec:
     name: flux-system
   path: "./infrastructure/traefik-config"
   prune: true
+  wait: true
+  timeout: 5m

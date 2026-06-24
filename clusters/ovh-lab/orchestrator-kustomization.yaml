@@ -10,6 +10,8 @@ spec:
     name: flux-system
   path: ./apps/orchestrator
   prune: true
+  wait: true
+  timeout: 5m
   # ─────────────────────────────────────────────────────────────────────────
   # SINGLE SOURCE OF TRUTH for the orchestrator version. Bump ONLY this line.
   # ${ORCH_VERSION} is substituted into the GitRepository tag (v${ORCH_VERSION}),

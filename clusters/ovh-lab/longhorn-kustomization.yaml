@@ -10,6 +10,8 @@ spec:
     name: flux-system
   path: ./infrastructure/storage/longhorn
   prune: true
+  wait: true
+  timeout: 15m
   dependsOn:
     - name: cert-manager-config
   # OVH-only: activate the S3 backup target. The shared base HelmRelease leaves
