@@ -72,4 +72,4 @@ spec:
       requests:
         cpu: "250m"
         memory: "256Mi"
-      # No hard limits — MariaDB OOMs badly under tight memory caps during SST
+        # No hard limits — MariaDB OOMs badly under tight memory caps during SST
