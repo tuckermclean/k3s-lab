@@ -1,7 +1,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: shared-redis
+  name: redis-ha
   namespace: redis
 spec:
   interval: 30m
@@ -14,83 +14,86 @@ spec:
       remediateLastFailure: true
   chart:
     spec:
-      chart: redis
-      version: "25.3.5"
+      chart: redis-ha
+      version: "4.39.0"
       sourceRef:
         kind: HelmRepository
-        name: bitnami
+        name: dandydeveloper
         namespace: flux-system
+
   values:
-    global:
-      security:
-        allowInsecureImages: true
-
+    # Use official Docker Hub redis image, pinned to a current durable tag.
+    # 8.x line (chart appVersion is 8.8); 7.4 would be a major behind.
+    # Verified: docker buildx imagetools inspect docker.io/library/redis:8.4.4-alpine
     image:
-      registry: docker.io
-      repository: bitnamilegacy/redis
-      tag: "8.2.1-debian-12-r0"
+      repository: docker.io/library/redis
+      tag: "8.4.4-alpine"
 
-    architecture: replication
+    replicas: 3
 
     # CRITICAL: noeviction prevents silent data loss under memory pressure.
-    # This cluster will also hold JuiceFS filesystem metadata (PR5). Under any
+    # This cluster holds JuiceFS filesystem metadata (see PR5). Under any
     # eviction policy, memory pressure can silently evict JuiceFS keys, causing
     # filesystem corruption. With noeviction, Redis rejects writes when full
     # (recoverable) rather than evicting live data.
-    commonConfiguration: |-
-      maxmemory-policy noeviction
-
-    auth:
-      enabled: true
-      existingSecret: redis-auth
-      existingSecretPasswordKey: redis-password
+    redis:
+      config:
+        maxmemory-policy: "noeviction"
+        min-replicas-to-write: 1
+        min-replicas-max-lag: 5
+        save: "900 1"
+        repl-diskless-sync: "yes"
+        rdbcompression: "yes"
+        rdbchecksum: "yes"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
 
     sentinel:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+
+    # Auth: reuse existing SOPS-managed secret in the redis namespace.
+    # Our secret key is "redis-password"; the chart default authKey is "auth",
+    # so we override authKey here to match.
+    auth: true
+    existingSecret: redis-auth
+    authKey: redis-password
+
+    # Persistence: local-path storageClass, 2Gi per redis replica.
+    persistentVolume:
       enabled: true
-      masterSet: mymaster
-      quorum: 2
+      storageClass: local-path
+      size: 2Gi
+
+    # Hard pod anti-affinity: one redis pod per node.
+    # hardAntiAffinity: true is the chart default (requiredDuringScheduling),
+    # set explicitly here for clarity.
+    hardAntiAffinity: true
+
+    # HAProxy: enabled, proxies to the current Sentinel-elected master.
+    # Stable master endpoint: redis-ha-haproxy.redis.svc.cluster.local:6379
+    # Use official Docker Hub haproxy image, pinned.
+    # Verified: docker buildx imagetools inspect docker.io/library/haproxy:3.3.10-alpine
+    haproxy:
+      enabled: true
+      replicas: 3
+      hardAntiAffinity: true
       image:
-        registry: docker.io
-        repository: bitnamilegacy/redis-sentinel
-        tag: "8.2.1-debian-12-r0"
-
-    replica:
-      replicaCount: 3
-      persistence:
-        enabled: true
-        storageClass: local-path
-        size: 2Gi
+        repository: docker.io/library/haproxy
+        tag: "3.3.10-alpine"
       resources:
         requests:
-          cpu: 50m
-          memory: 128Mi
+          cpu: 25m
+          memory: 64Mi
         limits:
-          memory: 512Mi
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: redis
-                  app.kubernetes.io/instance: shared-redis
-              topologyKey: kubernetes.io/hostname
-
-    master:
-      persistence:
-        enabled: true
-        storageClass: local-path
-        size: 2Gi
-      resources:
-        requests:
-          cpu: 50m
           memory: 128Mi
-        limits:
-          memory: 512Mi
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: redis
-                  app.kubernetes.io/instance: shared-redis
-              topologyKey: kubernetes.io/hostname
+      service:
+        type: ClusterIP
