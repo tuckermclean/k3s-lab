@@ -19,7 +19,7 @@ spec:
       # Upstream image runs as root (chmod 777 /app/data, /app/transcode-cache at build time)
       containers:
         - name: nodecast-tv
-          image: ghcr.io/technomancer702/nodecast-tv:latest
+          image: ghcr.io/technomancer702/nodecast-tv@sha256:caf34492517f5a827ca75e8d27d5a9a65155c12671d02ac335060cfc4df151fc
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
