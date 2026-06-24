@@ -124,8 +124,12 @@ spec:
                     fi
 
                     echo "Redis DB $REDIS_DB has $DBSIZE keys."
-                    if [ "$DBSIZE" -eq 0 ]; then
-                      echo "Redis is empty (fresh repave). Checking S3 for stale objects ..."
+                    # SAFETY GATE: the destructive "clear S3" path can ONLY run when an
+                    # operator explicitly opts in via ALLOW_S3_CLEAR=true (deliberate repave
+                    # only). Without it, a Redis misparse / wrong-empty-DB can NEVER wipe the
+                    # live JuiceFS object store.
+                    if [ "$DBSIZE" -eq 0 ] && [ "${ALLOW_S3_CLEAR:-false}" = "true" ]; then
+                      echo "Redis empty AND ALLOW_S3_CLEAR=true (repave) — checking S3 for stale objects ..."
                       COUNT=$(aws s3 ls "s3://${bucket}/${name}/" --recursive 2>/dev/null | wc -l || echo 0)
                       if [ "$COUNT" -gt 0 ]; then
                         echo "Found $COUNT stale objects. Clearing s3://${bucket}/${name}/ ..."
@@ -135,7 +139,7 @@ spec:
                         echo "S3 prefix already empty."
                       fi
                     else
-                      echo "Redis has existing metadata — skipping S3 cleanup."
+                      echo "Skipping S3 cleanup (Redis has metadata, or ALLOW_S3_CLEAR not set)."
                     fi
                   env:
                   - name: AWS_DEFAULT_REGION
