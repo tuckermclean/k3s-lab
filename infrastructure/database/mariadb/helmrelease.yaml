@@ -36,6 +36,21 @@ spec:
         name: bitnami
         namespace: flux-system
   values:
+    # Override image to bitnamilegacy: bitnami pruned versioned tags from docker.io/bitnami
+    # in 2025 and moved them to docker.io/bitnamilegacy.
+    # Verified pullable: docker buildx imagetools inspect
+    #   docker.io/bitnamilegacy/mariadb-galera:11.4.7-debian-12-r3
+    # → sha256:83c760ea09444ad52aaa575e5c81569d1d3140195f03a073aa25b9721422f61e (linux/amd64 + linux/arm64)
+    image:
+      registry: docker.io
+      repository: bitnamilegacy/mariadb-galera
+      tag: "11.4.7-debian-12-r3"
+
+    # Required: bitnami charts refuse non-bitnami repository references without this flag.
+    global:
+      security:
+        allowInsecureImages: true
+
     replicaCount: 3
 
     # Credentials — the chart expects these three keys in the named secret:
