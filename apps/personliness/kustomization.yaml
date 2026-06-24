@@ -9,7 +9,6 @@ resources:
   - configmap.yaml
   - pvc.yaml
   - db.yaml
-  - redis.yaml
   - deployment.yaml
   - ingress.yaml
   - secret.sops.yaml

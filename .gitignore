@@ -67,3 +67,5 @@ charts/
 secrets.yaml
 
 .specstory/
+# Claude Code agent worktrees (transient)
+.claude/worktrees/
