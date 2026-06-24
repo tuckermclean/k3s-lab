@@ -7,7 +7,7 @@ data:
   DEBUG: "False"
   POSTGRES_DB: personliness
   POSTGRES_USER: personliness
-  POSTGRES_HOST: "db"
+  POSTGRES_HOST: "pg-rw.postgres.svc.cluster.local"
   POSTGRES_PORT: "5432"
   LLM_ACTIVE_CONFIG: "anthropic"
   LLM_ENABLE_REFINEMENT: "False"

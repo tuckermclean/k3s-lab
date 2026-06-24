@@ -19,3 +19,4 @@ spec:
   dependsOn:
     - name: cert-manager-config
     - name: shared-redis
+    - name: postgres
