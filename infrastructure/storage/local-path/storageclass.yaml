@@ -1,0 +1,26 @@
+# k3s ships local-path as a (default) StorageClass via its bundled
+# local-path-provisioner addon. With both local-path AND longhorn flagged
+# default, a PVC that omits storageClassName binds nondeterministically.
+#
+# We want longhorn as the SOLE default (replicated storage for general
+# workloads) and local-path available but NON-default — it's reserved for the
+# DB clusters that set storageClassName: local-path explicitly.
+#
+# This manifest mirrors k3s's local-path StorageClass exactly (provisioner /
+# reclaimPolicy / volumeBindingMode are immutable, so they must match) and
+# flips only the default annotation to "false". Flux then owns the annotation
+# and re-corrects it on the ~10m reconcile.
+#
+# Caveat: k3s re-applies its bundled local-path manifest (which sets the
+# default annotation back to "true") on k3s restart/upgrade. Flux will revert
+# it on the next reconcile; expect a brief window where local-path is default
+# again right after a k3s control-plane restart.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-path
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: rancher.io/local-path
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
