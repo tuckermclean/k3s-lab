@@ -21,6 +21,7 @@ resources:
   - cloudnative-pg-kustomization.yaml
   - postgres-kustomization.yaml
   - redis-kustomization.yaml
+  - mariadb-kustomization.yaml
 
   # Core infrastructure
   - authentik-kustomization.yaml
