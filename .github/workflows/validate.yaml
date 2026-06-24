@@ -22,7 +22,7 @@ jobs:
 
       - name: Validate kustomizations
         run: |
-          kustomize build clusters/k3s-lab >/dev/null
+          kustomize build clusters/ovh-lab >/dev/null
 
       - name: Install yamllint
         run: |

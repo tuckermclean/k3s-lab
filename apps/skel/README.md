@@ -11,14 +11,14 @@ Guidelines and repo-specific conventions
 Quick steps to add a new app
 1. Copy `apps/skel/` -> `apps/<your-app>/`.
 2. Replace placeholders in files.
-3. Add the new app path to `clusters/k3s-lab/kustomization.yaml` or create a new kustomization under `clusters/k3s-lab/` to include the app.
+3. Add the new app path to `clusters/ovh-lab/kustomization.yaml` or create a new kustomization under `clusters/ovh-lab/` to include the app.
 4. Add a kustomization.yaml in your app folder to include the above resources and the namespace if applicable.
-5. Create a new `clusters/k3s-lab/<your-app>-kustomization.yaml` pointing at `./apps/<your-app>` and add `dependsOn` as needed.
+5. Create a new `clusters/ovh-lab/<your-app>-kustomization.yaml` pointing at `./apps/<your-app>` and add `dependsOn` as needed.
 
 6. Locally preview with:
 
 ```bash
-flux diff kustomization clusters/k3s-lab
+flux diff kustomization clusters/ovh-lab
 ```
 
 5. Create a PR and merge to `main` — Flux will reconcile the new resources.

@@ -150,7 +150,7 @@ make install-sops-age
 
 # 3. Bootstrap Flux (also creates the flux-system deploy key)
 export GITHUB_TOKEN=<your-PAT>
-make flux-bootstrap-k3s-lab   # or ovh-lab / oci-lab
+make flux-bootstrap-ovh-lab   # or oci-lab
 
 # Flux will now reconcile all secrets from the encrypted git files automatically.
 # Watch progress:

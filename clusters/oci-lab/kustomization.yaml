@@ -2,5 +2,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   # `flux bootstrap` (run by bootstrap/terraform/oci-k3s) populates flux-system/.
-  # Add infrastructure/app Flux Kustomizations here the same way clusters/k3s-lab does.
+  # Add infrastructure/app Flux Kustomizations here the same way clusters/ovh-lab does.
   - flux-system/

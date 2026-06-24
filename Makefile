@@ -51,9 +51,8 @@ help:
 	@echo ""
 	@echo "  Flux bootstrap (run after install-sops-age)"
 	@echo "    flux-bootstrap-ovh-lab   Bootstrap Flux on the OVH cluster"
-	@echo "    flux-bootstrap-k3s-lab   Bootstrap Flux on the home cluster"
 	@echo "    flux-bootstrap-oci-lab   Bootstrap Flux on the OCI cluster"
-	@echo "    (GitHub PAT read from SOPS automatically for all three)"
+	@echo "    (GitHub PAT read from SOPS automatically for both)"
 	@echo ""
 	@echo "  Secrets"
 	@echo "    fill-secrets               Recover key, edit every secret.sops.yaml in sequence, clean up"
@@ -117,16 +116,6 @@ define flux-github-token
 $$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d "$(OVH_TF_DIR)/secrets.sops.yaml" | \
   python3 -c "import sys,yaml; print(yaml.safe_load(sys.stdin)['GITHUB_TOKEN'])")
 endef
-
-.PHONY: flux-bootstrap-k3s-lab
-flux-bootstrap-k3s-lab: recover-age-key ## Bootstrap Flux on the home (k3s-lab) cluster
-	@GITHUB_TOKEN=$(flux-github-token) \
-	flux bootstrap github \
-	  --owner="$(GITHUB_OWNER)" \
-	  --repository="$(GITHUB_REPO)" \
-	  --branch=main \
-	  --path=./clusters/k3s-lab \
-	  --personal
 
 .PHONY: flux-bootstrap-ovh-lab
 flux-bootstrap-ovh-lab: recover-age-key ## Bootstrap Flux on the OVH cluster

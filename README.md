@@ -30,7 +30,7 @@ directory's `README.md`.
 
 ## Stack
 
-**GitOps:** Flux v2, watching `clusters/k3s-lab/`
+**GitOps:** Flux v2, watching `clusters/ovh-lab/`
 
 **Ingress:** Traefik, deployed as DaemonSet + LoadBalancer. Uses IngressRoute CRDs throughout — there are no standard Ingress objects in this cluster. Do not add them.
 
@@ -61,7 +61,7 @@ infrastructure/
   storage/longhorn/
   storage/juicefs/
   traefik/
-clusters/k3s-lab/
+clusters/ovh-lab/
   kustomization.yaml
   flux-system/
 bootstrap/
@@ -70,7 +70,7 @@ bootstrap/
   scripts/
 ```
 
-The entry point for Flux is `clusters/k3s-lab/kustomization.yaml`. Every Flux Kustomization that should be active needs to be referenced there (or transitively via something that is).
+The entry point for Flux is `clusters/ovh-lab/kustomization.yaml`. Every Flux Kustomization that should be active needs to be referenced there (or transitively via something that is).
 
 ## Active Apps
 
@@ -83,8 +83,8 @@ Removed apps (jellyfin, jellyseerr, sonarr, radarr, lidarr, deluge, prowlarr, fl
 ## Adding an App
 
 1. Create `apps/<name>/` with at minimum: `namespace.yaml`, `kustomization.yaml`, and your workload manifests.
-2. Create `clusters/k3s-lab/<name>-kustomization.yaml` — this is a Flux `Kustomization` resource pointing at `apps/<name>/`.
-3. Add that file to the resources list in `clusters/k3s-lab/kustomization.yaml`.
+2. Create `clusters/ovh-lab/<name>-kustomization.yaml` — this is a Flux `Kustomization` resource pointing at `apps/<name>/`.
+3. Add that file to the resources list in `clusters/ovh-lab/kustomization.yaml`.
 4. Add a `Middleware` resource in the app's namespace for authentik forward auth (see below).
 5. Reference the middleware in the app's `IngressRoute`.
 
@@ -168,8 +168,8 @@ make flux-bootstrap-ovh-lab               # bootstrap Flux (GitHub PAT read from
 All credentials come from `bootstrap/terraform/ovh-k3s/secrets.sops.yaml` (encrypted in git).
 The only thing you need outside the repo is `~/.ssh/id_rsa`.
 
-**Home / OCI clusters:** See `bootstrap/BOOTSTRAP.md` for node provisioning details.
-Once nodes exist: `make install-sops-age && make flux-bootstrap-k3s-lab` (or `oci-lab`).
+**OVH / OCI clusters:** See `bootstrap/BOOTSTRAP.md` for node provisioning details.
+Once nodes exist: `make install-sops-age && make flux-bootstrap-ovh-lab` (or `oci-lab`).
 
 Run `make help` from the repo root to see all available targets.
 
