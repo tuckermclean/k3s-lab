@@ -52,7 +52,7 @@ spec:
               readOnly: true
       containers:
         - name: gluetun
-          image: qmcgaw/gluetun:latest
+          image: qmcgaw/gluetun@sha256:0e999c910d8077458ffbd869acfd9faa2a49decbca02afec6370277854587b3e
           imagePullPolicy: IfNotPresent
           lifecycle:
             postStart:
@@ -84,7 +84,7 @@ spec:
             limits:
               memory: "512Mi"
         - name: deluge
-          image: lscr.io/linuxserver/deluge:latest
+          image: lscr.io/linuxserver/deluge:2.2.0-ls380@sha256:112cea440ed50b696dc672846b482438a05bc7b1b7f0bda9d1e8171b466c192c
           imagePullPolicy: IfNotPresent
           # linuxserver/deluge starts as root for its s6 init, then drops to
           # PUID/PGID (1000) — override the Pod-level runAsNonRoot accordingly.

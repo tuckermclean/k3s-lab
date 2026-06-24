@@ -68,7 +68,7 @@ spec:
                 path: /spec/template/spec/initContainers/0
                 value:
                   name: check-redis-clear-s3
-                  image: amazon/aws-cli:latest
+                  image: amazon/aws-cli:2.35.11@sha256:749bfaf91d690b9a1768083822d620f96c19defdf9ca2dc227eb3695281fda5b
                   command:
                   - sh
                   - -c

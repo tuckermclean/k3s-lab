@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/tuckermclean/personliness/web:latest
+          image: ghcr.io/tuckermclean/personliness/web@sha256:28761270e96d9c74d083208dbf8c8c0c1a857362e93ff93928b46218faf326bc
           imagePullPolicy: Always
           command: ["/entrypoint.sh"]
           envFrom:
@@ -34,7 +34,7 @@ spec:
               mountPath: /app/staticfiles
 
         - name: worker
-          image: ghcr.io/tuckermclean/personliness/web:latest
+          image: ghcr.io/tuckermclean/personliness/web@sha256:28761270e96d9c74d083208dbf8c8c0c1a857362e93ff93928b46218faf326bc
           imagePullPolicy: Always
           command: ["celery", "-A", "personliness", "worker", "--loglevel=info"]
           envFrom:
@@ -47,7 +47,7 @@ spec:
               mountPath: /app/media
 
         - name: frontend
-          image: ghcr.io/tuckermclean/personliness/frontend:latest
+          image: ghcr.io/tuckermclean/personliness/frontend@sha256:a6309fb531dd357168f1a5c5690a1c0cf765b8ec4fe877227be7858bf1208fb5
           imagePullPolicy: Always
           ports:
             - name: http
