@@ -67,6 +67,17 @@ spec:
   postRenderers:
     - kustomize:
         patches:
+          # Tell reloader which Secret to watch. The chart renders its own
+          # juicefs-secret (in kube-system) from the valuesFrom inputs; when
+          # that Secret's data changes (e.g. metaurl rotation in #74/#39),
+          # reloader will roll the Deployment automatically.
+          - target:
+              kind: Deployment
+              name: juicefs-s3-gateway
+            patch: |-
+              - op: add
+                path: /metadata/annotations/secret.reloader.stakater.com~1reload
+                value: "juicefs-secret"
           - target:
               kind: Deployment
               name: juicefs-s3-gateway

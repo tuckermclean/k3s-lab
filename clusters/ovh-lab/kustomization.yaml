@@ -27,6 +27,7 @@ resources:
 
   # Infrastructure tools
   - headlamp-kustomization.yaml
+  - reloader-kustomization.yaml
 
   # Applications
   - personliness-kustomization.yaml
