@@ -37,6 +37,10 @@ spec:
       name: authentik-db-secret
       valuesKey: postgres-password
       targetPath: authentik.postgresql.password
+    - kind: Secret
+      name: authentik-redis-secret
+      valuesKey: redis-password
+      targetPath: authentik.redis.password
   values:
     global:
       host: https://auth.dcxxiv.com
@@ -54,6 +58,10 @@ spec:
         host: authentik-postgresql
         user: authentik
         name: authentik
+      redis:
+        host: redis-ha-haproxy.redis.svc.cluster.local
+        port: 6379
+        db: 1
     server:
       ingress:
         enabled: true
@@ -77,8 +85,9 @@ spec:
       primary:
         persistence:
           existingClaim: postgresql-config-pvc
+    # Redis externalized onto the shared redis-ha cluster (DB 1) via the
+    # HAProxy master endpoint — see authentik.redis above. The bundled bitnami
+    # redis subchart is disabled (kills a bitnami-image-prune risk + offloads
+    # the node). redis-config-pvc is now orphaned; prune separately.
     redis:
-      enabled: true
-      master:
-        persistence:
-          existingClaim: redis-config-pvc
+      enabled: false
