@@ -8,7 +8,6 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - pvc.yaml
-  - db.yaml
   - deployment.yaml
   - ingress.yaml
   - secret.sops.yaml
