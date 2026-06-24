@@ -7,6 +7,13 @@ metadata:
     app.kubernetes.io/part-of: gitops
 spec:
   interval: 5m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
   chart:
     spec:
       chart: <chart-name>          # e.g. ingress-nginx, jellyfin

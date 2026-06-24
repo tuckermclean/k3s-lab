@@ -21,8 +21,13 @@ spec:
       reconcileStrategy: Revision
   install:
     crds: Skip
+    remediation:
+      retries: 3
   upgrade:
     crds: Skip
+    remediation:
+      retries: 3
+      remediateLastFailure: true
   # Upstream chart bug (v0.1.1): the Deployment's `migrate` init container runs
   # `python -m src.db.migrate`, but that module does not exist in the v0.1.1
   # image (src/db/ has no migrate.py). The schema is instead created at app
