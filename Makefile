@@ -40,8 +40,9 @@ help:
 	@echo "    destroy-ovh              Destroy the OVH cluster (stops billing)"
 	@echo "    kubeconfig-ovh           Print path to the OVH kubeconfig"
 	@echo ""
-	@echo "  Longhorn S3 backup"
-	@echo "    store-longhorn-backup-secret  Encrypt provided AWS keys into SOPS secrets (also derives backup-target-vars)"
+	@echo "  S3 backup credentials"
+	@echo "    store-longhorn-backup-secret  Encrypt AWS keys into Longhorn SOPS secrets (also derives backup-target-vars)"
+	@echo "    store-s3-backup-creds NS=<ns> Encrypt AWS keys into s3-backup-creds Secret for any namespace"
 	@echo ""
 	@echo "  Authentik (run after Flux deploys Authentik)"
 	@echo "    store-authentik-token      Encrypt and store Authentik API token: make store-authentik-token TOKEN=<value>"
@@ -195,6 +196,34 @@ store-longhorn-backup-secret: recover-age-key ## Encrypt provided AWS keys into 
 	@echo ""
 	@echo "Secrets encrypted. Commit both:"
 	@echo "  git add $(LONGHORN_BACKUP_SECRET) $(LONGHORN_BACKUP_TARGET_VARS) && git commit"
+
+# ---------------------------------------------------------------------------
+# Generic S3 backup creds (any namespace)
+# ---------------------------------------------------------------------------
+
+POSTGRES_S3_CREDS_PATH := infrastructure/database/postgres/s3-backup-creds.sops.yaml
+
+.PHONY: store-s3-backup-creds
+store-s3-backup-creds: recover-age-key ## Encrypt AWS S3 creds into s3-backup-creds Secret for a given namespace
+	@test -n "$(NS)" || \
+	  (echo "Usage: make store-s3-backup-creds NS=<namespace>"; \
+	   echo "Example: make store-s3-backup-creds NS=postgres"; exit 1)
+	@echo "Opening S3 creds template in $$EDITOR."
+	@echo "Fill in AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_DEFAULT_REGION."
+	@printf -- 'apiVersion: v1\nkind: Secret\nmetadata:\n  name: s3-backup-creds\n  namespace: %s\ntype: Opaque\nstringData:\n  AWS_ACCESS_KEY_ID: ""\n  AWS_SECRET_ACCESS_KEY: ""\n  AWS_DEFAULT_REGION: "us-west-2"\n' "$(NS)" > /tmp/s3-backup-creds.yaml
+	@$${EDITOR:-vi} /tmp/s3-backup-creds.yaml
+	@OUT=infrastructure/database/postgres/s3-backup-creds.sops.yaml; \
+	  if [ "$(NS)" != "postgres" ]; then \
+	    OUT="infrastructure/database/$(NS)/s3-backup-creds.sops.yaml"; \
+	  fi; \
+	  cp /tmp/s3-backup-creds.yaml "$$OUT"; \
+	  SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -e -i "$$OUT"; \
+	  rm /tmp/s3-backup-creds.yaml; \
+	  echo "Encrypted: $$OUT"
+	$(MAKE) clean-age-key
+	@echo ""
+	@echo "Secret encrypted. Commit it:"
+	@echo "  git add infrastructure/database/<ns>/s3-backup-creds.sops.yaml && git commit"
 
 # Internal: derive the flux-system substituteFrom secret from the already-encrypted backup secret.
 # Called automatically by store-longhorn-backup-secret — not intended to be run directly.

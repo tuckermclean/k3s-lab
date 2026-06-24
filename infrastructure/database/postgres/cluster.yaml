@@ -1,0 +1,83 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pg
+  namespace: postgres
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+
+  storage:
+    size: 10Gi
+    storageClass: local-path
+
+  # One replica per node — prevents split-brain during node loss
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: required
+
+  # Requests only — no tight memory limit (CNPG/Postgres OOMs badly with low limits)
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+
+  postgresql:
+    parameters:
+      statement_timeout: "30000"   # 30 s guardrail; apps can widen per-session
+
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://k3s-lab-backups/postgres/pg
+      # No endpointURL needed — this is real AWS S3 (us-west-2)
+      s3Credentials:
+        accessKeyId:
+          name: s3-backup-creds
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: s3-backup-creds
+          key: AWS_SECRET_ACCESS_KEY
+        region:
+          name: s3-backup-creds
+          key: AWS_DEFAULT_REGION
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "30d"
+
+  managed:
+    roles:
+      - name: personliness
+        login: true
+        # Password sourced from the same SOPS secret used by the app —
+        # means only POSTGRES_HOST changes at cutover, no credential rotation needed.
+        passwordSecret:
+          name: personliness-role-secret
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: personliness
+  namespace: postgres
+spec:
+  name: personliness
+  owner: personliness
+  cluster:
+    name: pg
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: pg-daily
+  namespace: postgres
+spec:
+  # 6-field cron required by CNPG: seconds minutes hours dom month dow
+  schedule: "0 0 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: pg
