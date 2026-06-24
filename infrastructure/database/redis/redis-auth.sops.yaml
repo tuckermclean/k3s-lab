@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: redis-auth
+    namespace: redis
+type: Opaque
+stringData:
+    redis-password: ENC[AES256_GCM,data:h9bEmYVeHyUoWJdFIDd/QS3v+diEWKc4/DBzPQsPpe1Kk0Gx0MjdbA==,iv:7rwzZHawoUnrXJuhwMU3CDUNCfJ5BVZKGnjP5b3VJEA=,tag:FDfHNNpXI6VDQu7VH0axug==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBzSkVJWFRDRnJwVk5Cc2xq
+            L2pnODdHbVlmUlRHaDAzTnBMNU1hZllWWEJzCmoyM0tCcjlPL0tydEN6L0wzamg2
+            ZTQwSmtwVTJOWnVFZ1hUZ0JOcHQ4a28KLS0tIEJSZmZ1cDVDbW9GM3E0aXhQWmRC
+            S3lJNkcvQ3h1dm0yQ0wxdWh3VGR5ZncKL2d2yYJCZXzTzVZsw+AjL4aV6bM65JO5
+            idUIHOMQNtycD4t2BFtnmmwODEZL0q/mlKM7dxpoJu2SDTsul5IScw==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-24T18:30:10Z"
+    mac: ENC[AES256_GCM,data:+5F8hNPJZ4w77xq8O8Igl9f3NHDmaZ4kMUQHq5s3lxxkTBAB+q8hGmdyxy8w8Q/bu1oT1hjNvWD+OcXeFltftr8SzBMfcL5YHNt1M1wOmc2V6EAbZ5tQoENtiQUwxmPG18z31KP29O27VPCXvFKPP2RGWnyALn+jDBnSWPrz75k=,iv:3ZMiFcA0GnPF5w3Hx8KDtEsdnkWpjJ4w14P90SsCrRY=,tag:/tMzYiNnwtsCLrpwEQt8tg==,type:str]
+    version: 3.13.1
