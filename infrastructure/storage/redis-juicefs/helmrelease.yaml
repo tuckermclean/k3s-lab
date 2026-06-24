@@ -24,7 +24,9 @@ spec:
     architecture: standalone
 
     auth:
-      enabled: false    # JuiceFS does not require auth for local-cluster meta
+      enabled: true
+      existingSecret: juicefs-redis-auth
+      existingSecretPasswordKey: redis-password
 
     master:
       persistence:
