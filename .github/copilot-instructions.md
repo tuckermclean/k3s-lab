@@ -1,12 +1,12 @@
 # k3s-lab — AI Assistant Context
 
-Flux v2 GitOps repo for a k3s cluster. Path watched by Flux: `clusters/k3s-lab/`.
+Flux v2 GitOps repo for a k3s cluster. Path watched by Flux: `clusters/ovh-lab/`.
 
 ## Architecture
 
 - `apps/` — one dir per application (namespace, kustomization, manifests)
 - `infrastructure/` — cluster infrastructure (Traefik, cert-manager, Longhorn, JuiceFS, authentik, monitoring)
-- `clusters/k3s-lab/` — Flux Kustomization resources wiring the repo to the cluster
+- `clusters/ovh-lab/` — Flux Kustomization resources wiring the repo to the cluster
 
 ## Conventions
 
@@ -60,4 +60,4 @@ jellyfin, jellyseerr, sonarr, radarr, lidarr, deluge, prowlarr, flaresolverr, da
 - Never push directly to main. Feature branch → PR.
 - Preview changes: `flux diff kustomization <name> -n flux-system`
 - Force reconcile: `flux reconcile kustomization <name> -n flux-system`
-- Adding an app: `apps/<name>/` + `clusters/k3s-lab/<name>-kustomization.yaml` + entry in `clusters/k3s-lab/kustomization.yaml` + Middleware for auth.
+- Adding an app: `apps/<name>/` + `clusters/ovh-lab/<name>-kustomization.yaml` + entry in `clusters/ovh-lab/kustomization.yaml` + Middleware for auth.
