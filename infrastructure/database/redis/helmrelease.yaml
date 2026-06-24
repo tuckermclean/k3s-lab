@@ -21,6 +21,15 @@ spec:
         name: bitnami
         namespace: flux-system
   values:
+    global:
+      security:
+        allowInsecureImages: true
+
+    image:
+      registry: docker.io
+      repository: bitnamilegacy/redis
+      tag: "8.2.1-debian-12-r0"
+
     architecture: replication
 
     # CRITICAL: noeviction prevents silent data loss under memory pressure.
@@ -40,6 +49,10 @@ spec:
       enabled: true
       masterSet: mymaster
       quorum: 2
+      image:
+        registry: docker.io
+        repository: bitnamilegacy/redis-sentinel
+        tag: "8.2.1-debian-12-r0"
 
     replica:
       replicaCount: 3
