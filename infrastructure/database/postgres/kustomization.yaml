@@ -4,4 +4,5 @@ resources:
   - namespace.yaml
   - s3-backup-creds.sops.yaml
   - personliness-role-secret.sops.yaml
+  - authentik-role-secret.sops.yaml
   - cluster.yaml

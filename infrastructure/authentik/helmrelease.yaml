@@ -32,10 +32,6 @@ spec:
     - kind: Secret
       name: authentik-db-secret
       valuesKey: postgres-password
-      targetPath: postgresql.auth.password
-    - kind: Secret
-      name: authentik-db-secret
-      valuesKey: postgres-password
       targetPath: authentik.postgresql.password
     - kind: Secret
       name: authentik-redis-secret
@@ -55,7 +51,7 @@ spec:
         types:
           - forward_auth
       postgresql:
-        host: authentik-postgresql
+        host: pg-rw.postgres.svc.cluster.local
         user: authentik
         name: authentik
       redis:
@@ -77,14 +73,11 @@ spec:
           - secretName: authentik-outpost-tls
             hosts:
               - auth.dcxxiv.com
+    # Postgres externalized onto the shared CNPG `pg` cluster (database authentik,
+    # PG16 — bundled was PG17; pg_dump's transaction_timeout GUC stripped on import).
+    # Bundled bitnami postgresql disabled; postgresql-config-pvc orphaned (prune later).
     postgresql:
-      enabled: true
-      auth:
-        username: authentik
-        database: authentik
-      primary:
-        persistence:
-          existingClaim: postgresql-config-pvc
+      enabled: false
     # Redis externalized onto the shared redis-ha cluster (DB 1) via the
     # HAProxy master endpoint — see authentik.redis above. The bundled bitnami
     # redis subchart is disabled (kills a bitnami-image-prune risk + offloads
