@@ -11,6 +11,7 @@ resources:
   - cert-manager-kustomization.yaml
   - cert-manager-http01-kustomization.yaml
   - cert-manager-config-kustomization.yaml
+  - local-path-kustomization.yaml
   - longhorn-kustomization.yaml
   - longhorn-backup-kustomization.yaml
   - longhorn-backup-target-kustomization.yaml
