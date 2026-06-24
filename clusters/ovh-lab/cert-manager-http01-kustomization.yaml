@@ -10,5 +10,7 @@ spec:
     name: flux-system
   path: "./infrastructure/cert-manager-http01"
   prune: true
+  wait: true
+  timeout: 5m
   dependsOn:
     - name: cert-manager

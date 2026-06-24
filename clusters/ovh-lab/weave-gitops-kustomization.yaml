@@ -10,6 +10,8 @@ spec:
     name: flux-system
   path: "./infrastructure/weave-gitops"
   prune: true
+  wait: true
+  timeout: 5m
   decryption:
     provider: sops
     secretRef:
