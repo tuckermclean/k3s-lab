@@ -52,16 +52,3 @@ spec:
       # allowVolumeExpansion is on; grow this (or add a data disk) if needed.
       storage: 10Gi
   storageClassName: longhorn
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-data-v2
-  namespace: wordpress
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: longhorn
