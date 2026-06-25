@@ -1,6 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-  # `flux bootstrap` (run by bootstrap/terraform/oci-k3s) populates flux-system/.
-  # Add infrastructure/app Flux Kustomizations here the same way clusters/ovh-lab does.
-  - flux-system/
+# This cluster is not bootstrapped yet — flux-system/ does not exist, so resources
+# is empty to keep `kustomize build clusters/oci-lab` clean instead of erroring.
+# Once `flux bootstrap` (run by bootstrap/terraform/oci-k3s) populates flux-system/,
+# add it (and infrastructure/app Flux Kustomizations) here the way clusters/ovh-lab does:
+#   - flux-system/
+resources: []

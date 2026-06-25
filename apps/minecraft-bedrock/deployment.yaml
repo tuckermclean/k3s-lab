@@ -37,8 +37,8 @@ spec:
             - name: VERSION
               value: "1.21.101.1"
           envFrom:
-            - secretRef:
-                name: bedrock-env   # optional; define keys like SERVER_NAME, etc.
+            - configMapRef:
+                name: bedrock-env   # non-sensitive server config; define keys like SERVER_NAME, etc.
           ports:
             - name: bedrock
               containerPort: 19132
