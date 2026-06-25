@@ -20,7 +20,7 @@ spec:
       # Restart the pod to refresh content: kubectl -n hero rollout restart deploy/hero
       initContainers:
         - name: clone
-          image: alpine/git:2.45.2
+          image: alpine/git:v2.54.0@sha256:8d6ede0b29c666ac111c732468c4d758c1c08f054f211dd98f15d421a6ffab40
           command:
             - sh
             - -c
@@ -33,7 +33,7 @@ spec:
               mountPath: /web
       containers:
         - name: nginx
-          image: nginx:1.27-alpine
+          image: nginx:1.31-alpine@sha256:54f2a904c251d5a34adf545a72d32515a15e08418dae0266e23be2e18c66fefa
           ports:
             - name: http
               containerPort: 80
