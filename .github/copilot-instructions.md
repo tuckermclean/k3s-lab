@@ -1,6 +1,6 @@
 # k3s-lab — AI Assistant Context
 
-Flux v2 GitOps repo for a k3s cluster. Path watched by Flux: `clusters/ovh-lab/`.
+Flux v2 GitOps repo for a k3s cluster. Primary cluster: `clusters/ovh-lab/` (bootstrapped). `clusters/oci-lab/` is a separate, not-yet-bootstrapped cluster.
 
 ## Architecture
 
@@ -11,49 +11,23 @@ Flux v2 GitOps repo for a k3s cluster. Path watched by Flux: `clusters/ovh-lab/`
 ## Conventions
 
 - **Ingress:** Traefik `IngressRoute` CRDs throughout. Never use standard `Ingress` objects.
-- **TLS:** cert-manager, ClusterIssuer `letsencrypt-prod` (Vultr DNS01). Each app needs a `Certificate` resource — IngressRoute does not support cert-manager annotations.
+- **TLS:** cert-manager, ClusterIssuer `letsencrypt-prod` (Cloudflare DNS01). Each app needs a `Certificate` resource — IngressRoute does not support cert-manager annotations.
 - **Storage:** Longhorn is the default StorageClass. Use JuiceFS for ReadWriteMany / shared access.
-- **Secrets:** Never in Git. Create in-cluster; reference via `envFrom.secretRef` or `secretKeyRef`.
+- **Secrets:** This repo uses **SOPS + age**. Secrets are committed to Git as `*.sops.yaml` files and decrypted at apply time by Flux's kustomize-controller. Never create plaintext `Secret` manifests or out-of-band cluster secrets. To add or edit a secret, run `make edit-secret FILE=<path>` (or `sops <path>` directly). Do not write unencrypted secret values anywhere in the repo.
 - **Labels:** Tag resources with `app.kubernetes.io/part-of: gitops`.
+
+## Live App Set
+
+The authoritative list of active apps and infrastructure components is `clusters/ovh-lab/kustomization.yaml`. Do not rely on any hardcoded app list in this file — consult that file for the current set.
 
 ## Authentication
 
-Every app is protected by authentik forward auth. Each app namespace needs a `Middleware`:
-
-```yaml
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: authentik
-  namespace: <app-namespace>
-spec:
-  forwardAuth:
-    address: http://ak-outpost-<outpost-name>.authentik:9000/outpost.goauthentik.io/auth/traefik
-    trustForwardHeader: true
-    authResponseHeaders:
-      - X-authentik-username
-      - X-authentik-groups
-      - X-authentik-email
-      - X-authentik-name
-      - X-authentik-uid
-      - X-authentik-jwt
-      - X-authentik-meta-jwks
-      - X-authentik-meta-outpost
-      - X-authentik-meta-provider
-      - X-authentik-meta-app
-      - X-authentik-meta-version
-```
-
-The IngressRoute references `name: authentik`. No bypass routes needed. The outpost must be configured in authentik as **domain-level forward auth** with `authentik_host_browser: https://auth.dcxxiv.com/` and the app's provider assigned to it. See `apps/openhands/` for the reference implementation.
+Every app is protected by authentik forward auth. Each app namespace needs a `Middleware` named `authentik` with a `forwardAuth` address pointing to the relevant outpost in the `authentik` namespace. The IngressRoute references `name: authentik`. The outpost must be configured in authentik as domain-level forward auth with `authentik_host_browser: https://auth.dcxxiv.com/` and the app's provider assigned to it. See `apps/nodecast-tv/` (active) for the reference implementation — `middleware.yaml` + IngressRoute.
 
 ## Node Notes
 
 - k3s02 has taint `node-role=storage-ingress:NoSchedule` — add an explicit toleration for workloads that must schedule there.
-- k3s04 is the current control plane (OVH VPS). It does not have a cloud-init file in `bootstrap/` yet.
-
-## Removed Apps
-
-jellyfin, jellyseerr, sonarr, radarr, lidarr, deluge, prowlarr, flaresolverr, dashy are in the `media-apps` branch, not in main.
+- k3s04 is the current control plane (OVH VPS). All nodes are provisioned via Terraform (`bootstrap/terraform/ovh-k3s/`); cloud-init is generated from templates in that module, not from hand-maintained per-node files.
 
 ## Workflow
 
@@ -61,3 +35,4 @@ jellyfin, jellyseerr, sonarr, radarr, lidarr, deluge, prowlarr, flaresolverr, da
 - Preview changes: `flux diff kustomization <name> -n flux-system`
 - Force reconcile: `flux reconcile kustomization <name> -n flux-system`
 - Adding an app: `apps/<name>/` + `clusters/ovh-lab/<name>-kustomization.yaml` + entry in `clusters/ovh-lab/kustomization.yaml` + Middleware for auth.
+- See README for full project structure and additional operational commands.
