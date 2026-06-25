@@ -23,7 +23,7 @@ spec:
               emptyDir: {}
           initContainers:
             - name: juicefs-dump
-              image: juicedata/juicefs-csi-driver:v0.30.3
+              image: juicedata/juicefs-csi-driver:v0.31.10@sha256:a3e392d68b6503fbc911e967e72832e0e75b4f90770da9a2490fe1d75e5ab696
               command: ["sh", "-c", "juicefs dump \"$METAURL\" /dump/meta.json && wc -c /dump/meta.json"]
               env:
                 - name: METAURL
