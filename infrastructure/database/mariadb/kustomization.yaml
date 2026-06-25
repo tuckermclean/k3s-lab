@@ -4,5 +4,6 @@ resources:
   - namespace.yaml
   - wordpress-db.sops.yaml
   - s3-backup-creds.sops.yaml
+  - helmrepository.yaml
   - helmrelease.yaml
   - backup-cronjob.yaml
