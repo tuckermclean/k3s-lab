@@ -28,9 +28,9 @@ spec:
               env:
                 - name: METAURL
                   valueFrom:
-                    secretKeyRef: { name: juicefs-secret, key: metaurl }
+                    secretKeyRef: {name: juicefs-secret, key: metaurl}
               volumeMounts:
-                - { name: dump, mountPath: /dump }
+                - {name: dump, mountPath: /dump}
           containers:
             - name: upload
               image: amazon/aws-cli:2.35.11@sha256:749bfaf91d690b9a1768083822d620f96c19defdf9ca2dc227eb3695281fda5b
@@ -40,10 +40,10 @@ spec:
                 - 'gzip -c /dump/meta.json | aws s3 cp - "s3://k3s-lab-backups/juicefs/meta-$(date +%F-%H%M).json.gz" && echo uploaded'
               env:
                 - name: AWS_ACCESS_KEY_ID
-                  valueFrom: { secretKeyRef: { name: juicefs-secret, key: access-key } }
+                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: access-key}}
                 - name: AWS_SECRET_ACCESS_KEY
-                  valueFrom: { secretKeyRef: { name: juicefs-secret, key: secret-key } }
+                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: secret-key}}
                 - name: AWS_DEFAULT_REGION
-                  valueFrom: { secretKeyRef: { name: juicefs-secret, key: region } }
+                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: region}}
               volumeMounts:
-                - { name: dump, mountPath: /dump }
+                - {name: dump, mountPath: /dump}
