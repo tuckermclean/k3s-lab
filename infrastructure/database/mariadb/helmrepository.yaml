@@ -1,0 +1,14 @@
+# Bitnami OCI chart source for the mariadb-galera HelmRelease.
+# Restored here after the redis-juicefs package (its previous, only definition) was
+# retired in 928e708 — mariadb-galera is now the sole consumer, so it lives per-app.
+# STOPGAP: this keeps us on bitnami; the planned exit is mariadb-operator (official
+# images, Galera 3-node). See the mariadb-operator migration follow-up.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: bitnami
+  namespace: flux-system
+spec:
+  type: oci
+  interval: 1h
+  url: oci://registry-1.docker.io/bitnamicharts
