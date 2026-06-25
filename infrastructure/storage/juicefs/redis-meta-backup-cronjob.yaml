@@ -1,0 +1,49 @@
+# Daily DR backup of the JuiceFS metadata (now on shared redis-ha DB 2).
+# `juicefs dump` exports portable JSON (engine/version-agnostic; strips the S3
+# secret key) → gzip → S3. Needed because redis-ha is 3-node HA but local-path
+# (not Longhorn-backed), so this is the only OFFSITE copy of the filesystem map.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: juicefs-meta-backup
+  namespace: kube-system
+spec:
+  schedule: "0 4 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          volumes:
+            - name: dump
+              emptyDir: {}
+          initContainers:
+            - name: juicefs-dump
+              image: juicedata/juicefs-csi-driver:v0.30.3
+              command: ["sh", "-c", "juicefs dump \"$METAURL\" /dump/meta.json && wc -c /dump/meta.json"]
+              env:
+                - name: METAURL
+                  valueFrom:
+                    secretKeyRef: {name: juicefs-secret, key: metaurl}
+              volumeMounts:
+                - {name: dump, mountPath: /dump}
+          containers:
+            - name: upload
+              image: amazon/aws-cli:2.35.11@sha256:749bfaf91d690b9a1768083822d620f96c19defdf9ca2dc227eb3695281fda5b
+              command:
+                - sh
+                - -c
+                - 'gzip -c /dump/meta.json | aws s3 cp - "s3://k3s-lab-backups/juicefs/meta-$(date +%F-%H%M).json.gz" && echo uploaded'
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: access-key}}
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: secret-key}}
+                - name: AWS_DEFAULT_REGION
+                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: region}}
+              volumeMounts:
+                - {name: dump, mountPath: /dump}

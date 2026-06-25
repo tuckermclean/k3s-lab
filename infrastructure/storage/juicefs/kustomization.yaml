@@ -6,3 +6,4 @@ resources:
   - secret.sops.yaml
   - storageclass.yaml
   - dashboard-ingress.yaml
+  - redis-meta-backup-cronjob.yaml
