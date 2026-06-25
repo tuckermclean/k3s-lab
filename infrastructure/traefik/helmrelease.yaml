@@ -19,7 +19,7 @@ spec:
         kind: HelmRepository
         name: traefik
         namespace: flux-system
-      version: "30.x"
+      version: "41.x"
   values:
     deployment:
       kind: DaemonSet
