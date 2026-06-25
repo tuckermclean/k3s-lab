@@ -8,6 +8,12 @@ allowVolumeExpansion: true
 volumeBindingMode: Immediate
 mountOptions:
   - enable-xattr
+  # Cap the local read cache so /var/jfsCache can't fill the node disk.
+  # JuiceFS CE defaults to a 100 GiB cache + 10% free-space floor — on the
+  # 48 GiB OVH nodes that grew /var/jfsCache to ~29 GiB and tripped
+  # DiskPressure. 10 GiB cache + a 20% free-space floor keeps headroom.
+  - cache-size=10240
+  - free-space-ratio=0.2
 parameters:
   csi.storage.k8s.io/provisioner-secret-name: juicefs-secret
   csi.storage.k8s.io/provisioner-secret-namespace: kube-system
