@@ -19,8 +19,7 @@ spec:
   # ─────────────────────────────────────────────────────────────────────────
   postBuild:
     substitute:
-      ORCH_VERSION: "0.1.28"
-      GITHUB_BOT_LOGIN: "orecchiette1111"
+      ORCH_VERSION: "0.1.29"
   decryption:
     provider: sops
     secretRef:

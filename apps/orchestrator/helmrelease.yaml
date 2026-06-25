@@ -75,6 +75,7 @@ spec:
     config:
       GITHUB_OWNER: "tuckermclean"
       GITHUB_REPO: "sandbox-derp"
+      GITHUB_BOT_LOGIN: "orecchiette1111"
       # Default-deny: empty allowlist admits ONLY the repo owner.
       ALLOWLIST: ""
       RECONCILE_CRON: "*/15 * * * *"
