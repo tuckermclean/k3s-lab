@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: juicefs-meta-backup-creds
+    namespace: kube-system
+type: Opaque
+stringData:
+    AWS_ACCESS_KEY_ID: ENC[AES256_GCM,data:rpSu3H6EglGPhEnSheWD1TxrWoc=,iv:tENX6KLgo0FROa4B7jh5GNAIXnhrV3sYG3qTYfpKSNY=,tag:9yhfjXRkunoqp0wcKI9xtQ==,type:str]
+    AWS_SECRET_ACCESS_KEY: ENC[AES256_GCM,data:6ur/uo/Md8Q1WqBc1aHF3OZT/E5jVzuN8JYDzYBcyPXAPD+V1/9/+g==,iv:06WT4SBiAdGSMTcJ69mDHo/bRobotQ7SmPy4kdpCijk=,tag:oleq0yzwYeVOmwt2lBWcfA==,type:str]
+    AWS_DEFAULT_REGION: ENC[AES256_GCM,data:X9/nM3ys+ssG,iv:YOc2yy9gvm4IiGL9TjVFomFpU16mNXr3Bs86bbTtJ2E=,tag:o9yYXTCqSSV1TBD7ZtPorA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBTVjV1SlNGdU5iK1g2T29P
+            ZXJES2FFYkZPaWxCY0VtRW5oblJDZjUwdldzCmNwZnloRDVuN2FtS3F4ci9VRS82
+            UVpJSlJLL2s0cjFuVDB1aWFBaXhSeUkKLS0tIC92NElQMjBlMUhYaWVicFZLNDlS
+            MmNZd0NTNkJEYnlDZ0d3NzZQS1E3aDQKXRmlGnaaYCkTkZN1nH0uz5PHyvBZY/GT
+            sG01M1bvhxYdSg5WnatU6NsQC6OGTJ/mGGtxoPCY3s8WlQRIZ4rlnA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-06-25T00:05:34Z"
+    mac: ENC[AES256_GCM,data:Vj7efNr8I8DNFHvBeo9My4RPAL7YIvFhzqBewIHZj/KiZIdLdU5G0IOHJsZJvXTEFaoqUuYPTNwXHKgB5T18gwpE0SBEE23RDHaFuWNX89mgJ+OUc0WW7vmHkDYZptGyPMlYICbcSouShKGhHZpZCf2CemB75hDxipwplYQckXM=,iv:bhd9xQRwMH4il+C16wsG65+a1DeUFLJwVoZbfrHqjlc=,tag:Rgp2eS7JgORo3eABMPZA2A==,type:str]
+    version: 3.13.1
