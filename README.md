@@ -1,16 +1,16 @@
 # k3s-lab
 
-GitOps-managed k3s cluster across three cloud providers. Everything declarative, everything in this repo, secrets included (encrypted).
+GitOps-managed k3s cluster on OVH, with a separate OCI cluster. Everything declarative, everything in this repo, secrets included (encrypted).
 
 ## Nodes
 
-| Node | Role | Provider | Location |
-|------|------|----------|----------|
-| k3s04 | server / control-plane | OVH VPS | Hillsboro, OR |
-| k3s02 | agent | Vultr VPS | Seattle, WA |
-| k3s03 | agent | Hetzner VPS | Hillsboro, OR |
+3-node HA cluster on OVH US Public Cloud (Oregon). Every node is a control-plane + etcd member; there are no agent-only or tainted nodes, so workloads schedule anywhere.
 
-k3s02 carries the `node-role=storage-ingress:NoSchedule` taint. Add a toleration explicitly if you need to schedule there.
+| Node | Role | Provider |
+|------|------|----------|
+| k3s-ovh-1 | server / control-plane + etcd | OVH US Public Cloud |
+| k3s-ovh-2 | server / control-plane + etcd | OVH US Public Cloud |
+| k3s-ovh-3 | server / control-plane + etcd | OVH US Public Cloud |
 
 ## OCI Lab Cluster (separate)
 

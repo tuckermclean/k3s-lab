@@ -26,8 +26,8 @@ Every app is protected by authentik forward auth. Each app namespace needs a `Mi
 
 ## Node Notes
 
-- k3s02 has taint `node-role=storage-ingress:NoSchedule` — add an explicit toleration for workloads that must schedule there.
-- k3s04 is the current control plane (OVH VPS). All nodes are provisioned via Terraform (`bootstrap/terraform/ovh-k3s/`); cloud-init is generated from templates in that module, not from hand-maintained per-node files.
+- The cluster is 3 OVH nodes (`k3s-ovh-1/2/3`), all control-plane + etcd, no taints — workloads schedule anywhere.
+- Provisioned via Terraform (`bootstrap/terraform/ovh-k3s/`); cloud-init is generated from templates in that module, not from hand-maintained per-node files.
 
 ## Workflow
 

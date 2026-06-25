@@ -42,7 +42,7 @@ backup is needed — just working DNS.
 
 ### Step 2 — Provision nodes
 ```bash
-make apply-ovh        # OVH 3-node HA cluster (spans OVH / Vultr / Hetzner VPS via WireGuard)
+make apply-ovh        # OVH 3-node HA cluster (k3s-ovh-1/2/3, all control-plane + etcd)
 ```
 See [`bootstrap/terraform/ovh-k3s/README.md`](../../bootstrap/terraform/ovh-k3s/README.md). The OCI
 cluster is separate — `bootstrap/terraform/oci-k3s/`.
