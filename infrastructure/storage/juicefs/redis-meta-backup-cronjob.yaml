@@ -37,13 +37,13 @@ spec:
               command:
                 - sh
                 - -c
-                - 'gzip -c /dump/meta.json | aws s3 cp - "s3://k3s-lab-backups/juicefs/meta-$(date +%F-%H%M).json.gz" && echo uploaded'
+                - 'aws s3 cp /dump/meta.json "s3://k3s-lab-backups/juicefs/meta-$(date +%F-%H%M).json" && echo uploaded'
               env:
                 - name: AWS_ACCESS_KEY_ID
-                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: access-key}}
+                  valueFrom: {secretKeyRef: {name: juicefs-meta-backup-creds, key: AWS_ACCESS_KEY_ID}}
                 - name: AWS_SECRET_ACCESS_KEY
-                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: secret-key}}
+                  valueFrom: {secretKeyRef: {name: juicefs-meta-backup-creds, key: AWS_SECRET_ACCESS_KEY}}
                 - name: AWS_DEFAULT_REGION
-                  valueFrom: {secretKeyRef: {name: juicefs-secret, key: region}}
+                  valueFrom: {secretKeyRef: {name: juicefs-meta-backup-creds, key: AWS_DEFAULT_REGION}}
               volumeMounts:
                 - {name: dump, mountPath: /dump}

@@ -7,3 +7,4 @@ resources:
   - storageclass.yaml
   - dashboard-ingress.yaml
   - redis-meta-backup-cronjob.yaml
+  - s3-backup-creds.sops.yaml
