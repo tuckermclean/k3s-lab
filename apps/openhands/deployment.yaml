@@ -32,7 +32,7 @@ spec:
             - {name: docker-run, mountPath: /var/run}
             - {name: docker-lib, mountPath: /var/lib/docker}
         - name: openhands
-          image: docker.openhands.dev/openhands/openhands:0.62
+          image: docker.openhands.dev/openhands/openhands:1.13@sha256:bb3eabbe1149a07d2a85276c594a99845906764f6b4f1015074850d4a1c501d4
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
