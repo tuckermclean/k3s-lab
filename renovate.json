@@ -11,22 +11,22 @@
   "prHourlyLimit": 2,
   "pinDigests": true,
   "flux": {
-    "fileMatch": [
-      "(^|/)infrastructure/.+\\.ya?ml$",
-      "(^|/)apps/.+\\.ya?ml$",
-      "(^|/)clusters/.+\\.ya?ml$"
+    "managerFilePatterns": [
+      "/(^|/)infrastructure/.+\\.ya?ml$/",
+      "/(^|/)apps/.+\\.ya?ml$/",
+      "/(^|/)clusters/.+\\.ya?ml$/"
     ]
   },
   "kubernetes": {
-    "fileMatch": [
-      "(^|/)infrastructure/.+\\.ya?ml$",
-      "(^|/)apps/.+\\.ya?ml$"
+    "managerFilePatterns": [
+      "/(^|/)infrastructure/.+\\.ya?ml$/",
+      "/(^|/)apps/.+\\.ya?ml$/"
     ]
   },
   "helm-values": {
-    "fileMatch": [
-      "(^|/)infrastructure/.+\\.ya?ml$",
-      "(^|/)apps/.+\\.ya?ml$"
+    "managerFilePatterns": [
+      "/(^|/)infrastructure/.+\\.ya?ml$/",
+      "/(^|/)apps/.+\\.ya?ml$/"
     ]
   },
   "packageRules": [
