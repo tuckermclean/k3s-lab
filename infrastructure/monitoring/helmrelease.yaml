@@ -19,7 +19,7 @@ spec:
         kind: HelmRepository
         name: prometheus-community
         namespace: flux-system
-      version: "56.x"
+      version: "87.x"
   valuesFrom:
     - kind: Secret
       name: grafana-admin-secret
