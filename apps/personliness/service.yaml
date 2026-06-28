@@ -1,13 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: personliness
+  name: db
   namespace: personliness
 spec:
-  type: ClusterIP
-  selector:
-    app.kubernetes.io/name: personliness
+  type: ExternalName
+  externalName: pg-rw.postgres.svc.cluster.local
   ports:
-    - name: http
-      port: 80
-      targetPort: 80
+    - port: 5432
