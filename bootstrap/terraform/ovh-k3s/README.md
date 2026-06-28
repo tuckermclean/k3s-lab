@@ -30,7 +30,7 @@ running and you repoint the kubeconfig at another node.
 ## Cost
 
 Pricing is USD and region-specific in OVH US. Confirm current rates in the
-us.ovhcloud.com manager before applying. `terraform destroy` (or `make destroy`)
+us.ovhcloud.com manager before applying. `make destroy-ovh` (from the repo root)
 stops billing.
 
 ## Bootstrap from scratch
@@ -101,6 +101,14 @@ make destroy-ovh  # terraform destroy -auto-approve — STOPS BILLING
 Age key recovery and SOPS decryption happen automatically. No OpenRC file to source.
 
 ## Teardown
+
+From the repo root:
+
+```bash
+make destroy-ovh
+```
+
+Or from within `bootstrap/terraform/ovh-k3s/` with the age key already recovered:
 
 ```bash
 make destroy

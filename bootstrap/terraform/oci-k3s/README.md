@@ -32,6 +32,8 @@ before installing k3s.
 
 ## Usage
 
+Unlike the OVH module, there is no root `make` wrapper — all operations use `terraform` directly from the module directory.
+
 ```bash
 cd bootstrap/terraform/oci-k3s
 cp terraform.tfvars.example terraform.tfvars
