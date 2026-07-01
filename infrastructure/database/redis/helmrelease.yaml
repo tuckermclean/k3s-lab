@@ -88,7 +88,7 @@ spec:
       hardAntiAffinity: true
       image:
         repository: docker.io/library/haproxy
-        tag: "3.4.0-alpine"
+        tag: "3.4.1-alpine"
       resources:
         requests:
           cpu: 25m
