@@ -86,6 +86,11 @@ spec:
       enabled: true
       replicas: 3
       hardAntiAffinity: true
+      deploymentStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
       image:
         repository: docker.io/library/haproxy
         tag: "3.4.0-alpine"
