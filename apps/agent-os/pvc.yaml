@@ -10,5 +10,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 50Gi
+      # 20Gi fits Longhorn's per-node schedulable budget (~74GB after the 30%
+      # reservation); 50Gi failed replica scheduling on every node.
+      storage: 20Gi
   storageClassName: longhorn
