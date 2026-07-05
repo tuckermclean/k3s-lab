@@ -1,0 +1,23 @@
+# Web UI gated by the shared authentik forwardAuth middleware (embedded outpost),
+# same pattern as orch.dcxxiv.com / longhorn.dcxxiv.com.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: agent-os
+  namespace: agent-os
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`agent.dcxxiv.com`)
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      services:
+        - name: agent-os
+          port: 3011
+  tls:
+    secretName: agent-os-tls
