@@ -26,7 +26,7 @@ spec:
       containers:
         - name: agent-os
           # Digest pinned after the first CI build publishes the image.
-          image: ghcr.io/tuckermclean/agent-os:0.2.1@sha256:fa095850c6b9f8a72099b68219605dcf331bd597d80f50e1adf94e59b0c8ada1
+          image: ghcr.io/tuckermclean/agent-os:0.2.1@sha256:752f00e90f85c9e3d0266f2ea418d6e2c30f3c4647461ed405302e0e74d931e7
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
