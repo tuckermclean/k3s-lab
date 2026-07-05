@@ -6,10 +6,21 @@ ARG AGENT_OS_REF=v0.2.1
 ARG CLAUDE_CODE_VERSION=2.1.201
 # msitarzewski/agency-agents commit providing the 220+ agent definitions
 ARG AGENCY_AGENTS_REF=90ae2b27d159d9a4b80160484b0c00f67c7dd0ff
+ARG KUBECTL_VERSION=v1.36.2
+ARG GH_VERSION=2.96.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl git openssh-client procps python3 make g++ ripgrep tmux less vim nano \
     && rm -rf /var/lib/apt/lists/*
+
+# kubectl + GitHub CLI (static release binaries, no extra apt repos)
+RUN arch="$(dpkg --print-architecture)" \
+    && curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${arch}/kubectl" -o /usr/local/bin/kubectl \
+    && chmod +x /usr/local/bin/kubectl \
+    && curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${arch}.tar.gz" \
+       | tar -xz -C /tmp \
+    && install -m 0755 "/tmp/gh_${GH_VERSION}_linux_${arch}/bin/gh" /usr/local/bin/gh \
+    && rm -rf "/tmp/gh_${GH_VERSION}_linux_${arch}"
 
 RUN npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
     && npm cache clean --force
