@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-os
+  namespace: agent-os
+  labels:
+    app.kubernetes.io/name: agent-os
+    app.kubernetes.io/part-of: gitops
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agent-os
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: agent-os
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: agent-os
+          # Digest pinned after the first CI build publishes the image.
+          image: ghcr.io/tuckermclean/agent-os:0.2.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3011
+          env:
+            - name: PORT
+              value: "3011"
+            - name: HOME
+              value: /home/node
+            - name: DB_PATH
+              value: /home/node/.agent-os/agent-os.db
+            # In-pod Claude Code sessions dispatch subagents on Sonnet
+            - name: CLAUDE_CODE_SUBAGENT_MODEL
+              value: sonnet
+          envFrom:
+            - secretRef:
+                name: agent-os-env
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: home
+              mountPath: /home/node
+      volumes:
+        - name: home
+          persistentVolumeClaim:
+            claimName: agent-os-home

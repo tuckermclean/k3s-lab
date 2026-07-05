@@ -39,3 +39,4 @@ resources:
   - orchestrator-kustomization.yaml
   - deluge-kustomization.yaml
   - nodecast-tv-kustomization.yaml
+  - agent-os-kustomization.yaml
