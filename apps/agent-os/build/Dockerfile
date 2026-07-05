@@ -8,11 +8,14 @@ ARG CLAUDE_CODE_VERSION=2.1.201
 ARG AGENCY_AGENTS_REF=90ae2b27d159d9a4b80160484b0c00f67c7dd0ff
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl git openssh-client procps python3 make g++ ripgrep tmux \
+      ca-certificates curl git openssh-client procps python3 make g++ ripgrep tmux less vim nano \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
     && npm cache clean --force
+
+# Install Codex CLI globally
+RUN npm install -g @openai/codex
 
 # Bake the app itself: the npm package's `agent-os` bin is an installer that
 # clones into $HOME at runtime; we want an immutable, prebuilt copy instead.
