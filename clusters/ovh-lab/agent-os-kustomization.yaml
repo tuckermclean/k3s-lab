@@ -19,3 +19,5 @@ spec:
   dependsOn:
     - name: cert-manager-config
     - name: longhorn
+    # authentik/authentik forwardAuth Middleware referenced by the IngressRoute
+    - name: authentik

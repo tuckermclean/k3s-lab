@@ -4,7 +4,7 @@ FROM node:22-bookworm-slim
 
 ARG AGENT_OS_REF=v0.2.1
 ARG CLAUDE_CODE_VERSION=2.1.201
-# msitarzewski/agency-agents commit providing the 232 agent definitions
+# msitarzewski/agency-agents commit providing the 220+ agent definitions
 ARG AGENCY_AGENTS_REF=90ae2b27d159d9a4b80160484b0c00f67c7dd0ff
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
