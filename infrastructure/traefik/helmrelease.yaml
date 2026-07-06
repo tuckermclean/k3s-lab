@@ -50,3 +50,18 @@ spec:
           default: true
         exposedPort: 19132    # LB/Node port that clients hit
         protocol: UDP
+      dev3000:
+        port: 3000
+        exposedPort: 3000
+        expose:
+          default: true
+      dev5173:
+        port: 5173
+        exposedPort: 5173
+        expose:
+          default: true
+      dev8080:
+        port: 8080
+        exposedPort: 8080
+        expose:
+          default: true
