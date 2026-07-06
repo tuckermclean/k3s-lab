@@ -21,3 +21,71 @@ spec:
           port: 3011
   tls:
     secretName: agent-os-tls
+---
+# Dev servers reachable at agent.dcxxiv.com:<port> — same host, dedicated
+# entrypoint per port, same authentik forwardAuth + agent-os-tls cert as above.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: agent-os-dev3000
+  namespace: agent-os
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  entryPoints:
+    - dev3000
+  routes:
+    - kind: Rule
+      match: Host(`agent.dcxxiv.com`)
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      services:
+        - name: agent-os
+          port: 3000
+  tls:
+    secretName: agent-os-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: agent-os-dev5173
+  namespace: agent-os
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  entryPoints:
+    - dev5173
+  routes:
+    - kind: Rule
+      match: Host(`agent.dcxxiv.com`)
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      services:
+        - name: agent-os
+          port: 5173
+  tls:
+    secretName: agent-os-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: agent-os-dev8080
+  namespace: agent-os
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  entryPoints:
+    - dev8080
+  routes:
+    - kind: Rule
+      match: Host(`agent.dcxxiv.com`)
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      services:
+        - name: agent-os
+          port: 8080
+  tls:
+    secretName: agent-os-tls
