@@ -14,3 +14,14 @@ spec:
     - name: http
       port: 3011
       targetPort: 3011
+    # Dev-server ports exposed on agent.dcxxiv.com:<port> via dedicated
+    # Traefik entrypoints (see infrastructure/traefik/helmrelease.yaml).
+    - name: dev-3000
+      port: 3000
+      targetPort: 3000
+    - name: dev-5173
+      port: 5173
+      targetPort: 5173
+    - name: dev-8080
+      port: 8080
+      targetPort: 8080
