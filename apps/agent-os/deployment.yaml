@@ -49,22 +49,30 @@ spec:
           envFrom:
             - secretRef:
                 name: agent-os-env
+          # Builds inside the workspace peg CPU/memory and slow the HTTP
+          # server; probes must tolerate a busy-but-alive dev box or the
+          # kubelet kills sessions mid-build (2026-07-06 incident).
           readinessProbe:
             httpGet:
               path: /
               port: http
             initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /
               port: http
             initialDelaySeconds: 60
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
           resources:
             requests:
-              cpu: 500m
-              memory: 1Gi
+              cpu: "1"
+              # Observed 2.3Gi working set during builds; request must cover
+              # it or the scheduler packs the pod onto memory-starved nodes.
+              memory: 3Gi
             limits:
               cpu: "2"
               memory: 4Gi
