@@ -1,0 +1,25 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bosnia
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/bosnia
+  prune: true
+  wait: true
+  timeout: 5m
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  dependsOn:
+    # letsencrypt-prod ClusterIssuer (DNS01/Cloudflare) for the TLS cert
+    - name: cert-manager-config
+    # longhorn StorageClass for the static-assets PVC
+    - name: longhorn
+    # 'bosnia' role + database on the in-cluster CloudNativePG cluster
+    - name: postgres

@@ -1,0 +1,36 @@
+# One host, path-split, all PUBLIC (no authentik middleware):
+#   - /api/* and /health  -> backend (Fastify API; secured by its own JWT auth,
+#     consumed by the Expo mobile client which cannot do browser SSO)
+#   - everything else      -> bosnia-static (Expo web build at /, MP3s at /audio/)
+#
+# This is an intentional deviation from the repo's "every app behind forward
+# auth" convention: an SSO wall would break the mobile client and the public
+# audio fetches. Auth is the app's own JWT layer.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bosnia
+  namespace: bosnia
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    # API + health check → backend. Higher priority so it wins over the
+    # catch-all below.
+    - kind: Rule
+      match: Host(`bosnia.dcxxiv.com`) && (PathPrefix(`/api`) || Path(`/health`))
+      priority: 20
+      services:
+        - name: backend
+          port: 80
+    # Web app (/) + reference audio (/audio/) → static nginx.
+    - kind: Rule
+      match: Host(`bosnia.dcxxiv.com`)
+      priority: 10
+      services:
+        - name: bosnia-static
+          port: 80
+  tls:
+    secretName: bosnia-tls

@@ -1,0 +1,19 @@
+# Shared volume for the static assets served by bosnia-static: the Expo web
+# build at the root and the reference lesson audio (MP3s) under audio/.
+# ReadWriteOnce is fine — a single-replica nginx (Recreate) is the only writer/
+# reader. Populated out-of-band (see the PR description): expo web export +
+# Azure-generated audio are copied in via `kubectl cp`.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bosnia-static
+  namespace: bosnia
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: longhorn

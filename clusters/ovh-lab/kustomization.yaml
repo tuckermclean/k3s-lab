@@ -40,3 +40,4 @@ resources:
   - deluge-kustomization.yaml
   - nodecast-tv-kustomization.yaml
   - agent-os-kustomization.yaml
+  - bosnia-kustomization.yaml

@@ -1,0 +1,34 @@
+# nginx config for bosnia-static. Serves two things off one Longhorn volume
+# mounted at /usr/share/nginx/html:
+#   - /audio/*  -> reference lesson MP3s (long cache, plain 404 on miss)
+#   - /*        -> the Expo web build, with SPA fallback to index.html
+# The backend (/api/*, /health) is NOT served here — the Traefik IngressRoute
+# routes those to the backend Service before the catch-all reaches nginx.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bosnia-static-nginx
+  namespace: bosnia
+  labels:
+    app.kubernetes.io/part-of: gitops
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+        root /usr/share/nginx/html;
+
+        # Reference lesson audio. Immutable, content-hashed filenames.
+        location /audio/ {
+            alias /usr/share/nginx/html/audio/;
+            expires 30d;
+            add_header Cache-Control "public, immutable";
+            try_files $uri =404;
+        }
+
+        # Expo web build (single-page app): fall back to index.html so client
+        # routes resolve.
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+    }
