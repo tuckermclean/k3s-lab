@@ -8,8 +8,25 @@ ARG CLAUDE_CODE_VERSION=2.1.201
 ARG AGENCY_AGENTS_REF=90ae2b27d159d9a4b80160484b0c00f67c7dd0ff
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl git openssh-client procps python3 make g++ ripgrep tmux less vim nano \
+      ca-certificates curl git openssh-client procps python3 make g++ ripgrep tmux less vim nano age \
     && rm -rf /var/lib/apt/lists/*
+
+# sops (SOPS secret encryption) — not packaged in Debian, so fetch the release
+# binary and verify its checksum. Pairs with `age` (installed above), the
+# backend this repo's *.sops.yaml files are encrypted to.
+ARG SOPS_VERSION=3.13.2
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) sha="154dfe4cd70554bdd82b98e4cd4acf191d43d01ead6f00a73477aa44c4ac42ef" ;; \
+      arm64) sha="78abf2e15c86250a1553ae6f53aba96be6b2a8126f160b1534959add3467ad76" ;; \
+      *) echo "unsupported arch: $arch" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /usr/local/bin/sops \
+      "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${arch}"; \
+    echo "${sha}  /usr/local/bin/sops" | sha256sum -c -; \
+    chmod +x /usr/local/bin/sops; \
+    sops --version
 
 RUN npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
     && npm cache clean --force

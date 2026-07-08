@@ -28,5 +28,5 @@ jobs:
           context: apps/agent-os/build
           push: true
           tags: |
-            ghcr.io/tuckermclean/agent-os:0.2.1
+            ghcr.io/tuckermclean/agent-os:0.2.2
             ghcr.io/tuckermclean/agent-os:latest
