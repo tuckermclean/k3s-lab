@@ -5,4 +5,5 @@ resources:
   - s3-backup-creds.sops.yaml
   - personliness-role-secret.sops.yaml
   - authentik-role-secret.sops.yaml
+  - bosnia-role-secret.sops.yaml
   - cluster.yaml

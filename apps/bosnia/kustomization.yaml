@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bosnia
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: gitops
+resources:
+  - namespace.yaml
+  - secret.sops.yaml
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - seed-job.yaml
+  - voice-agent-deployment.yaml
+  - static-pvc.yaml
+  - static-nginx-config.yaml
+  - static-deployment.yaml
+  - static-service.yaml
+  - certificate.yaml
+  - ingressroute.yaml

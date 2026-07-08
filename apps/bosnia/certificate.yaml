@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: bosnia-cert
+  namespace: bosnia
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  secretName: bosnia-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  dnsNames:
+    - bosnia.dcxxiv.com
