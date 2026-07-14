@@ -1,11 +1,11 @@
-name: build-agent-os
+name: build-juggler
 
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/agent-os/build/**'
-      - '.github/workflows/build-agent-os.yaml'
+      - 'apps/juggler/build/**'
+      - '.github/workflows/build-juggler.yaml'
   workflow_dispatch: {}
 
 permissions:
@@ -25,8 +25,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
-          context: apps/agent-os/build
+          context: apps/juggler/build
           push: true
           tags: |
-            ghcr.io/tuckermclean/agent-os:0.2.2
-            ghcr.io/tuckermclean/agent-os:latest
+            ghcr.io/tuckermclean/juggler:0.3.7
+            ghcr.io/tuckermclean/juggler:latest
