@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: juggler
+  namespace: juggler
+  labels:
+    app.kubernetes.io/name: juggler
+    app.kubernetes.io/part-of: gitops
+spec:
+  replicas: 1
+  # Single RWO Longhorn volume: a rolling update would try to mount it into two
+  # pods at once. Same as agent-os.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: juggler
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: juggler
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        fsGroup: 1000
+      containers:
+        # ── Juggler headless server (+ hidden WebKitGTK engine under Xvfb) ──
+        # Binds 0.0.0.0:3939 but its LAN gate 403s any non-loopback client; only
+        # the nginx sidecar (same pod, 127.0.0.1) reaches it. Not exposed via the
+        # Service directly. See build/entrypoint.sh for the Xvfb/WebKit wiring.
+        - name: juggler
+          # Digest pinned after the first CI build publishes the image.
+          image: ghcr.io/tuckermclean/juggler:0.3.7
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          ports:
+            - name: juggler
+              containerPort: 3939
+          envFrom:
+            - secretRef:
+                name: juggler-env
+          resources:
+            requests:
+              cpu: "500m"
+              # WebKitGTK + Node + agent builds; generous but bounded.
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            # WebKitGTK is multi-process and uses shared memory; the default 64Mi
+            # /dev/shm can crash the WebView under load.
+            - name: dshm
+              mountPath: /dev/shm
+        # ── nginx sidecar: TLS terminates at Traefik; this rewrites Host and
+        # strips Origin so Juggler's DNS-rebinding /api gate and /api/ws
+        # same-origin check both pass, and reaches Juggler over loopback. ──
+        - name: nginx
+          image: nginx:1.27-alpine
+          imagePullPolicy: IfNotPresent
+          # Runs as root so the master can bind :80 and manage its cache dirs;
+          # it only ever proxies to loopback.
+          securityContext:
+            runAsUser: 0
+          ports:
+            - name: http
+              containerPort: 80
+          # Probes go through nginx (loopback -> juggler), so they exercise the
+          # whole path and stay green only while the server actually serves.
+          # /api/health is auth-exempt. Tolerant timing: the engine WebView takes
+          # time to boot and agent tasks can peg the box.
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: "20m"
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: juggler-data
+        - name: nginx-config
+          configMap:
+            name: juggler-nginx
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 512Mi
