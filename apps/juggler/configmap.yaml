@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: juggler-nginx
+  namespace: juggler
+  labels:
+    app.kubernetes.io/part-of: gitops
+data:
+  # Sidecar proxy that lets a browser at https://juggler.dcxxiv.com reach a
+  # server built to be spoken to only as localhost. Two rewrites are load-bearing
+  # (see cmd/juggler/server/{api_auth,network,server}.go in upstream):
+  #   - Host: localhost  -> passes hostAllowed() (DNS-rebinding defense rejects a
+  #     real FQDN with 403 on every gated /api call).
+  #   - Origin: ""       -> passes the /api/ws same-origin check, which compares
+  #     the Origin host to the (rewritten) Host; an empty Origin is allowed.
+  default.conf: |
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+        client_max_body_size 50m;
+
+        location / {
+            proxy_pass http://127.0.0.1:3939;
+            proxy_http_version 1.1;
+
+            proxy_set_header Host localhost;
+            proxy_set_header Origin "";
+
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # WebSocket upgrade for /api/ws.
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
+        }
+    }

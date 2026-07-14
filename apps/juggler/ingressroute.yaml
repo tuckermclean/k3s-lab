@@ -1,0 +1,25 @@
+# Web UI gated by the shared authentik forwardAuth middleware (embedded outpost),
+# same pattern as agent.dcxxiv.com / orch.dcxxiv.com / longhorn.dcxxiv.com.
+# Juggler itself ships no user authentication (only a same-origin CSRF token),
+# so authentik is the sole real access-control layer here.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: juggler
+  namespace: juggler
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`juggler.dcxxiv.com`)
+      middlewares:
+        - name: authentik
+          namespace: authentik
+      services:
+        - name: juggler
+          port: 80
+  tls:
+    secretName: juggler-tls

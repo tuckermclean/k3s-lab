@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: juggler-data
+  namespace: juggler
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # Same starting point as agent-os-home: 20Gi fits Longhorn's per-node
+      # schedulable budget. Holds both /data/.juggler (durable config/
+      # credentials) and /data/workspace (the project(s) the agent operates
+      # on) — adjust once real project sizes are known.
+      storage: 20Gi
+  storageClassName: longhorn
