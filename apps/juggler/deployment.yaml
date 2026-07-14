@@ -29,9 +29,12 @@ spec:
         # the nginx sidecar (same pod, 127.0.0.1) reaches it. Not exposed via the
         # Service directly. See build/entrypoint.sh for the Xvfb/WebKit wiring.
         - name: juggler
-          # Digest pinned after the first CI build publishes the image.
+          # The 0.3.7 tag is rebuilt in place (the app version is fixed; only our
+          # wrapper image changes), so Always is required for a rebuild to roll
+          # out — IfNotPresent would keep the stale cached image. Switch to an
+          # @sha256 digest pin once the image stabilizes.
           image: ghcr.io/tuckermclean/juggler:0.3.7
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000

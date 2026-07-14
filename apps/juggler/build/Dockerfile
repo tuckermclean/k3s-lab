@@ -17,12 +17,14 @@ ARG JUGGLER_VERSION=0.3.7
 ARG CLAUDE_CODE_VERSION=2.1.201
 
 # 1) Juggler runtime libraries (libgtk-4-1 libwebkitgtk-6.0-4 pull in libsoup,
-#    libjavascriptcoregtk, glib, libX11, ...) + virtual display + software GL,
-#    then the agent's own shell tooling (git/ripgrep) and TLS/download prereqs.
+#    libjavascriptcoregtk, glib, libX11, ...) + virtual display (xvfb) +
+#    xdpyinfo (x11-utils, for the display-readiness probe in entrypoint.sh) +
+#    software GL, tini as a PID 1 that reaps WebKit's child processes and
+#    forwards signals, then the agent's own shell tooling and TLS/download prereqs.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl git ripgrep procps \
+      ca-certificates curl git ripgrep procps tini \
       libgtk-4-1 libwebkitgtk-6.0-4 \
-      xvfb xauth dbus dbus-x11 \
+      xvfb x11-utils \
       libgl1-mesa-dri libegl-mesa0 fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
@@ -63,4 +65,6 @@ ENV HOME=/data \
 USER 1000
 WORKDIR /data
 EXPOSE 3939
-ENTRYPOINT ["/entrypoint.sh"]
+# tini reaps zombies (WebKit spawns WebProcess/NetworkProcess children) and
+# forwards signals to the entrypoint, which execs juggler as tini's child.
+ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
