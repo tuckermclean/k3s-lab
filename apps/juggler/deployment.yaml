@@ -41,17 +41,28 @@ spec:
           ports:
             - name: juggler
               containerPort: 3939
+          env:
+            # Talk to the DinD sidecar (same pod netns) for the agent's
+            # throwaway test containers.
+            - name: DOCKER_HOST
+              value: tcp://localhost:2375
+            # In-pod Claude Code sessions dispatch subagents on Sonnet (matches
+            # apps/agent-os). CLAUDE_CODE_OAUTH_TOKEN comes from the secret below.
+            - name: CLAUDE_CODE_SUBAGENT_MODEL
+              value: sonnet
+            - name: SHELL
+              value: /bin/bash
           envFrom:
             - secretRef:
                 name: juggler-env
           resources:
             requests:
               cpu: "500m"
-              # WebKitGTK + Node + agent builds; generous but bounded.
+              # WebKitGTK + Node + agent builds/tests; generous but bounded.
               memory: 1Gi
             limits:
               cpu: "2"
-              memory: 3Gi
+              memory: 4Gi
           volumeMounts:
             - name: data
               mountPath: /data
@@ -102,6 +113,30 @@ spec:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
+        # ── Docker-in-Docker sidecar: gives the agent a real dockerd for
+        # throwaway test containers. Privileged (dockerd needs it); reachable
+        # only within the pod netns at tcp://localhost:2375 (TLS disabled). ──
+        - name: dind
+          image: docker:27-dind
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          env:
+            # Empty cert dir => listen on tcp://0.0.0.0:2375 (plain), pod-local.
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          resources:
+            requests:
+              cpu: "250m"
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            # dockerd's image/container store — ephemeral (throwaway test
+            # containers), kept off the Longhorn PVC to avoid overlay-on-overlay.
+            - name: dind-storage
+              mountPath: /var/lib/docker
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -113,3 +148,6 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 512Mi
+        - name: dind-storage
+          emptyDir:
+            sizeLimit: 20Gi
