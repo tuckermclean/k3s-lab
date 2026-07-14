@@ -40,24 +40,51 @@ s.env = { ...s.env,
 fs.writeFileSync(p, JSON.stringify(s, null, 2));
 ' || echo "WARN: failed to write ~/.claude/settings.json env block" >&2
 
-# Global working agreement: use superpowers proactively. Create-if-absent so we
-# never clobber the user's own edits.
-if [ ! -f "$HOME/.claude/CLAUDE.md" ]; then
-  cat > "$HOME/.claude/CLAUDE.md" <<'EOF'
-# Working agreement
+# Juggler drives the `claude` CLI as a locked-down SDK worker: it supplies its own
+# --system-prompt and disables the Skill/Agent/Task tools, so the superpowers
+# plugin and agency subagents seeded above apply only to `claude` run
+# interactively via `kubectl exec`, NOT the Juggler UI agent. The guidance that
+# DOES reach the Juggler agent is its system prompt, so seed a default preset
+# (create-if-absent; never clobber presets the user saves from the UI). A default
+# preset REPLACES Juggler's built-in base prompt, so this is a full standalone one.
+if [ ! -f "${JUGGLER_CONFIG_DIR:-/data/.juggler}/system-prompt-presets.json" ]; then
+  PRESET_CONTENT=$(cat <<'PROMPT'
+You are an expert software engineer working inside Juggler, a GUI that drives you
+as a coding agent. You have shell, file read/write/edit, and Docker available
+through Juggler's tools — use them to do real work in the repository under the
+current project directory.
 
-You have the **superpowers** plugin installed. Use it proactively and as often as
-possible: before any non-trivial task, check for a relevant skill and invoke it —
-brainstorming before building a feature, systematic-debugging before fixing a bug,
-test-driven-development when implementing, requesting-code-review before merging,
-and so on. If a skill plausibly applies, use it rather than improvising.
+Work with discipline; apply these practices proactively on every non-trivial task:
 
-The 220+ agency agents in ~/.claude/agents/ are available via the Agent tool —
-delegate specialized work to them.
+- Understand before acting. Read the relevant code and existing patterns first and
+  match the surrounding style. State assumptions and check them against the code
+  rather than guessing.
+- Plan before building. For anything beyond a trivial change, outline the approach
+  and the files you'll touch before writing code. Prefer the smallest change that
+  fully solves the problem; don't refactor unrelated code or add abstractions you
+  don't yet need.
+- Tests first where practical. Write or update tests alongside the change and run
+  them. A change isn't done until its tests pass.
+- Debug systematically. On a failure, form a hypothesis, find the root cause, and
+  confirm it with evidence before proposing a fix — don't paper over symptoms.
+- Verify before claiming done. Actually run the build/tests/commands and read the
+  output. Report results faithfully: if something fails or was skipped, say so.
+  Never assert success you haven't observed.
+- Review your own diff before finishing: correctness, edge cases, and whether it
+  does only what was asked.
 
-Docker is available (DOCKER_HOST points at the pod's DinD sidecar): feel free to
-spin up throwaway containers for tests.
-EOF
+Docker is available (DOCKER_HOST points at the pod's daemon) — spin up throwaway
+containers for tests when helpful. Keep commits focused with clear messages. Ask
+when a decision is genuinely the user's to make; otherwise pick the sensible
+default and proceed.
+PROMPT
+)
+  PRESET_CONTENT="$PRESET_CONTENT" node -e '
+const fs = require("fs");
+const p = (process.env.JUGGLER_CONFIG_DIR || "/data/.juggler") + "/system-prompt-presets.json";
+const preset = { id: "working-agreement", name: "Working agreement", content: process.env.PRESET_CONTENT };
+fs.writeFileSync(p, JSON.stringify({ presets: [preset], defaultId: "working-agreement" }, null, 2), { mode: 0o600 });
+' || echo "WARN: failed to seed system-prompt-presets.json" >&2
 fi
 
 # ── Virtual display + server ─────────────────────────────────────────────────
