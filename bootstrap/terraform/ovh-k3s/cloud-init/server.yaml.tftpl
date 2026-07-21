@@ -13,10 +13,25 @@ write_files:
     permissions: "0600"
     content: |
       write-kubeconfig-mode: "0644"
+  - path: /etc/multipath/conf.d/longhorn.conf
+    permissions: "0644"
+    content: |
+      # Managed via Terraform cloud-init. Prevents multipathd from grabbing
+      # Longhorn's iSCSI frontend devices (vendor IET / product VIRTUAL-DISK),
+      # which otherwise blocks Longhorn PVC mounts with "already mounted or
+      # mount point busy".
+      blacklist {
+          device {
+              vendor "IET"
+              product "VIRTUAL-DISK"
+          }
+      }
 
 runcmd:
   - |
     set -e
+    # Ensure multipathd (if present) honors the Longhorn blacklist before Longhorn starts.
+    command -v multipathd >/dev/null 2>&1 && { multipathd reconfigure || systemctl restart multipathd || true; } || true
 %{ if data_volume_size_gb > 0 ~}
     # ── Data disk setup (runs before k3s so storage paths are on the new disk) ──
     # The data volume is attached by the Terraform null_resource on a running
