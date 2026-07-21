@@ -93,7 +93,7 @@ spec:
           maxUnavailable: 1
       image:
         repository: docker.io/library/haproxy
-        tag: "3.4.0-alpine"
+        tag: "3.4.2-alpine"
       resources:
         requests:
           cpu: 25m
