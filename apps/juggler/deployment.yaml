@@ -117,7 +117,7 @@ spec:
         # throwaway test containers. Privileged (dockerd needs it); reachable
         # only within the pod netns at tcp://localhost:2375 (TLS disabled). ──
         - name: dind
-          image: docker:27-dind
+          image: docker:29-dind@sha256:bfec1f5159c63a81ca6fdedbd81404d2c0e16378ed0feec3bb3fbf3998847659
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
