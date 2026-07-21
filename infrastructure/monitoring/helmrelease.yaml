@@ -73,6 +73,12 @@ spec:
       prometheusSpec:
         replicas: 2
         retention: 7d
+        # Chart default is "soft", which injects its own podAntiAffinity block
+        # into affinity in addition to the custom hard requirement below,
+        # producing a duplicate podAntiAffinity key and breaking rendering.
+        # We supply our own (stronger, hard-required) rule via `affinity`
+        # below, so disable the chart's built-in preset.
+        podAntiAffinity: ""
         affinity:
           podAntiAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
