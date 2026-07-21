@@ -23,7 +23,7 @@ spec:
             - "host.docker.internal"
       containers:
         - name: dind
-          image: docker:29-dind@sha256:7bb861a04bb42bda1d237fc2cb539f9823c9b666ecfbfdbd3e534ab74c8cb976
+          image: docker:29-dind@sha256:bfec1f5159c63a81ca6fdedbd81404d2c0e16378ed0feec3bb3fbf3998847659
           securityContext:
             privileged: true
           args:
