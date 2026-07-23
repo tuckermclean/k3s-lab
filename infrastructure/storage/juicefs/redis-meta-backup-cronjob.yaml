@@ -33,7 +33,7 @@ spec:
                 - {name: dump, mountPath: /dump}
           containers:
             - name: upload
-              image: amazon/aws-cli:2.36.4@sha256:7cbd2e4d2c469c5c448dc249c7c8109ada7fa6ae57a1dc3f348fa39d19b6c689
+              image: amazon/aws-cli:2.36.7@sha256:5b76c069e37cfa091ec6398dc683c09e0c9ef8ae2e557b0a36d931df34011227
               command:
                 - sh
                 - -c
