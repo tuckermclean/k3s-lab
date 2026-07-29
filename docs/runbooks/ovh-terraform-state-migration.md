@@ -48,6 +48,17 @@ scoped to the `k3s-lab-backups` bucket; no new IAM setup is needed.
 Run this on the machine holding the current local `bootstrap/terraform/ovh-k3s/terraform.tfstate`
 (or `scp` a copy of it into that directory first — do not proceed without it).
 
+> **Checkout the branch/commit that introduces the S3 backend first.** The `backend "s3"` block
+> lives in `versions.tf`, added by the commit that migrates this root to S3 (currently
+> `feat/ovh-k3s-s3-remote-state`). Before that lands on `main`, `main`'s `versions.tf` still pins
+> the `cloudflare` provider to `~> 5.0`, which conflicts with the `4.52.7` version locked in state —
+> `init`/`plan` fail with a provider-version error, and there is no backend block to migrate to
+> anyway. Run:
+> ```bash
+> git checkout <branch-or-commit-with-the-s3-backend> && git pull
+> ```
+> before starting §4. Once this work merges to `main`, running from `main` is fine again.
+
 ```bash
 terraform version   # confirm >= 1.10.0
 ```
@@ -63,14 +74,25 @@ make recover-age-key
 Decrypts `bootstrap/age.agekey.age` with `~/.ssh/id_rsa` → `/tmp/k3s-lab-age.agekey`, `chmod 600`.
 
 ### Step 2 — Baseline, then migrate
+`tf.sh` already defaults `SOPS_AGE_KEY_FILE` to `/tmp/k3s-lab-age.agekey` (where `make
+recover-age-key` writes it), so no `export` is needed when invoking `./tf.sh`.
 ```bash
 cd bootstrap/terraform/ovh-k3s
-export SOPS_AGE_KEY_FILE=/tmp/k3s-lab-age.agekey
 
-terraform state list > /tmp/pre-migrate.txt   # baseline BEFORE migrating — do this first
-ls -la terraform.tfstate                      # confirm local state is actually present here
+# Baseline BEFORE migrating. `terraform state list` cannot be used here: once the `backend "s3"`
+# block is present but not yet initialized, Terraform errors with "Backend initialization
+# required". Parse the local state file directly instead — needs no backend init.
+python3 -c "
+import json
+d=json.load(open('terraform.tfstate'))
+out=[( (r.get('module','')+'.') if r.get('module') else '')+r['type']+'.'+r['name']
+      for r in d.get('resources',[])]
+print('\n'.join(sorted(out)))
+" > /tmp/pre-migrate.txt
+wc -l /tmp/pre-migrate.txt   # sanity: > 0
+ls -la terraform.tfstate     # confirm local state is actually present here
 
-./tf.sh init -migrate-state                   # answer "yes" to copy state to S3
+./tf.sh init -migrate-state  # answer "yes" to copy state to S3
 ```
 If Terraform does **not** prompt to copy existing state into the new backend, STOP — you are either
 in the wrong directory or the local state is empty/missing. Do not answer "yes" to anything until
@@ -79,13 +101,28 @@ you understand why.
 ### Step 3 — Verify
 | Check | Command | Expect |
 |-------|---------|--------|
-| State contents unchanged | `./tf.sh state list \| diff - /tmp/pre-migrate.txt` | no diff |
+| State contents look sane | `./tf.sh state list \| sort \| diff - /tmp/pre-migrate.txt` | differences expected, see below |
 | Local backup exists | `ls -la terraform.tfstate.backup` | present (Terraform's pre-migration safety copy) |
-| S3 object exists (optional) | `aws s3api head-object --bucket k3s-lab-backups --key terraform/state/ovh-k3s --region us-west-2` | 200 response |
+| S3 object exists (optional) | `aws s3api head-object --bucket k3s-lab-backups --key terraform/state/ovh-k3s --region us-west-2` (needs AWS creds in env — see note) | 200 response |
 | No drift | `./tf.sh plan` | **"No changes."** |
 
-Do not consider the migration done until `plan` reports no changes. If it reports any creates or
-destroys, treat it as a failed migration — see §5.
+> The `diff` above will show **cosmetic** differences only, not a real mismatch. The raw-file
+> parse used for `/tmp/pre-migrate.txt` lists each resource once (e.g. `cloudflare_record.apex`),
+> while `state list` expands `count`/`for_each` instances into addressed form (e.g.
+> `cloudflare_record.apex["..."]`, `openstack_compute_instance_v2.rest[0]`). Same resources,
+> different address formatting — do not treat this diff as authoritative.
+>
+> The **authoritative** success check is `./tf.sh plan` reporting **"No changes."** Do not consider
+> the migration done until `plan` confirms it, regardless of what the `diff` shows. If `plan`
+> reports any creates or destroys, treat it as a failed migration — see §5.
+>
+> The optional `aws s3api head-object` row runs `aws` directly (not through `tf.sh`), so it needs
+> AWS credentials in the environment. Decrypt them from SOPS first:
+> ```bash
+> export SOPS_AGE_KEY_FILE=/tmp/k3s-lab-age.agekey   # raw sops call needs this; tf.sh sets it itself
+> export AWS_ACCESS_KEY_ID=$(sops -d secrets.sops.yaml | python3 -c "import sys,yaml;print(yaml.safe_load(sys.stdin)['AWS_ACCESS_KEY_ID'])")
+> export AWS_SECRET_ACCESS_KEY=$(sops -d secrets.sops.yaml | python3 -c "import sys,yaml;print(yaml.safe_load(sys.stdin)['AWS_SECRET_ACCESS_KEY'])")
+> ```
 
 ---
 
