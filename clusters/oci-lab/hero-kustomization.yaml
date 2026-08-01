@@ -1,0 +1,55 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: hero
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/hero
+  prune: true
+  wait: true
+  timeout: 5m
+  dependsOn:
+    - name: cert-manager-config
+  patches:
+    - patch: |
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: hero
+          namespace: hero
+        spec:
+          rules:
+            - host: hero.oci.dcxxiv.com
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: hero
+                        port:
+                          number: 80
+          tls:
+            - hosts:
+                - hero.oci.dcxxiv.com
+              secretName: hero-tls
+      target:
+        kind: Ingress
+        name: hero
+        namespace: hero
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: hero
+          namespace: hero
+        spec:
+          replicas: 0
+      target:
+        kind: Deployment
+        name: hero
+        namespace: hero
