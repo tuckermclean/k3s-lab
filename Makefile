@@ -40,6 +40,13 @@ help:
 	@echo "    destroy-ovh              Destroy the OVH cluster (stops billing)"
 	@echo "    kubeconfig-ovh           Print path to the OVH kubeconfig"
 	@echo ""
+	@echo "  OCI cluster (Terraform)"
+	@echo "    init-oci                 One-time setup: create secrets if needed, then terraform init"
+	@echo "    plan-oci                 Preview changes to the OCI cluster"
+	@echo "    apply-oci                Provision or update the OCI cluster"
+	@echo "    destroy-oci              Destroy the OCI cluster (frees the Always Free pool)"
+	@echo "    kubeconfig-oci           Print path to the OCI kubeconfig"
+	@echo ""
 	@echo "  S3 backup credentials"
 	@echo "    store-longhorn-backup-secret  Encrypt AWS keys into Longhorn SOPS secrets (also derives backup-target-vars)"
 	@echo "    store-s3-backup-creds NS=<ns> Encrypt AWS keys into s3-backup-creds Secret for any namespace"
@@ -172,6 +179,41 @@ destroy-ovh: recover-age-key ## Destroy the OVH cluster (stops billing)
 .PHONY: kubeconfig-ovh
 kubeconfig-ovh: recover-age-key ## Print absolute path to the OVH kubeconfig
 	@echo "$(CURDIR)/$(OVH_TF_DIR)/kubeconfig"
+
+# ---------------------------------------------------------------------------
+# OCI Terraform
+# ---------------------------------------------------------------------------
+
+OCI_TF_DIR := bootstrap/terraform/oci-k3s
+
+.PHONY: init-oci
+init-oci: recover-age-key ## One-time setup: create secrets if needed, then terraform init
+	@if [ ! -f "$(OCI_TF_DIR)/secrets.sops.yaml" ]; then \
+	  echo "No secrets.sops.yaml found — opening example in $$EDITOR to fill in credentials."; \
+	  cp "$(OCI_TF_DIR)/secrets.yaml.example" "$(OCI_TF_DIR)/secrets.yaml"; \
+	  $${EDITOR:-vi} "$(OCI_TF_DIR)/secrets.yaml"; \
+	  cp "$(OCI_TF_DIR)/secrets.yaml" "$(OCI_TF_DIR)/secrets.sops.yaml"; \
+	  SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -e -i "$(OCI_TF_DIR)/secrets.sops.yaml"; \
+	  rm "$(OCI_TF_DIR)/secrets.yaml"; \
+	  echo "Secrets encrypted. Commit with: git add $(OCI_TF_DIR)/secrets.sops.yaml && git commit"; \
+	fi
+	terraform -chdir="$(OCI_TF_DIR)" init
+
+.PHONY: plan-oci
+plan-oci: recover-age-key ## Preview OCI cluster changes
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(OCI_TF_DIR) plan
+
+.PHONY: apply-oci
+apply-oci: recover-age-key ## Provision or update the OCI cluster
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(OCI_TF_DIR) apply
+
+.PHONY: destroy-oci
+destroy-oci: recover-age-key ## Destroy the OCI cluster (frees the Always Free pool)
+	SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" $(MAKE) -C $(OCI_TF_DIR) destroy
+
+.PHONY: kubeconfig-oci
+kubeconfig-oci: recover-age-key ## Print absolute path to the OCI kubeconfig
+	@echo "$(CURDIR)/$(OCI_TF_DIR)/kubeconfig"
 
 # ---------------------------------------------------------------------------
 # Longhorn S3 backup
