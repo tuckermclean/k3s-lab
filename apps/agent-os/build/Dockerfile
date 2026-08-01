@@ -57,6 +57,10 @@ RUN chmod +x /entrypoint.sh
 
 ENV PORT=3011 \
     DB_PATH=/home/node/.agent-os/agent-os.db
+# First-boot seed version only: entrypoint.sh installs this via the native
+# installer if ~/.local/bin/claude is missing, then Claude Code self-updates
+# from there, so bumping this ARG/ENV only matters for fresh PVCs.
+ENV CLAUDE_CODE_VERSION=${CLAUDE_CODE_VERSION}
 # Native-installer location for Claude Code (installed at first boot by
 # entrypoint.sh into the PVC-backed home dir).
 ENV PATH="/home/node/.local/bin:${PATH}"
