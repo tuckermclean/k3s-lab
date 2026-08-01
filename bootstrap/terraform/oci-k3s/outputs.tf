@@ -1,11 +1,6 @@
 output "api_endpoint" {
-  description = "Kubernetes API endpoint (load-balanced)."
-  value       = "https://${local.lb_ip}:6443"
-}
-
-output "lb_public_ip" {
-  description = "Reserved public IP of the API load balancer. Point any API DNS record here."
-  value       = local.lb_ip
+  description = "Kubernetes API endpoint (server-0's public IP — no load balancer, Option A)."
+  value       = "https://${oci_core_instance.server[0].public_ip}:6443"
 }
 
 output "kubeconfig_path" {
@@ -26,4 +21,9 @@ output "server_private_ips" {
 output "agent_public_ips" {
   description = "Public IPs of any agent nodes."
   value       = oci_core_instance.agent[*].public_ip
+}
+
+output "oci_dns" {
+  description = "Cloudflare oci.<dns_zone> A records managed by Terraform. Empty unless manage_dns=true."
+  value       = [for k, r in cloudflare_record.oci : "oci.${var.dns_zone} -> ${r.content}"]
 }

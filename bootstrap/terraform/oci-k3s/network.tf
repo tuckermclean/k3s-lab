@@ -42,7 +42,8 @@ resource "oci_core_security_list" "k3s" {
     }
   }
 
-  # Kubernetes API via the load balancer.
+  # Kubernetes API directly on each node's public IP (no load balancer — see
+  # cloud-init/server.yaml.tftpl and flux.tf for the Option-A rationale).
   ingress_security_rules {
     protocol = "6" # TCP
     source   = var.api_allowed_cidr
@@ -83,49 +84,11 @@ resource "oci_core_subnet" "public" {
   security_list_ids = [oci_core_security_list.k3s.id]
 }
 
-# --- HA API endpoint: Network Load Balancer with a reserved (static) public IP ---
-
-resource "oci_core_public_ip" "api" {
-  compartment_id = var.compartment_ocid
-  lifetime       = "RESERVED"
-  display_name   = "oci-k3s-api"
-}
-
-resource "oci_network_load_balancer_network_load_balancer" "api" {
-  compartment_id = var.compartment_ocid
-  display_name   = "oci-k3s-api"
-  subnet_id      = oci_core_subnet.public.id
-  is_private     = false
-
-  reserved_ips {
-    id = oci_core_public_ip.api.id
-  }
-}
-
-resource "oci_network_load_balancer_backend_set" "api" {
-  name                     = "k3s-api"
-  network_load_balancer_id = oci_network_load_balancer_network_load_balancer.api.id
-  policy                   = "FIVE_TUPLE"
-  is_preserve_source       = false
-
-  health_checker {
-    protocol = "TCP"
-    port     = 6443
-  }
-}
-
-resource "oci_network_load_balancer_listener" "api" {
-  name                     = "k3s-api"
-  network_load_balancer_id = oci_network_load_balancer_network_load_balancer.api.id
-  default_backend_set_name = oci_network_load_balancer_backend_set.api.name
-  port                     = 6443
-  protocol                 = "TCP"
-}
-
-resource "oci_network_load_balancer_backend" "api" {
-  count                    = var.server_count
-  network_load_balancer_id = oci_network_load_balancer_network_load_balancer.api.id
-  backend_set_name         = oci_network_load_balancer_backend_set.api.name
-  ip_address               = local.server_private_ips[count.index]
-  port                     = 6443
-}
+# --- API endpoint: Option A — no load balancer ---
+#
+# The k3s API is reached directly on each server node's public IP (mirrors
+# ovh-k3s: no LB, to keep cost/complexity down). etcd stays HA across all
+# server nodes; if server-0 dies, repoint the kubeconfig at another server's
+# public IP. See cloud-init/server.yaml.tftpl (node-external-ip/tls-san) and
+# flux.tf (kubeconfig fetch + readiness poll) for how the public IP is wired
+# up post-boot.
