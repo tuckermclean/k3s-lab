@@ -29,3 +29,7 @@ bootstrap_flux    = true
 github_owner      = "your-github-username"
 github_repository = "k3s-lab"
 github_branch     = "main"
+
+# --- Free-tier billing tripwire ---
+# Email that gets the $1 budget's ACTUAL (>=$0.01) and FORECAST (>=$1) alerts.
+# budget_alert_email = "me@tuckermclean.com"
