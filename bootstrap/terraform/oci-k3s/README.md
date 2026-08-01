@@ -77,6 +77,30 @@ flux get all                        # flux-system reconciling from clusters/oci-
   Traefik/cert-manager addition under `clusters/oci-lab/`. For a stable API hostname,
   set `api_dns_name` and point an A record at `terraform output -raw lb_public_ip`.
 
+## Free-tier billing tripwire
+
+`budget.tf` creates a $1/month tenancy-wide OCI budget (`oci_budget_budget.free_tier_guard`)
+with two alert rules: one fires on **ACTUAL** spend crossing ~$0.01 (1% of the $1 budget),
+the other on a **FORECAST** to exceed the full $1. Expected spend on the Always Free pool
+is $0, so either alert firing means something changed. It can be brought up independently
+of the rest of the cluster with a targeted apply:
+
+```bash
+terraform -chdir=bootstrap/terraform/oci-k3s apply \
+  -target=oci_budget_budget.free_tier_guard \
+  -target=oci_budget_alert_rule.actual_first_cent \
+  -target=oci_budget_alert_rule.forecast_over_budget
+```
+
+Caveats:
+
+- **Latency.** OCI cost data is not real-time — alerts typically land within about a day
+  of the triggering spend, not instantly.
+- **IAM policy.** Creating budgets requires a policy granting
+  `Allow group <admins> to manage usage-budgets in tenancy`.
+- **No subscription confirmation.** OCI budget alerts email `recipients` directly; there's
+  no opt-in/confirmation step like an SNS subscription.
+
 ## Teardown
 
 ```bash
