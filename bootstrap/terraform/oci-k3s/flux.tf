@@ -67,10 +67,10 @@ resource "null_resource" "flux_bootstrap" {
       echo "Waiting for the k3s API to report healthy at https://$host:6443/livez..."
       ready=0
       for i in $(seq 1 30); do
-        if curl -sk --max-time 5 "https://$host:6443/livez" | grep -q '^ok$'; then
-          ready=1
-          break
-        fi
+        code=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 5 "https://$host:6443/livez" || echo 000)
+        case "$code" in
+          200|401|403) ready=1; break ;;
+        esac
         sleep 10
       done
       if [ "$ready" -ne 1 ]; then
