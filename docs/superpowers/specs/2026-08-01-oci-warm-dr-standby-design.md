@@ -247,17 +247,39 @@ needing a live feature-flag mechanism.
 Current defaults: `boot_volume_size_gbs = 50` × 3 nodes = 150 GB, no separate data volume
 (unlike OVH, which bind-mounts a dedicated 100 GB Cinder disk over `/var/lib/longhorn`).
 
+**Grounding:** measured via `kubectl` on the live OVH nodes — root/boot filesystem usage is
+~47 GB and ~36 GB used per node, of which ~25 GB is the containerd image store (itself
+inflated by un-GC'd stale image versions — see cross-reference below). The standby's image
+set is leaner than OVH's (`agent-os` ~0.8 GB and `juggler` ~1.8 GB are both excluded per §1
+and §7), so 35 GB boot is right-sized with headroom; 25–30 GB would be too tight against
+OVH's observed footprint.
+
 **Options**
 
 | # | Approach | Numbers | Fit |
 |---|---|---|---|
 | A (MVP) | Keep boot volume as-is, point Longhorn's `defaultDataPath` at a subdir of the boot volume — zero Terraform changes. | 3× 50 GB boot (150 GB total), no dedicated data volume. | Fastest to stand up; couples OS and data I/O/capacity — diverges from OVH's own separation-of-concerns pattern; risk of Longhorn filling the disk and starving the OS. |
-| B (chosen) | Shrink boot volumes, add a dedicated per-node Block Volume for Longhorn (mirrors OVH's bind-mount pattern), new `oci_core_volume` + `oci_core_volume_attachment` resources + cloud-init mount step. | 3× 30 GB boot (90 GB) + 3× ~35 GB data volume (105 GB) = 195 GB, 5 GB slack under the 200 GB cap. | Matches OVH's own architecture; modest Terraform addition (`prepare-data-disk.sh`-style script already exists as a template in `ovh-k3s` to copy from). |
+| B (chosen) | Shrink boot volumes, add a dedicated per-node Block Volume for Longhorn (mirrors OVH's bind-mount pattern), new `oci_core_volume` + `oci_core_volume_attachment` resources + cloud-init mount step. | 3× 35 GB boot (105 GB) + 3× 30 GB data volume (90 GB) = 195 GB, 5 GB slack under the 200 GB cap. | Matches OVH's own architecture; modest Terraform addition (`prepare-data-disk.sh`-style script already exists as a template in `ovh-k3s` to copy from). |
 
-**Decision: B.** The actual dataset (Postgres 10Gi, Redis 3×2Gi, MariaDB 10Gi, plus
-app PVCs) is well under 50 GB today even generously estimated, so 105 GB of dedicated
-Longhorn capacity across 3 nodes (with `numberOfReplicas: 2`) is comfortable headroom, and
-keeping data off the boot volume avoids an OS-disk-pressure failure mode.
+**Decision: B, sized free-tier-first.** Boot 35 GB × 3 (105 GB) + a dedicated Longhorn data
+volume 30 GB × 3 (90 GB) = 195 GB total, under the 200 GB Always Free cap, giving ~90 GB of
+Longhorn capacity. The actual dataset (Postgres 10Gi, Redis 3×2Gi, MariaDB 10Gi, plus app
+PVCs) is well under 50 GB today even generously estimated, so ~90 GB of dedicated Longhorn
+capacity across 3 nodes (with `numberOfReplicas: 2`) is roughly 2× the real dataset —
+comfortable headroom — and keeping data off the boot volume avoids an OS-disk-pressure
+failure mode.
+
+**PAYG in back pocket.** Keep both sizes as Terraform variables: `boot_volume_size_gbs`
+already exists; add a new `data_volume_size_gbs` variable for the dedicated Longhorn block
+volume introduced by Option B. Growing past the free tier later is a one-variable bump —
+OCI block volumes resize **online** (no detach, no downtime), and Longhorn grows its
+schedulable capacity once the underlying filesystem is expanded — no rebuild, no data
+migration required. The existing $1 budget alert is the guardrail the moment total block
+storage crosses 200 GB and starts incurring cost.
+
+**Cross-reference:** OVH's own boot disks are currently running ~80% full (~9 GB free) —
+a separate production-hygiene item (stale container image pruning) already under
+investigation on OVH, not a blocker for this spec.
 
 ---
 
@@ -348,7 +370,10 @@ keeping data off the boot volume avoids an OS-disk-pressure failure mode.
 Terraform apply, age key, Flux bootstrap, mirrored `clusters/oci-lab/*` (minus stateful-data
 kustomizations that need restore gating), apps at `replicas: 0` under `*.oci.dcxxiv.com`,
 cert-manager DNS01 working. Goal: prove the ARM64 platform reconciles end-to-end. Storage
-sizing (§5) and DNS `dns.tf` (§2) land here.
+sizing (§5) and DNS `dns.tf` (§2) land here — specifically, adding the new
+`data_volume_size_gbs` Terraform variable and the `oci_core_volume` +
+`oci_core_volume_attachment` dedicated Longhorn block volume resources (plus resizing
+`boot_volume_size_gbs` to 35 GB) is Phase-1 Terraform work, done before first `apply`.
 
 **Phase 2 — Stateful data restore rehearsal.** Depends on the CNPG `bootstrap.recovery`
 stanza landing via `feat/cnpg-bootstrap-recovery` (shared prerequisite — benefits OVH DR
@@ -377,9 +402,12 @@ the prompt, and Phase 3 scoped to the one-time, rare, high-stakes event.
    `bootstrap/terraform/oci-k3s/dns.tf`, with a manual, Terraform-driven apex cutover at
    promotion (`manage_apex_dns` flag). Reuses the existing `cloudflare_record.apex`
    mechanism with zero collision risk against OVH's live certs/records.
-3. **Storage (§5): Option B — dedicated per-node Block Volume** for Longhorn (~30 GB boot
-   ×3 + ~35 GB data ×3 = 195 GB, under the 200 GB Always Free cap). Mirrors OVH's own
-   boot/data separation and avoids an OS-disk-pressure failure mode.
+3. **Storage (§5): Option B — dedicated per-node Block Volume** for Longhorn, sized free
+   now with PAYG easy later: boot 35 GB ×3 (105 GB) + dedicated Longhorn data volume 30 GB
+   ×3 (90 GB) = 195 GB total, under the 200 GB Always Free cap, giving ~90 GB of Longhorn
+   capacity (~2× the real dataset). Mirrors OVH's own boot/data separation, avoids an
+   OS-disk-pressure failure mode, and both sizes are Terraform variables so growing past
+   the free tier later is an online, one-variable resize.
 4. **App coordination (§4): A + B — distinct hostnames and `replicas: 0` patches.**
    Hostnames give DNS/cert isolation; scale-to-zero is the actual safety mechanism against
    split-brain writes.
