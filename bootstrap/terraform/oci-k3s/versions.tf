@@ -1,10 +1,22 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.10.0"
+
+  backend "s3" {
+    bucket       = "k3s-lab-backups"
+    key          = "terraform/state/oci-k3s"
+    region       = "us-west-2"
+    use_lockfile = true
+    encrypt      = true
+  }
 
   required_providers {
     oci = {
       source  = "oracle/oci"
       version = "~> 8.0"
+    }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
