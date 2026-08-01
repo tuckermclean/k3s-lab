@@ -8,16 +8,6 @@ spec:
   instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:16
 
-  # Honored ONLY at initial cluster creation — CNPG ignores spec.bootstrap on a
-  # cluster that already exists (see the recovery-stanza note below `backup:`
-  # and the PR description for the full safety analysis). This is a no-op for
-  # the live OVH `pg` cluster; it exists so a FRESH cluster (OCI standby, or an
-  # OVH from-scratch rebuild per docs/runbooks/dr.md Step 6.1) restores from
-  # the Barman S3 backup below instead of initializing empty.
-  bootstrap:
-    recovery:
-      source: pg-backup
-
   storage:
     size: 10Gi
     storageClass: local-path
@@ -57,33 +47,6 @@ spec:
       data:
         compression: gzip
     retentionPolicy: "30d"
-
-  # Mirrors `backup.barmanObjectStore` above — this is what `bootstrap.recovery.source: pg-backup`
-  # (above) reads from to restore a brand-new cluster. Must NOT diverge from the backup block
-  # (same bucket path/creds) or recovery will read from the wrong place.
-  #
-  # CAUTION for future mirror/DR deployments (e.g. the OCI standby): if a second Cluster is ever
-  # pointed at this same destinationPath for its OWN `backup.barmanObjectStore` (not just recovery
-  # source), two clusters would archive WAL to the same S3 prefix and corrupt the backup chain. The
-  # OCI standby's Flux Kustomization must patch its `backup.barmanObjectStore.destinationPath` to a
-  # different path (e.g. `s3://k3s-lab-backups/postgres/pg-oci-standby`) or disable backup entirely.
-  externalClusters:
-    - name: pg-backup
-      barmanObjectStore:
-        destinationPath: s3://k3s-lab-backups/postgres/pg
-        # No endpointURL needed — this is real AWS S3 (us-west-2)
-        s3Credentials:
-          accessKeyId:
-            name: s3-backup-creds
-            key: AWS_ACCESS_KEY_ID
-          secretAccessKey:
-            name: s3-backup-creds
-            key: AWS_SECRET_ACCESS_KEY
-          region:
-            name: s3-backup-creds
-            key: AWS_DEFAULT_REGION
-        wal:
-          compression: gzip
 
   managed:
     roles:
