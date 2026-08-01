@@ -46,9 +46,13 @@ spec:
             # In-pod Claude Code sessions dispatch subagents on Sonnet
             - name: CLAUDE_CODE_SUBAGENT_MODEL
               value: sonnet
-          envFrom:
-            - secretRef:
-                name: agent-os-env
+          # No envFrom/agent-os-env secret here: full-scope login mode
+          # requires CLAUDE_CODE_OAUTH_TOKEN to be absent from the container
+          # env (a long-lived setup-token overrides the interactive
+          # full-scope login and breaks Remote Control). Run `claude-login`
+          # (or `claude auth login`) once interactively; credentials persist
+          # on the PVC. The agent-os-env secret's CLAUDE_CODE_OAUTH_TOKEN key
+          # is now unused but left in place (see secret.sops.yaml).
           # Builds inside the workspace peg CPU/memory and slow the HTTP
           # server; probes must tolerate a busy-but-alive dev box or the
           # kubelet kills sessions mid-build (2026-07-06 incident).
