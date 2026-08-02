@@ -9,8 +9,14 @@ ARG CLAUDE_CODE_VERSION=2.1.220
 # msitarzewski/agency-agents commit providing the 220+ agent definitions
 ARG AGENCY_AGENTS_REF=c89557f78509868c6d4cc08e5cbc79bc8625fe1c
 
+# jq/unzip/python3-pexpect: SBOM validation + the boot-test harness (pexpect).
+# qemu-system-x86 provides both qemu-system-x86_64 and qemu-system-i386
+# (the latter is a virtual package on Debian, resolved to the same real
+# package) for ISO boot tests — TCG software emulation only in-pod (no
+# /dev/kvm, no nested virt), which is expected; boot tests just run slower.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl git openssh-client procps python3 make g++ ripgrep tmux less vim nano age \
+      jq unzip python3-pexpect qemu-system-x86 \
     && rm -rf /var/lib/apt/lists/*
 
 # sops (SOPS secret encryption) — not packaged in Debian, so fetch the release
@@ -29,6 +35,103 @@ RUN set -eux; \
     echo "${sha}  /usr/local/bin/sops" | sha256sum -c -; \
     chmod +x /usr/local/bin/sops; \
     sops --version
+
+# Docker CLI + buildx (client only) — dockerd runs in the pod's privileged
+# DinD sidecar (see apps/agent-os/deployment.yaml); the agent talks to it via
+# DOCKER_HOST=tcp://localhost:2375. Mirrors apps/juggler/build/Dockerfile's
+# approach, except the apt repo line is arch-aware
+# ([arch=$(dpkg --print-architecture)]): juggler is an amd64-only image and
+# hardcodes [arch=amd64], which would break the arm64 leg of this multi-arch
+# build.
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" \
+         > /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends docker-ce-cli docker-buildx-plugin \
+    && rm -rf /var/lib/apt/lists/*
+
+# CVE scanners (grype, trivy, osv-scanner) for the ISO build+scan pipeline.
+# Release binaries, checksum-verified against each project's published
+# checksums file.
+ARG GRYPE_VERSION=0.116.1
+ARG TRIVY_VERSION=0.72.0
+ARG OSV_SCANNER_VERSION=2.4.0
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) \
+        grype_sha="0122df7b655981abe547ad3d2190d65551dac6a2bfc80b4dc2a989b5d0587458"; \
+        trivy_asset="Linux-64bit"; \
+        trivy_sha="bbb64b9695866ce4a7a8f5c9592002c5961cab378577fa3f8a040df362b9b2ea"; \
+        osv_sha="15314940c10d26af9c6649f150b8a47c1262e8fc7e17b1d1029b0e479e8ed8a0"; \
+        ;; \
+      arm64) \
+        grype_sha="a8d7504a149629324eb5f4ce3dc25dfd211bbfe047e64ee2bf7844b466c3d84d"; \
+        trivy_asset="Linux-ARM64"; \
+        trivy_sha="2ca2c023109c2db6b2b77366b6717291452d4531167377d95c79547f0c8e3467"; \
+        osv_sha="44e580752910f0ff36ec99aff59af20f65df1e859aa31e5605a8f0d055b496e9"; \
+        ;; \
+      *) echo "unsupported arch: $arch" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/grype.tar.gz \
+      "https://github.com/anchore/grype/releases/download/v${GRYPE_VERSION}/grype_${GRYPE_VERSION}_linux_${arch}.tar.gz"; \
+    echo "${grype_sha}  /tmp/grype.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/grype.tar.gz -C /usr/local/bin grype; \
+    curl -fsSL -o /tmp/trivy.tar.gz \
+      "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_${trivy_asset}.tar.gz"; \
+    echo "${trivy_sha}  /tmp/trivy.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy; \
+    curl -fsSL -o /usr/local/bin/osv-scanner \
+      "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_${arch}"; \
+    echo "${osv_sha}  /usr/local/bin/osv-scanner" | sha256sum -c -; \
+    chmod +x /usr/local/bin/osv-scanner; \
+    rm -f /tmp/grype.tar.gz /tmp/trivy.tar.gz; \
+    grype version; trivy --version; osv-scanner --version
+
+# cyclonedx-cli — SBOM schema validation. Release binaries; upstream ships no
+# checksums file for this project, so the hash below is pinned against the
+# exact asset fetched for this ARG version (computed and verified at the time
+# this Dockerfile was written) instead of a published checksums list.
+ARG CYCLONEDX_CLI_VERSION=0.33.1
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) \
+        cdx_asset="cyclonedx-linux-x64"; \
+        cdx_sha="bfc8b2538da86fe239bc53658bbb63c1c8c510a293c1e6891aa5bea5d3c58746"; \
+        ;; \
+      arm64) \
+        cdx_asset="cyclonedx-linux-arm64"; \
+        cdx_sha="b2e9fdf9665ef49868a2ec012171c6e785dcd69745bc5869e53e4f4bfb096a5f"; \
+        ;; \
+      *) echo "unsupported arch: $arch" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /usr/local/bin/cyclonedx \
+      "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v${CYCLONEDX_CLI_VERSION}/${cdx_asset}"; \
+    echo "${cdx_sha}  /usr/local/bin/cyclonedx" | sha256sum -c -; \
+    chmod +x /usr/local/bin/cyclonedx; \
+    cyclonedx version
+
+# AWS CLI v2 — publishes the ISO build dashboard/SBOM to S3. Same as
+# cyclonedx-cli above: no published checksums file for the installer zip, so
+# the hash is pinned against the exact asset fetched for this ARG version.
+ARG AWS_CLI_VERSION=2.36.14
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) aws_asset="x86_64"; aws_sha="43b34875482244039716cc3725d1f60e7d47ef3cfb2a19e114759a46db24dc30" ;; \
+      arm64) aws_asset="aarch64"; aws_sha="61e2fb72b36dc0ad98912b3a7b7469c886b90ea703f1096428a152ab09babd8a" ;; \
+      *) echo "unsupported arch: $arch" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/awscliv2.zip \
+      "https://awscli.amazonaws.com/awscli-exe-linux-${aws_asset}-${AWS_CLI_VERSION}.zip"; \
+    echo "${aws_sha}  /tmp/awscliv2.zip" | sha256sum -c -; \
+    unzip -q /tmp/awscliv2.zip -d /tmp/awscli-install; \
+    /tmp/awscli-install/aws/install; \
+    rm -rf /tmp/awscliv2.zip /tmp/awscli-install; \
+    aws --version
 
 # Claude Code is intentionally NOT installed at build time: entrypoint.sh
 # seeds it via the native installer into the PVC-backed ~/.local at first
