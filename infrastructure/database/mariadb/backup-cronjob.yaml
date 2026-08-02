@@ -9,13 +9,28 @@
 #
 # Dump pipeline:
 #   mysqldump --single-transaction --routines --triggers wordpress \
+#     | sed -E ... (Galera-clean rewrite, see below) \
 #     | gzip \
 #     | aws s3 cp - s3://k3s-lab-backups/mysql/wordpress/YYYY-MM-DD-HHMM.sql.gz
 #
-# Note for PR4 cutover: rewrite mysqldump output with sed to:
-#   1. Strip DEFINER clauses (cross-user stored proc references)
-#   2. Convert ENGINE=MyISAM → ENGINE=InnoDB for Galera compatibility
-#   3. Ensure all tables have explicit PRIMARY KEY (Galera requirement)
+# Galera-clean rewrite (sed pass between mysqldump and gzip):
+#   1. Strip DEFINER=`user`@`host` clauses (routines/views/triggers reference
+#      the definer that created them; that user may not exist, or may not
+#      match, on the restore target — stripping lets the restore fall back to
+#      the connecting/invoking user instead of failing).
+#   2. Convert ENGINE=MyISAM → ENGINE=InnoDB — Galera/wsrep only replicates
+#      InnoDB writes; a MyISAM table would silently fail to replicate across
+#      Galera nodes after restore.
+#   3. PRIMARY KEY enforcement is NOT done here — sed can't safely rewrite
+#      CREATE TABLE statements to add a PK after the fact. Galera requires
+#      every table to have an explicit PRIMARY KEY for writeset certification
+#      to behave correctly under multi-master replication. WordPress's stock
+#      schema already gives every table a PK, so this is satisfied today; if
+#      a plugin ever introduces a PK-less table, it would need a manual
+#      schema fix before that table is safe to restore into Galera.
+#
+# This rewrite also benefits OVH's own from-scratch DR path (dr.md §2 step
+# 6.3), which restores from this same dump into Galera.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -53,6 +68,10 @@ spec:
                     --routines \
                     --triggers \
                     wordpress \
+                  | sed -E \
+                      -e 's/DEFINER=`[^`]*`@`[^`]*`//g' \
+                      -e 's/DEFINER=[^ ]+ //g' \
+                      -e 's/ENGINE=MyISAM/ENGINE=InnoDB/g' \
                   | gzip \
                   | aws s3 cp - "s3://k3s-lab-backups/mysql/wordpress/${TIMESTAMP}.sql.gz" \
                       --region "${AWS_DEFAULT_REGION}"
