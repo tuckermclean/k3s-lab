@@ -31,6 +31,7 @@ api_allowed_cidr = "203.0.113.4/32"
 # --- Cloudflare DNS (also export CLOUDFLARE_API_TOKEN before apply, via secrets.sops.yaml) ---
 # manage_dns = true
 # dns_zone   = "dcxxiv.com"
+# manage_apex_dns = false  # flip to true only at OVH->OCI cutover
 
 # --- Flux GitOps bootstrap (GITHUB_TOKEN comes from secrets.sops.yaml via tf.sh) ---
 bootstrap_flux    = true

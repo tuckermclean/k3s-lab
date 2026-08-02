@@ -134,6 +134,12 @@ variable "dns_zone" {
   default     = "dcxxiv.com"
 }
 
+variable "manage_apex_dns" {
+  type        = bool
+  description = "Cutover flag: when true, also point the bare dcxxiv.com apex A records at the OCI nodes (for OVH->OCI primary cutover). Keep false until cutover; OVH manages the apex until then."
+  default     = false
+}
+
 # --- Flux GitOps bootstrap ---
 
 variable "bootstrap_flux" {
