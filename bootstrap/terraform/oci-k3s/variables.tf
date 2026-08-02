@@ -69,7 +69,19 @@ variable "memory_gbs_per_node" {
 variable "boot_volume_size_gbs" {
   type        = number
   description = "Boot volume size per node in GB. Always Free block storage total is 200 GB."
-  default     = 50
+  default     = 35
+}
+
+variable "data_volume_size_gbs" {
+  type        = number
+  description = "Size in GB of the per-node OCI Block Volume used for Longhorn + local-path storage. The disk is mounted and bind-mounted over /var/lib/longhorn and /var/lib/rancher/k3s/storage so existing StorageClasses gain the capacity. Set to 0 to disable."
+  default     = 30
+}
+
+variable "data_mount_point" {
+  type        = string
+  description = "Host path where the data Block Volume is mounted. Bind mounts for Longhorn and local-path are anchored here."
+  default     = "/mnt/data"
 }
 
 # --- Access / networking ---
@@ -86,7 +98,7 @@ variable "ssh_private_key_path" {
 
 variable "api_allowed_cidr" {
   type        = string
-  description = "CIDR allowed to reach the Kubernetes API (port 6443) through the load balancer. Set to your IP/32; 0.0.0.0/0 exposes the API to the internet."
+  description = "CIDR allowed to reach the Kubernetes API (port 6443) directly on each node's public IP (no load balancer). Set to your IP/32; 0.0.0.0/0 exposes the API to the internet."
   default     = "0.0.0.0/0"
 }
 
@@ -98,7 +110,7 @@ variable "enable_http_ingress" {
 
 variable "api_dns_name" {
   type        = string
-  description = "Optional hostname to add to the API server cert SAN (you create the A record pointing at the reserved LB IP). Leave empty to use the IP only."
+  description = "Optional hostname to add to the API server cert SAN (e.g. oci.dcxxiv.com, managed by dns.tf when manage_dns=true). Leave empty to use the node public IPs only."
   default     = ""
 }
 
@@ -106,6 +118,20 @@ variable "availability_domain" {
   type        = string
   description = "Availability domain to launch in. Leave empty to auto-pick the first AD in the region."
   default     = ""
+}
+
+# --- Cloudflare DNS ---
+
+variable "manage_dns" {
+  type        = bool
+  description = "If true, create round-robin A records in Cloudflare for the oci.dcxxiv.com subdomain across all server node public IPs. API token comes from CLOUDFLARE_API_TOKEN env var (exported by tf.sh from secrets.sops.yaml)."
+  default     = true
+}
+
+variable "dns_zone" {
+  type        = string
+  description = "Cloudflare DNS zone. The oci.<dns_zone> subdomain A records are created here; app hostnames are unmanaged CNAMEs that resolve via those records."
+  default     = "dcxxiv.com"
 }
 
 # --- Flux GitOps bootstrap ---

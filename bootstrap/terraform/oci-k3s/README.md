@@ -4,7 +4,9 @@ Terraform module that provisions a **standalone, HA k3s cluster** on Oracle Clou
 Always Free ARM pool and bootstraps Flux against [`clusters/oci-lab/`](../../../clusters/oci-lab).
 
 It is intentionally separate from the home `k3s-lab` cluster — its own control plane,
-its own kubeconfig, no WireGuard mesh.
+its own kubeconfig, no WireGuard mesh. Built as the free-tier mirror of the paid
+`ovh-k3s` module — same structure (S3 remote state, Cloudflare DNS, per-node data
+disk, `tf.sh`/`secrets.sops.yaml`), different provider.
 
 ## What it builds
 
@@ -13,46 +15,109 @@ its own kubeconfig, no WireGuard mesh.
   OCPUs, so this is the clean split of the free pool.
 - A **VCN** (`10.0.0.0/16`), public subnet (`10.0.1.0/24`), internet gateway, and a
   security list that opens the cluster ports.
-- An **OCI Network Load Balancer** with a **reserved static public IP** fronting the
-  Kubernetes API (6443) — the HA endpoint, durable across LB recreates.
+- A **30 GB per-node Block Volume** (`data_volume_size_gbs`), mounted at
+  `/mnt/data` with bind mounts over `/var/lib/longhorn` and
+  `/var/lib/rancher/k3s/storage` — existing StorageClasses gain the capacity
+  without any manifest changes.
 - **Flux** bootstrapped into this repo at `clusters/oci-lab/`.
 
+There is **no load balancer** (Option A — matches `ovh-k3s`, keeps things simple and
+free-tier-friendly): the API endpoint is server-0's public IP. etcd stays HA across
+all three servers; if server-0 dies, repoint the kubeconfig at another server's
+public IP (`terraform output server_public_ips`).
+
 Servers get **static private IPs** (`10.0.1.11/12/13`) so join targets are known before
-boot — no IP lookup needed. cloud-init opens the stock image's restrictive iptables
-before installing k3s.
+boot — no IP lookup needed for the intra-VCN join. The node's *public* IP (OCI NATs
+it — it's never present on the interface) is fetched from the OCI metadata service at
+boot and used only for k3s's external advertisement (`node-external-ip`) and API cert
+SANs (`tls-san`); see `cloud-init/server.yaml.tftpl`. cloud-init also opens the stock
+image's restrictive iptables before installing k3s.
 
 ## Prerequisites
 
-- `terraform` (>= 1.5) or `tofu`, `flux` CLI, `kubectl`, `ssh`, `sed` on the machine you
-  run this from.
+- `terraform` (>= 1.10) or `tofu`, `flux` CLI, `kubectl`, `ssh`, `sed`, `sops`, `age`
+  on the machine you run this from.
 - An OCI account with the Always Free ARM pool available in your home region.
 - An **OCI API signing key**: OCI Console → Identity → Users → *your user* → API Keys →
   Add API Key. Download the private key, note the fingerprint, tenancy/user OCIDs.
-- A **GitHub PAT** with `repo` scope for the Flux bootstrap.
+  These go into `terraform.tfvars` (see below) — they are plain Terraform variables,
+  not secrets managed by SOPS.
+- AWS credentials for the S3 remote state backend, a Cloudflare API token, and a
+  GitHub PAT — these go into `secrets.sops.yaml` (see "Bootstrap from scratch" below).
 
-## Usage
+## Bootstrap from scratch
 
-Unlike the OVH module, there is no root `make` wrapper — all operations use `terraform` directly from the module directory.
+Everything you need to recover the cluster lives in this repo + your `~/.ssh/id_rsa`.
+
+### 1. One-time: create the encrypted secrets file
 
 ```bash
 cd bootstrap/terraform/oci-k3s
-cp terraform.tfvars.example terraform.tfvars
-$EDITOR terraform.tfvars            # OCI creds, SSH keys, github_owner, api_allowed_cidr
+cp secrets.yaml.example secrets.yaml
+$EDITOR secrets.yaml   # fill in AWS creds (S3 backend) + Cloudflare token + GitHub PAT
 
-export GITHUB_TOKEN=ghp_xxxx        # used only by the flux bootstrap step
-
-terraform init
-terraform plan                      # confirm 3 A1.Flex nodes, VCN, NLB
-terraform apply
+cp secrets.yaml secrets.sops.yaml
+sops -e -i secrets.sops.yaml
+rm secrets.yaml
+git add secrets.sops.yaml && git commit -m "oci-k3s: add encrypted bootstrap secrets"
+git push
 ```
 
-After apply:
+The age private key is stored encrypted in the repo at `bootstrap/age.agekey.age` and
+recovered automatically from `~/.ssh/id_rsa` — no separate key file to manage.
+
+### 2. One-time: set tfvars
 
 ```bash
-export KUBECONFIG=$(terraform output -raw kubeconfig_path)
-kubectl get nodes -o wide           # 3 nodes, all control-plane,etcd,master
-flux get all                        # flux-system reconciling from clusters/oci-lab
+cp terraform.tfvars.example terraform.tfvars
+$EDITOR terraform.tfvars   # OCI API key creds, SSH keys, github_owner, api_allowed_cidr
+                           # set server_count = 3 for the HA quorum
 ```
+
+`terraform.tfvars` is gitignored — OCI API key material and SSH keys never enter Git.
+
+### 3. Deploy
+
+All operations go through top-level make targets from the repo root:
+
+```bash
+make init-oci   # terraform init (one-time)
+make apply-oci  # recovers age key, decrypts secrets, runs terraform apply -auto-approve
+```
+
+`make apply-oci` takes a few minutes. When done:
+
+```bash
+export KUBECONFIG=$(make kubeconfig-oci)
+kubectl get nodes -o wide
+```
+
+### 4. Activate data disk bind mounts (rolling reboot)
+
+After apply, `prepare-data-disk.sh` has set up the fstab entries on each node but the
+bind mounts for `/var/lib/longhorn` and `/var/lib/rancher/k3s/storage` need a reboot
+to go live. Reboot **one node at a time** — Longhorn (2 replicas) tolerates one node
+offline:
+
+```bash
+# On each node, one at a time:
+ssh ubuntu@<node-ip> sudo reboot
+
+# Wait for the node to come back and Longhorn to go healthy:
+kubectl -n longhorn-system get nodes.longhorn.io
+```
+
+## Day-to-day
+
+From the repo root:
+
+```bash
+make plan-oci     # terraform plan (shows what would change)
+make apply-oci    # terraform apply -auto-approve
+make destroy-oci  # terraform destroy -auto-approve — frees the Always Free pool
+```
+
+Age key recovery and SOPS decryption happen automatically.
 
 ## Notes & gotchas
 
@@ -63,19 +128,28 @@ flux get all                        # flux-system reconciling from clusters/oci-
   your `IP/32`.
 - **Topology is variable-driven.** Change `server_count` / `agent_count` /
   `ocpus_per_node` / `memory_gbs_per_node`; a guardrail fails the plan if you exceed the
-  free pool (4 OCPU / 24 GB), tunable via `free_tier_max_*`.
-- **Flux bootstrap** uses `null_resource` + `local-exec` running the same
-  `flux bootstrap github` command documented in the repo README. For fully idempotent
-  IaC you can switch to the official `flux`/`github`/`tls` Terraform providers later.
-- **State** is local by default. For a shared/durable setup, add an OCI Object Storage
-  (S3-compatible) backend.
+  free pool (4 OCPU / 24 GB / 200 GB block storage), tunable via `free_tier_max_*`.
+- **`server_count` must stay odd** (etcd quorum) — enforced by a `variable` validation
+  block, same as `ovh-k3s`'s `node_count`.
+- **cloud-init template changes**: check `terraform plan` before applying against a
+  live cluster — confirm whether a `cloud-init/server.yaml.tftpl` edit would force a
+  node replacement before running `apply`.
+- **Data disk bind mounts** require a rolling node reboot after first apply (see above).
+- **Flux bootstrap** uses `null_resource` + `local-exec` running `flux bootstrap github`,
+  gated behind a `/livez` readiness poll against the public API endpoint (handles the
+  first-boot race where the kubeconfig exists on disk before the apiserver is actually
+  serving requests over the public IP).
+- **State** is remote (S3, see `versions.tf`) — same bucket as `ovh-k3s`, different key
+  (`terraform/state/oci-k3s`).
 
 ## DNS
 
-- In-cluster DNS (CoreDNS) and VCN internal DNS (`*.oraclevcn.com`) are automatic.
-- Public DNS for app ingress is **not** created here — it belongs with a future
-  Traefik/cert-manager addition under `clusters/oci-lab/`. For a stable API hostname,
-  set `api_dns_name` and point an A record at `terraform output -raw lb_public_ip`.
+`dns.tf` manages round-robin `A` records for **`oci.dcxxiv.com`** (not the production
+apex — that stays owned by `ovh-k3s/dns.tf`), pointing at every server node's public
+IP. Gate with `manage_dns` (default `true`); set `dns_zone` to change the zone. App
+hostnames for this cluster are unmanaged CNAMEs to `oci.dcxxiv.com`. For a stable API
+hostname in the k3s API cert SANs, set `api_dns_name = "oci.dcxxiv.com"` in
+`terraform.tfvars`.
 
 ## Free-tier billing tripwire
 
@@ -103,8 +177,10 @@ Caveats:
 
 ## Teardown
 
+From the repo root:
+
 ```bash
-terraform destroy
+make destroy-oci
 ```
 
 This removes the OCI resources. The `clusters/oci-lab/flux-system/` files committed by

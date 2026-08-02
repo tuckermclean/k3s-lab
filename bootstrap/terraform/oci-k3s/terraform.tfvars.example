@@ -14,17 +14,25 @@ ssh_public_key       = "ssh-ed25519 AAAA... you@host"
 ssh_private_key_path = "~/.ssh/id_ed25519"
 
 # --- Topology (defaults give 3x 1 OCPU / 8 GB = 3 OCPU / 24 GB, 1 OCPU spare) ---
-# server_count        = 3
+server_count = 3
 # ocpus_per_node      = 1
 # memory_gbs_per_node = 8
+
+# --- Per-node data disk (Longhorn + local-path storage) ---
+# data_volume_size_gbs = 30   # 0 disables; 3x35 boot + 3x30 data = 195 GB, under the 200 GB cap
+# data_mount_point     = "/mnt/data"
 
 # --- Access scoping ---
 # Lock the API to your IP. Default is 0.0.0.0/0 (open to the internet).
 api_allowed_cidr = "203.0.113.4/32"
 # enable_http_ingress = false
-# api_dns_name        = "oci-k3s.example.com"
+# api_dns_name        = "oci.dcxxiv.com"   # set once dns.tf's oci.dcxxiv.com record exists
 
-# --- Flux GitOps bootstrap (also export GITHUB_TOKEN before apply) ---
+# --- Cloudflare DNS (also export CLOUDFLARE_API_TOKEN before apply, via secrets.sops.yaml) ---
+# manage_dns = true
+# dns_zone   = "dcxxiv.com"
+
+# --- Flux GitOps bootstrap (GITHUB_TOKEN comes from secrets.sops.yaml via tf.sh) ---
 bootstrap_flux    = true
 github_owner      = "your-github-username"
 github_repository = "k3s-lab"

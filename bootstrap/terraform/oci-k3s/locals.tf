@@ -16,7 +16,6 @@ locals {
   agent_private_ips  = [for i in range(var.agent_count) : cidrhost(local.subnet_cidr, 21 + i)]
 
   first_server_ip = local.server_private_ips[0]
-  lb_ip           = oci_core_public_ip.api.ip_address
 
   total_ocpus  = (var.server_count + var.agent_count) * var.ocpus_per_node
   total_memory = (var.server_count + var.agent_count) * var.memory_gbs_per_node
@@ -33,6 +32,10 @@ resource "null_resource" "free_tier_guardrail" {
     precondition {
       condition     = local.total_memory <= var.free_tier_max_memory_gbs
       error_message = "Requested ${local.total_memory} GB exceeds free_tier_max_memory_gbs (${var.free_tier_max_memory_gbs})."
+    }
+    precondition {
+      condition     = (var.server_count + var.agent_count) * (var.boot_volume_size_gbs + var.data_volume_size_gbs) <= 200
+      error_message = "Total block storage (boot + data, all nodes) exceeds the 200 GB Always Free cap."
     }
   }
 }
