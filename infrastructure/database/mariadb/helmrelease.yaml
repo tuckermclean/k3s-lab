@@ -86,6 +86,10 @@ spec:
 
     resources:
       requests:
-        cpu: "250m"
+        # 100m (not 250m) so the 3rd Galera pod fits the free-tier 3x1-OCPU
+        # budget alongside the full platform under HARD one-pod-per-node
+        # anti-affinity. No CPU limit is set, so Galera still bursts freely
+        # for SST/mariabackup — this request is scheduling reservation only.
+        cpu: "100m"
         memory: "256Mi"
         # No hard limits — MariaDB OOMs badly under tight memory caps during SST
