@@ -17,6 +17,7 @@ ARG AGENCY_AGENTS_REF=c89557f78509868c6d4cc08e5cbc79bc8625fe1c
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl git openssh-client procps python3 make g++ ripgrep tmux less vim nano age \
       jq unzip python3-pexpect qemu-system-x86 \
+      libicu72 \
     && rm -rf /var/lib/apt/lists/*
 
 # sops (SOPS secret encryption) — not packaged in Debian, so fetch the release
