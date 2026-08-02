@@ -1,0 +1,90 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: orchestrator
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/orchestrator
+  prune: true
+  wait: true
+  timeout: 5m
+  # ─────────────────────────────────────────────────────────────────────────
+  # SINGLE SOURCE OF TRUTH for the orchestrator version. Bump ONLY this line.
+  # Kept in sync with clusters/ovh-lab/orchestrator-kustomization.yaml.
+  # ─────────────────────────────────────────────────────────────────────────
+  postBuild:
+    substitute:
+      ORCH_VERSION: "0.1.29"
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  dependsOn:
+    # letsencrypt-prod ClusterIssuer (DNS01/Cloudflare) for the TLS cert
+    - name: cert-manager-config
+    # longhorn StorageClass for the SQLite PVC
+    - name: longhorn
+    # authentik/authentik forwardAuth Middleware referenced by the IngressRoute
+    - name: authentik
+  patches:
+    - patch: |
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: orchestrator-cert
+          namespace: orchestrator
+        spec:
+          dnsNames:
+            - orch.oci.dcxxiv.com
+      target:
+        kind: Certificate
+        name: orchestrator-cert
+        namespace: orchestrator
+    - patch: |
+        apiVersion: traefik.io/v1alpha1
+        kind: IngressRoute
+        metadata:
+          name: orchestrator
+          namespace: orchestrator
+        spec:
+          entryPoints:
+            - websecure
+          routes:
+            - kind: Rule
+              match: Host(`orch.oci.dcxxiv.com`) && (PathPrefix(`/api/webhook`) || PathPrefix(`/webhook`) || Path(`/healthz`) || Path(`/readyz`))
+              priority: 20
+              services:
+                - name: orchestrator
+                  port: 8080
+            - kind: Rule
+              match: Host(`orch.oci.dcxxiv.com`)
+              priority: 10
+              middlewares:
+                - name: authentik
+                  namespace: authentik
+              services:
+                - name: orchestrator
+                  port: 8080
+          tls:
+            secretName: orchestrator-tls
+      target:
+        kind: IngressRoute
+        name: orchestrator
+        namespace: orchestrator
+    - patch: |
+        apiVersion: helm.toolkit.fluxcd.io/v2
+        kind: HelmRelease
+        metadata:
+          name: orchestrator
+          namespace: orchestrator
+        spec:
+          values:
+            replicaCount: 0
+      target:
+        kind: HelmRelease
+        name: orchestrator
+        namespace: orchestrator

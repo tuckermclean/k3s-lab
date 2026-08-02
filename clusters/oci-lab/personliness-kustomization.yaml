@@ -1,0 +1,61 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: personliness
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/personliness
+  prune: true
+  wait: true
+  timeout: 5m
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  dependsOn:
+    - name: cert-manager-config
+    - name: shared-redis
+    - name: postgres
+  patches:
+    - patch: |
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: personliness
+          namespace: personliness
+        spec:
+          rules:
+            - host: personliness.oci.dcxxiv.com
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: personliness
+                        port:
+                          number: 80
+          tls:
+            - hosts:
+                - personliness.oci.dcxxiv.com
+              secretName: personliness-tls
+      target:
+        kind: Ingress
+        name: personliness
+        namespace: personliness
+    - patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: personliness
+          namespace: personliness
+        spec:
+          replicas: 0
+      target:
+        kind: Deployment
+        name: personliness
+        namespace: personliness

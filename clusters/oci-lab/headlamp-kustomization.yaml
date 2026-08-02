@@ -1,0 +1,55 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: headlamp
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./infrastructure/headlamp"
+  prune: true
+  wait: true
+  timeout: 5m
+  dependsOn:
+    - name: cert-manager-config
+    - name: authentik
+  patches:
+    - patch: |
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: headlamp-tls
+          namespace: headlamp
+        spec:
+          dnsNames:
+            - headlamp.oci.dcxxiv.com
+      target:
+        kind: Certificate
+        name: headlamp-tls
+        namespace: headlamp
+    - patch: |
+        apiVersion: traefik.io/v1alpha1
+        kind: IngressRoute
+        metadata:
+          name: headlamp
+          namespace: headlamp
+        spec:
+          entryPoints:
+            - websecure
+          routes:
+            - kind: Rule
+              match: Host(`headlamp.oci.dcxxiv.com`)
+              middlewares:
+                - name: authentik
+                  namespace: authentik
+              services:
+                - name: headlamp
+                  port: 80
+          tls:
+            secretName: headlamp-tls
+      target:
+        kind: IngressRoute
+        name: headlamp
+        namespace: headlamp

@@ -1,8 +1,52 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# This cluster is not bootstrapped yet — flux-system/ does not exist, so resources
-# is empty to keep `kustomize build clusters/oci-lab` clean instead of erroring.
-# Once `flux bootstrap` (run by bootstrap/terraform/oci-k3s) populates flux-system/,
-# add it (and infrastructure/app Flux Kustomizations) here the way clusters/ovh-lab does:
-#   - flux-system/
-resources: []
+resources:
+  # `flux bootstrap` (run by bootstrap/terraform/oci-k3s) populates flux-system/.
+  # NOT present yet pre-bootstrap — see Step 6 validation notes below for how to
+  # test around this.
+  - flux-system/
+
+  # k3s built-in Traefik configuration
+  - traefik-config-kustomization.yaml
+
+  # Foundation: certs (DNS01/Cloudflare, defines letsencrypt-prod) + storage
+  - cert-manager-kustomization.yaml
+  - cert-manager-http01-kustomization.yaml
+  - cert-manager-config-kustomization.yaml
+  - local-path-kustomization.yaml
+  - longhorn-kustomization.yaml
+  - cloudnative-pg-kustomization.yaml
+  - postgres-kustomization.yaml
+  - redis-kustomization.yaml
+  - mariadb-kustomization.yaml
+
+  # Core infrastructure
+  - authentik-kustomization.yaml
+  - monitoring-kustomization.yaml
+  - weave-gitops-kustomization.yaml
+
+  # Infrastructure tools
+  - headlamp-kustomization.yaml
+  - reloader-kustomization.yaml
+
+  # Applications — all patched to replicas: 0 (warm standby, no live traffic;
+  # see per-file patches). Hostnames rewritten to *.oci.dcxxiv.com.
+  - personliness-kustomization.yaml
+  - hero-kustomization.yaml
+  - dcxxiv-home-kustomization.yaml
+  - wordpress-kustomization.yaml
+  - orchestrator-kustomization.yaml
+  - deluge-kustomization.yaml
+  - nodecast-tv-kustomization.yaml
+
+  # Excluded from clusters/oci-lab/ (do not add these files):
+  #   juggler-kustomization.yaml                 — amd64-only, no arm64 image
+  #   juicefs-kustomization.yaml                 — dual-mount hazard: standby must not
+  #                                                 attach the shared JuiceFS S3 data
+  #   juicefs-s3-gateway-kustomization.yaml       — depends on juicefs above
+  #   agent-os-kustomization.yaml                 — excluded until its arm64 image PR
+  #                                                 (#141) is confirmed working
+  #   minecraft-bedrock                           — not wired on OVH either, no file exists
+  #   longhorn-backup-kustomization.yaml          — no working backup target on OCI
+  #   longhorn-backup-target-kustomization.yaml   — activates OVH's live shared S3 backup
+  #                                                 target; standby must not touch it

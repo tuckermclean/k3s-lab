@@ -1,0 +1,64 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: monitoring
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: "./infrastructure/monitoring"
+  prune: true
+  wait: true
+  timeout: 15m
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  dependsOn:
+    - name: cert-manager-config
+    - name: longhorn
+  patches:
+    - patch: |
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: grafana-tls
+          namespace: monitoring
+        spec:
+          dnsNames:
+            - grafana.oci.dcxxiv.com
+      target:
+        kind: Certificate
+        name: grafana-tls
+        namespace: monitoring
+    - patch: |
+        apiVersion: helm.toolkit.fluxcd.io/v2
+        kind: HelmRelease
+        metadata:
+          name: kube-prometheus-stack
+          namespace: monitoring
+        spec:
+          values:
+            grafana:
+              grafana.ini:
+                server:
+                  root_url: https://grafana.oci.dcxxiv.com
+                auth:
+                  signout_redirect_url: https://auth.oci.dcxxiv.com/application/o/grafana/end-session/
+                auth.generic_oauth:
+                  auth_url: https://auth.oci.dcxxiv.com/application/o/authorize/
+                  token_url: https://auth.oci.dcxxiv.com/application/o/token/
+                  api_url: https://auth.oci.dcxxiv.com/application/o/userinfo/
+              ingress:
+                hosts:
+                  - grafana.oci.dcxxiv.com
+                tls:
+                  - secretName: grafana-tls
+                    hosts:
+                      - grafana.oci.dcxxiv.com
+      target:
+        kind: HelmRelease
+        name: kube-prometheus-stack
+        namespace: monitoring

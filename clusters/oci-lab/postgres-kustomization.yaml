@@ -1,0 +1,44 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: postgres
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./infrastructure/database/postgres
+  prune: true
+  wait: true
+  timeout: 15m
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  dependsOn:
+    - name: cloudnative-pg
+  # OCI-only: the shared Cluster spec archives WAL to s3://k3s-lab-backups/postgres/pg —
+  # the same path OVH's live cluster continuously writes to. OCI's fresh, empty cluster
+  # must not also archive there (two independent PG timelines writing to the same
+  # barman prefix corrupts the backup chain for both). Remove backup entirely; a
+  # distinct OCI-only backup path and real data restore are a later phase.
+  patches:
+    - patch: |
+        - op: remove
+          path: /spec/backup
+      target:
+        kind: Cluster
+        name: pg
+        namespace: postgres
+    - patch: |
+        apiVersion: postgresql.cnpg.io/v1
+        kind: ScheduledBackup
+        metadata:
+          name: pg-daily
+          namespace: postgres
+        $patch: delete
+      target:
+        kind: ScheduledBackup
+        name: pg-daily
+        namespace: postgres
