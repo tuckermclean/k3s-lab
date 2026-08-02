@@ -36,7 +36,6 @@ resources:
   - dcxxiv-home-kustomization.yaml
   - wordpress-kustomization.yaml
   - orchestrator-kustomization.yaml
-  - deluge-kustomization.yaml
   - nodecast-tv-kustomization.yaml
 
   # Excluded from clusters/oci-lab/ (do not add these files):
@@ -44,6 +43,9 @@ resources:
   #   juicefs-kustomization.yaml                 — dual-mount hazard: standby must not
   #                                                 attach the shared JuiceFS S3 data
   #   juicefs-s3-gateway-kustomization.yaml       — depends on juicefs above
+  #   deluge-kustomization.yaml                  — depends on the excluded JuiceFS
+  #                                                 (media/juicefs-media-bucket PVC); returns
+  #                                                 with JuiceFS during the OCI-primary migration
   #   agent-os-kustomization.yaml                 — excluded until its arm64 image PR
   #                                                 (#141) is confirmed working
   #   minecraft-bedrock                           — not wired on OVH either, no file exists
