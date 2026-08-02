@@ -29,6 +29,13 @@ resource "oci_core_instance" "server" {
     # so parallel creation is fine even before server-0 is fully up.
     user_data = base64encode(count.index == 0 ? local.cloudinit_server_first : local.cloudinit_server_join)
   }
+
+  # user_data is consumed only at first boot; a template change must not
+  # recreate a running node (mirrors ovh-k3s). Nodes provisioned before a
+  # cloud-init fix stay put.
+  lifecycle {
+    ignore_changes = [metadata["user_data"]]
+  }
 }
 
 resource "oci_core_instance" "agent" {
@@ -59,6 +66,10 @@ resource "oci_core_instance" "agent" {
   metadata = {
     ssh_authorized_keys = var.ssh_public_key
     user_data           = base64encode(local.cloudinit_agent)
+  }
+
+  lifecycle {
+    ignore_changes = [metadata["user_data"]]
   }
 
   depends_on = [oci_core_instance.server]

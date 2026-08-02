@@ -30,7 +30,11 @@ runcmd:
     netfilter-persistent save
 
     # --- discover this node's public + private IPs from the OCI metadata service ---
-    PUB=$(curl -s -H "Authorization: Bearer Oracle" http://169.254.169.254/opc/v2/vnics/ | python3 -c "import sys,json;print(json.load(sys.stdin)[0]['publicIp'])")
+    # OCI's IMDS vnics endpoint has NO publicIp for NAT'd ephemeral IPs, so
+    # discover this node's public IP from an external echo service (fallbacks).
+    PUB=$(curl -s --max-time 10 https://api.ipify.org || true)
+    [ -n "$PUB" ] || PUB=$(curl -s --max-time 10 https://checkip.amazonaws.com | tr -d '[:space:]' || true)
+    [ -n "$PUB" ] || PUB=$(curl -s --max-time 10 https://ifconfig.me || true)
     PRIV=$(curl -s -H "Authorization: Bearer Oracle" http://169.254.169.254/opc/v2/vnics/ | python3 -c "import sys,json;print(json.load(sys.stdin)[0]['privateIp'])")
 
     # --- build k3s config.yaml now that PUB/PRIV are known (write_files can't: the IP isn't known at render time) ---
