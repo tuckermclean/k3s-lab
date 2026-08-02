@@ -18,27 +18,70 @@ spec:
       name: sops-age
   dependsOn:
     - name: cloudnative-pg
-  # OCI-only: the shared Cluster spec archives WAL to s3://k3s-lab-backups/postgres/pg —
-  # the same path OVH's live cluster continuously writes to. OCI's fresh, empty cluster
-  # must not also archive there (two independent PG timelines writing to the same
-  # barman prefix corrupts the backup chain for both). Remove backup entirely; a
-  # distinct OCI-only backup path and real data restore are a later phase.
+  # OCI restore posture (migration spec §4 "Postgres / CNPG"):
+  #
+  # 1. `bootstrap.recovery` + `externalClusters.pg-backup` below point OCI's `pg` Cluster at
+  #    OVH's LIVE barman path (s3://k3s-lab-backups/postgres/pg) as a READ-ONLY recovery
+  #    source. This is safe even while OVH keeps archiving WAL to that same path — CNPG only
+  #    *reads* from an `externalClusters` entry during recovery, it never writes to it.
+  #
+  # 2. `spec.backup.barmanObjectStore.destinationPath` is repointed (via JSON6902 replace,
+  #    below) to a DISTINCT, permanent path: s3://k3s-lab-backups/postgres/pg-oci. OCI must
+  #    never archive its own WAL/base backups to OVH's path — two independent PG timelines
+  #    writing to the same barman prefix corrupts the backup chain for both. `pg-daily`
+  #    ScheduledBackup (previously deleted here to give OCI a no-backup standby posture) is
+  #    now left to flow through from the shared base unmodified: it triggers backups against
+  #    the `pg` Cluster, which archives to whatever `spec.backup.barmanObjectStore
+  #    .destinationPath` resolves to on THIS cluster — i.e. pg-oci, never OVH's pg path.
+  #
+  # 3. CRITICAL CAVEAT — this patch alone does NOT restore anything today. CNPG only honors
+  #    `spec.bootstrap.recovery` at initial Cluster *object creation*; it is silently ignored
+  #    on a Cluster that already exists. OCI's `pg` Cluster was already created (empty) during
+  #    standby standup, so merging this patch is a no-op against it as-is. Restoring from
+  #    backup requires a human with cluster access to DELETE the existing (empty, nothing-
+  #    depends-on-it-yet) `pg` Cluster object and its PVCs, and let Flux recreate it fresh —
+  #    only then does CNPG read `bootstrap.recovery.source: pg-backup` and restore
+  #    `personliness`/`authentik` from the Barman object store. That delete-and-recreate is a
+  #    Phase B rehearsal step, performed manually — it is NOT part of this manifest change.
   patches:
     - patch: |
-        - op: remove
-          path: /spec/backup
+        apiVersion: postgresql.cnpg.io/v1
+        kind: Cluster
+        metadata:
+          name: pg
+          namespace: postgres
+        spec:
+          bootstrap:
+            recovery:
+              # Read-only recovery source — restores from OVH's live, still-archiving path.
+              source: pg-backup
+          externalClusters:
+            - name: pg-backup
+              barmanObjectStore:
+                destinationPath: s3://k3s-lab-backups/postgres/pg
+                # No endpointURL needed — this is real AWS S3 (us-west-2). Same
+                # s3Credentials structure as the base cluster's backup.barmanObjectStore.
+                s3Credentials:
+                  accessKeyId:
+                    name: s3-backup-creds
+                    key: AWS_ACCESS_KEY_ID
+                  secretAccessKey:
+                    name: s3-backup-creds
+                    key: AWS_SECRET_ACCESS_KEY
+                  region:
+                    name: s3-backup-creds
+                    key: AWS_DEFAULT_REGION
+                wal:
+                  compression: gzip
       target:
         kind: Cluster
         name: pg
         namespace: postgres
     - patch: |
-        apiVersion: postgresql.cnpg.io/v1
-        kind: ScheduledBackup
-        metadata:
-          name: pg-daily
-          namespace: postgres
-        $patch: delete
+        - op: replace
+          path: /spec/backup/barmanObjectStore/destinationPath
+          value: s3://k3s-lab-backups/postgres/pg-oci
       target:
-        kind: ScheduledBackup
-        name: pg-daily
+        kind: Cluster
+        name: pg
         namespace: postgres
