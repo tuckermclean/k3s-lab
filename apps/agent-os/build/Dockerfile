@@ -113,7 +113,7 @@ RUN set -eux; \
       "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v${CYCLONEDX_CLI_VERSION}/${cdx_asset}"; \
     echo "${cdx_sha}  /usr/local/bin/cyclonedx" | sha256sum -c -; \
     chmod +x /usr/local/bin/cyclonedx; \
-    cyclonedx version
+    cyclonedx --version
 
 # AWS CLI v2 — publishes the ISO build dashboard/SBOM to S3. Same as
 # cyclonedx-cli above: no published checksums file for the installer zip, so
