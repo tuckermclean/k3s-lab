@@ -151,6 +151,13 @@ hostnames for this cluster are unmanaged CNAMEs to `oci.dcxxiv.com`. For a stabl
 hostname in the k3s API cert SANs, set `api_dns_name = "oci.dcxxiv.com"` in
 `terraform.tfvars`.
 
+`oci.dcxxiv.com` stays a permanent secondary hostname even after cutover — it is never
+removed. A separate `manage_apex_dns` flag (default `false`) gates a second resource,
+`cloudflare_record.apex` (`name = "@"`), that points the bare `dcxxiv.com` apex at these
+same nodes. It's off by default; flip it to `true` only at the deliberate OVH→OCI
+cutover step (alongside setting `manage_dns = false` on `ovh-k3s`), then `terraform
+apply`. See the comment block in `dns.tf` for the full sequencing.
+
 ## Free-tier billing tripwire
 
 `budget.tf` creates a $1/month tenancy-wide OCI budget (`oci_budget_budget.free_tier_guard`)
