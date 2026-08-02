@@ -15,10 +15,10 @@ data "cloudflare_zones" "this" {
 }
 
 resource "cloudflare_record" "oci" {
-  for_each = var.manage_dns ? toset(oci_core_instance.server[*].public_ip) : toset([])
+  count    = var.manage_dns ? var.server_count : 0
   zone_id  = data.cloudflare_zones.this[0].zones[0].id
   name     = "oci"
-  content  = each.value
+  content  = oci_core_instance.server[count.index].public_ip
   type     = "A"
   ttl      = 1
 }
