@@ -136,14 +136,23 @@ flux-bootstrap-ovh-lab: recover-age-key ## Bootstrap Flux on the OVH cluster
 	  --personal
 
 .PHONY: flux-bootstrap-oci-lab
-flux-bootstrap-oci-lab: recover-age-key ## Bootstrap Flux on the OCI cluster
-	@GITHUB_TOKEN=$(flux-github-token) \
+flux-bootstrap-oci-lab: recover-age-key ## Bootstrap Flux on the OCI cluster, then install the sops-age decryption key
+	@KUBECONFIG="$(CURDIR)/$(OCI_TF_DIR)/kubeconfig" GITHUB_TOKEN=$(flux-github-token) \
 	flux bootstrap github \
 	  --owner="$(GITHUB_OWNER)" \
 	  --repository="$(GITHUB_REPO)" \
 	  --branch=main \
 	  --path=./clusters/oci-lab \
 	  --personal
+	@# flux bootstrap only wires up the Git sync — it does NOT install the sops-age
+	@# decryption key, so every sops-encrypted Kustomization fails to reconcile until
+	@# this Secret exists in flux-system. install-sops-age was previously a separate,
+	@# documented-but-manual step; run it here automatically now that the OCI
+	@# kubeconfig exists (fetched by terraform, see kubeconfig-oci) and the age key has
+	@# already been recovered by the recover-age-key prerequisite above. KUBECONFIG is
+	@# pinned explicitly to the OCI cluster's kubeconfig so this can never land the key
+	@# in the wrong cluster (e.g. if the caller's ambient context is OVH).
+	KUBECONFIG="$(CURDIR)/$(OCI_TF_DIR)/kubeconfig" $(MAKE) install-sops-age
 
 # ---------------------------------------------------------------------------
 # OVH Terraform

@@ -41,6 +41,19 @@ spec:
           namespace: monitoring
         spec:
           values:
+            # HA monitoring redundancy is a much lower priority than fitting the
+            # actual application workload on 3 free-tier (1 OCPU) nodes - drop
+            # replicas here for oci-lab only, leave the shared HelmRelease
+            # (infrastructure/monitoring/helmrelease.yaml, replicas: 2 / 3) untouched
+            # for OVH. NOTE: explicit CPU/memory resources.requests tuning for
+            # prometheus/alertmanager is deferred - that requires a live `kubectl
+            # top pods -A` measurement pass first, which hasn't been done yet.
+            prometheus:
+              prometheusSpec:
+                replicas: 1
+            alertmanager:
+              alertmanagerSpec:
+                replicas: 1
             grafana:
               grafana.ini:
                 server:

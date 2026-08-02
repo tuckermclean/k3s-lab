@@ -75,7 +75,15 @@ variable "boot_volume_size_gbs" {
 variable "data_volume_size_gbs" {
   type        = number
   description = "Size in GB of the per-node OCI Block Volume used for Longhorn + local-path storage. The disk is mounted and bind-mounted over /var/lib/longhorn and /var/lib/rancher/k3s/storage so existing StorageClasses gain the capacity. Set to 0 to disable."
-  default     = 0
+  # 25 GB/node data + the fixed 50 GB/node boot volume (boot size is set at instance
+  # launch and can't shrink without recreating already-live nodes, so it stays at 50) =
+  # 3x50 + 3x25 = 225 GB total, ~25 GB over the 200 GB Always Free block-storage cap.
+  # Accepted per docs/superpowers/specs/2026-08-02-ovh-to-oci-migration.md §3: the small
+  # resulting PAYG charge is exactly what budget.tf's $1 free_tier_guard is meant to catch
+  # and alert on, not prevent. Applying this (terraform apply, a user action - not run by
+  # this change) is also the first real exercise of storage.tf / prepare-data-disk.sh
+  # against OCI; local.data_volumes_enabled has evaluated false in every apply so far.
+  default = 25
 }
 
 variable "data_mount_point" {

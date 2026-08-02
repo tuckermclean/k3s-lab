@@ -19,7 +19,11 @@ server_count = 3
 # memory_gbs_per_node = 8
 
 # --- Per-node data disk (Longhorn + local-path storage) ---
-# data_volume_size_gbs = 30   # 0 disables; 3x35 boot + 3x30 data = 195 GB, under the 200 GB cap
+# data_volume_size_gbs = 25   # 0 disables; default is 25. Boot volume stays 50 (fixed at
+#                             # instance launch), so 3x50 boot + 3x25 data = 225 GB, ~25 GB
+#                             # over the 200 GB Always Free cap - the small PAYG overage is
+#                             # expected/accepted and is what budget.tf's $1 budget guard
+#                             # exists to catch, not prevent.
 # data_mount_point     = "/mnt/data"
 
 # --- Access scoping ---
