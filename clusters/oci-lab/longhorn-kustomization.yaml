@@ -12,8 +12,8 @@ spec:
   prune: true
   wait: true
   timeout: 15m
-  dependsOn:
-    - name: cert-manager-config
   # No backupTarget patch here (unlike clusters/ovh-lab/longhorn-kustomization.yaml):
   # OCI's Longhorn volumes are empty in Phase 1 and must not touch OVH's live S3
   # backup target. Restore-time wiring is a later phase.
+  dependsOn:
+    - name: cert-manager-config
