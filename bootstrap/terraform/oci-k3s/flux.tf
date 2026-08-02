@@ -85,6 +85,21 @@ resource "null_resource" "flux_bootstrap" {
         --branch=${var.github_branch} \
         --path=./clusters/oci-lab \
         --personal
+
+      # flux bootstrap only wires up the Git sync — it does NOT install the
+      # sops-age decryption key, so every Kustomization that uses a
+      # sops-encrypted secret.sops.yaml fails to reconcile until this Secret
+      # exists in flux-system. tf.sh (this run's caller) exports
+      # SOPS_AGE_KEY_FILE, falling back to /tmp/k3s-lab-age.agekey (the path
+      # `make recover-age-key` writes to), so the same key material used to
+      # decrypt secrets.sops.yaml above is reused here. This mirrors the
+      # root Makefile's manual `install-sops-age` target so a fresh OCI
+      # standup doesn't need that step run by hand.
+      kubectl --kubeconfig ${abspath(path.module)}/kubeconfig create secret generic sops-age \
+        --namespace flux-system \
+        --from-file=age.agekey="$${SOPS_AGE_KEY_FILE:-/tmp/k3s-lab-age.agekey}" \
+        --dry-run=client -o yaml \
+        | kubectl --kubeconfig ${abspath(path.module)}/kubeconfig apply -f -
     EOT
   }
 }
