@@ -69,13 +69,13 @@ variable "memory_gbs_per_node" {
 variable "boot_volume_size_gbs" {
   type        = number
   description = "Boot volume size per node in GB. Always Free block storage total is 200 GB."
-  default     = 35
+  default     = 50
 }
 
 variable "data_volume_size_gbs" {
   type        = number
   description = "Size in GB of the per-node OCI Block Volume used for Longhorn + local-path storage. The disk is mounted and bind-mounted over /var/lib/longhorn and /var/lib/rancher/k3s/storage so existing StorageClasses gain the capacity. Set to 0 to disable."
-  default     = 30
+  default     = 0
 }
 
 variable "data_mount_point" {
