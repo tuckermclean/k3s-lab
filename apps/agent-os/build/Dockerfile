@@ -2,6 +2,14 @@
 # Built by .github/workflows/build-agent-os.yaml -> ghcr.io/tuckermclean/agent-os
 FROM node:24-bookworm-slim@sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7
 
+# BuildKit-provided; differ only when cross-building (e.g. the arm64 leg of
+# a linux/amd64,linux/arm64 buildx build running under QEMU on an amd64
+# builder). Used below to skip executing target-arch binaries as
+# smoke-tests under emulation, while still verifying their SHA and chmod
+# unconditionally.
+ARG BUILDARCH
+ARG TARGETARCH
+
 ARG AGENT_OS_REF=v0.2.1
 # Seed version installed by entrypoint.sh via the native installer at first
 # boot; Claude Code then self-updates in place on the PVC-backed ~/.local.
@@ -35,7 +43,7 @@ RUN set -eux; \
       "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.${arch}"; \
     echo "${sha}  /usr/local/bin/sops" | sha256sum -c -; \
     chmod +x /usr/local/bin/sops; \
-    sops --version
+    if [ "$BUILDARCH" = "$TARGETARCH" ]; then sops --version; else echo "skip sops smoke-test under emulation ($BUILDARCH->$TARGETARCH)"; fi
 
 # Docker CLI + buildx (client only) — dockerd runs in the pod's privileged
 # DinD sidecar (see apps/agent-os/deployment.yaml); the agent talks to it via
@@ -89,7 +97,7 @@ RUN set -eux; \
     echo "${osv_sha}  /usr/local/bin/osv-scanner" | sha256sum -c -; \
     chmod +x /usr/local/bin/osv-scanner; \
     rm -f /tmp/grype.tar.gz /tmp/trivy.tar.gz; \
-    grype version; trivy --version; osv-scanner --version
+    if [ "$BUILDARCH" = "$TARGETARCH" ]; then grype version; trivy --version; osv-scanner --version; else echo "skip grype/trivy/osv-scanner smoke-test under emulation ($BUILDARCH->$TARGETARCH)"; fi
 
 # cyclonedx-cli — SBOM schema validation. Release binaries; upstream ships no
 # checksums file for this project, so the hash below is pinned against the
@@ -113,7 +121,7 @@ RUN set -eux; \
       "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v${CYCLONEDX_CLI_VERSION}/${cdx_asset}"; \
     echo "${cdx_sha}  /usr/local/bin/cyclonedx" | sha256sum -c -; \
     chmod +x /usr/local/bin/cyclonedx; \
-    cyclonedx --version
+    if [ "$BUILDARCH" = "$TARGETARCH" ]; then cyclonedx --version; else echo "skip cyclonedx smoke-test under emulation ($BUILDARCH->$TARGETARCH)"; fi
 
 # AWS CLI v2 — publishes the ISO build dashboard/SBOM to S3. Same as
 # cyclonedx-cli above: no published checksums file for the installer zip, so
@@ -132,7 +140,7 @@ RUN set -eux; \
     unzip -q /tmp/awscliv2.zip -d /tmp/awscli-install; \
     /tmp/awscli-install/aws/install; \
     rm -rf /tmp/awscliv2.zip /tmp/awscli-install; \
-    aws --version
+    if [ "$BUILDARCH" = "$TARGETARCH" ]; then aws --version; else echo "skip aws smoke-test under emulation ($BUILDARCH->$TARGETARCH)"; fi
 
 # Claude Code is intentionally NOT installed at build time: entrypoint.sh
 # seeds it via the native installer into the PVC-backed ~/.local at first
