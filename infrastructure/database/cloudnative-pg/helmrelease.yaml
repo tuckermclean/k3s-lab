@@ -1,8 +1,13 @@
-# Chart version: 0.23.2  →  operator appVersion: 1.25.1
-# Pinned to chart 0.23.2 (operator 1.25.x) because CNPG 1.26 deprecated the
-# in-tree .spec.backup.barmanObjectStore S3 syntax that later DB-migration PRs
-# rely on. The declarative Database CRD is present in 1.25. Do not bump past
-# chart 0.23.x without reviewing the barmanObjectStore deprecation path first.
+# Chart version: 0.29.0  →  operator appVersion: 1.30.0
+# WARNING: the in-tree .spec.backup.barmanObjectStore S3 syntax this cluster
+# uses for BOTH nightly backups AND restores (bootstrap.recovery /
+# externalClusters, incl. the OVH->OCI migration) was deprecated in CNPG 1.26
+# and is slated for REMOVAL in operator 1.31.0 -- one minor away. cloudnative-pg
+# is now PINNED OFF in renovate.json so an auto-bump can't cross into 1.31 and
+# break backup/restore. Do NOT bump until Postgres is migrated to the
+# barman-cloud plugin. (This began as an intended 0.23.x pin, but a non-major
+# Renovate group swept it to 0.29 -- a code comment isn't a guard, hence the
+# real renovate rule now.)
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

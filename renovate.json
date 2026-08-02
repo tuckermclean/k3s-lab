@@ -6,7 +6,11 @@
     ":semanticCommits"
   ],
   "timezone": "America/New_York",
-  "schedule": ["after 10pm every weekday", "before 6am every weekday", "every weekend"],
+  "schedule": [
+    "after 10pm every weekday",
+    "before 6am every weekday",
+    "every weekend"
+  ],
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
   "pinDigests": true,
@@ -32,18 +36,33 @@
   "packageRules": [
     {
       "description": "Group non-major updates together to cut PR noise",
-      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
       "groupName": "all non-major dependencies"
     },
     {
       "description": "Keep major bumps separate so breaking changes get individual review",
-      "matchUpdateTypes": ["major"],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "groupName": null
     },
     {
       "description": "Group GitHub Actions updates",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github-actions"
+    },
+    {
+      "description": "Pin cloudnative-pg OFF: in-tree barmanObjectStore (backup + restore) is deprecated and REMOVED in operator 1.31; chart already jumped 0.23->0.29 (operator 1.30). Do not bump until Postgres is migrated to the barman-cloud plugin.",
+      "matchPackageNames": [
+        "cloudnative-pg"
+      ],
+      "enabled": false
     }
   ]
 }
