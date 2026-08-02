@@ -21,6 +21,11 @@ metadata:
   namespace: mariadb
 spec:
   interval: 30m
+  # Fresh 3-node Galera bootstrap + mariabackup SST across nodes takes several
+  # minutes on constrained/ARM nodes; the default 5m install timeout would fire
+  # mid-bootstrap, and remediation's uninstall then kills a node uncleanly ->
+  # safe_to_bootstrap:0 deadlock -> reinstall spiral. Give it real room.
+  timeout: 15m
   install:
     remediation:
       retries: 3
