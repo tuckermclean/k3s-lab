@@ -24,6 +24,8 @@ SSH key + the AWS backup buckets.
 **Critical fact:** JuiceFS metadata lives in **Redis-HA, database 2** (`infrastructure/database/redis`).
 Redis-HA is 3-node HA but runs on **local-path, not Longhorn** — so the nightly `juicefs dump` to
 S3 is the *only offsite copy of the filesystem map*. Without it, JuiceFS data on S3 is unreadable.
+For Redis-HA-specific failure modes (Sentinel failover, replica rejoin, split-brain) and the exact
+DB 2 restore commands, see [`redis-recovery.md`](./redis-recovery.md).
 
 Backup credentials are themselves SOPS secrets (`s3-backup-creds` per namespace,
 `longhorn-backup-secret`, `juicefs-meta-backup-creds`) — they come back with the repo once the age
@@ -118,7 +120,8 @@ Follow with `make dr-authentik` so Authentik's Terraform-managed objects match t
 **MariaDB restore.** See Step 6.3 — pull the newest `.sql.gz` from S3 and import.
 
 **JuiceFS metadata recovery.** See Step 5.2 — `juicefs load` the newest S3 dump into Redis DB 2.
-Redis must be up first; JuiceFS mounts fail without readable metadata.
+Redis must be up first; JuiceFS mounts fail without readable metadata. Full step-by-step (including
+Sentinel/HAProxy diagnosis) lives in [`redis-recovery.md`](./redis-recovery.md).
 
 **age key loss / SSH key rotation.**
 ```bash
