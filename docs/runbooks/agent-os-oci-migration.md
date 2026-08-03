@@ -72,14 +72,21 @@ Confirm all of these before starting:
 **Do not scale `agent-os` down.** The Deployment stays at `replicas: 1` throughout this step —
 Longhorn supports backing up an attached, in-use volume.
 
-**Via the Longhorn UI (simplest):** on OVH's Longhorn dashboard, find the `agent-os-home`
-volume → "Create Backup". Wait for it to reach 100%/`Completed` in the Backup list, then note
-the backup's name and `Created` timestamp.
+**Via the Longhorn UI (simplest):** on OVH's Longhorn dashboard, find the volume backing the
+`agent-os-home` PVC (see the lookup below for its real name) → "Create Backup". Wait for it to
+reach 100%/`Completed` in the Backup list, then note the backup's name and `Created` timestamp.
 
 **Via `kubectl`, from an OVH context:**
 
 ```bash
-kubectl -n longhorn-system get volumes.longhorn.io agent-os-home
+# The Longhorn volume backing the PVC is named pvc-<uuid>, NOT "agent-os-home".
+# Resolve it and use it everywhere a SOURCE volume is referenced below:
+kubectl -n agent-os get pvc agent-os-home -o jsonpath='{.spec.volumeName}{"\n"}'
+# -> e.g. pvc-1a2b3c4d-...  (call this <SRC_VOL> below)
+```
+
+```bash
+kubectl -n longhorn-system get volumes.longhorn.io <SRC_VOL>
 # confirm State=attached, Robustness=healthy before proceeding
 
 kubectl -n longhorn-system get backuptarget.longhorn.io default -o jsonpath='{.status.available}'
@@ -88,7 +95,8 @@ kubectl -n longhorn-system get backuptarget.longhorn.io default -o jsonpath='{.s
 # Trigger an on-demand backup by annotating/patching the Volume's backup field,
 # or apply a one-off snapshot+backup via a Backup CR. Longhorn's Volume CRD
 # doesn't expose a plain "back up now" spec field directly; the supported
-# non-UI path is to create a Snapshot then a Backup that references it:
+# non-UI path is to create a Snapshot then a Backup that references it.
+# Substitute <SRC_VOL> with the pvc-<uuid> name resolved above.
 kubectl -n longhorn-system create -f - <<'EOF'
 apiVersion: longhorn.io/v1beta2
 kind: Snapshot
@@ -96,10 +104,10 @@ metadata:
   generateName: agent-os-home-migration-
   namespace: longhorn-system
 spec:
-  volume: agent-os-home
+  volume: <SRC_VOL>
 EOF
 # note the generated Snapshot name, then:
-kubectl -n longhorn-system get snapshots.longhorn.io -l longhornvolume=agent-os-home
+kubectl -n longhorn-system get snapshots.longhorn.io -l longhornvolume=<SRC_VOL>
 
 kubectl -n longhorn-system create -f - <<'EOF'
 apiVersion: longhorn.io/v1beta2
@@ -117,7 +125,7 @@ EOF
 Wait for the backup to finish:
 
 ```bash
-kubectl -n longhorn-system get backups.longhorn.io -l longhornvolume=agent-os-home
+kubectl -n longhorn-system get backups.longhorn.io -l longhornvolume=<SRC_VOL>
 # wait for the new one's status.state == Completed
 
 kubectl -n longhorn-system get backups.longhorn.io <backup-name> -o jsonpath='{.status.url}{"\n"}{.status.size}{"\n"}'
@@ -133,9 +141,11 @@ Step 2. Confirm `agent-os` is still `Running` on OVH and untouched throughout.
 Switch to an OCI `kubectl` context (or the OCI Longhorn UI).
 
 **Via the Longhorn UI:** OCI's Longhorn dashboard → Backup (left nav) should already list
-OVH's backups, since both clusters share the same backupstore. Find the
-`agent-os-home-migration-...` backup from Step 1 → "Restore Latest Backup" → name the new
-volume `agent-os-home` → confirm.
+OVH's backups, since both clusters share the same backupstore. Find the backup for volume
+`<SRC_VOL>` (the `pvc-<uuid>` resolved in Step 1, **not** literally "agent-os-home" — the
+backupstore lists backups by their source volume's real name) from the
+`agent-os-home-migration-...`-labeled entry → "Restore Latest Backup" → name the new volume
+`agent-os-home` → confirm.
 
 **Via `kubectl`, from an OCI context:**
 
@@ -143,9 +153,11 @@ volume `agent-os-home` → confirm.
 kubectl -n longhorn-system get backuptarget.longhorn.io default -o jsonpath='{.status.available}'
 # true
 
-kubectl -n longhorn-system get backupvolumes.longhorn.io agent-os-home
-# confirms OCI's Longhorn already sees OVH's agent-os-home backups via the shared backupstore
+kubectl -n longhorn-system get backupvolumes.longhorn.io <SRC_VOL>
+# confirms OCI's Longhorn already sees OVH's <SRC_VOL> backups via the shared backupstore
 
+# We deliberately name the RESTORED volume "agent-os-home" here (the source was
+# <SRC_VOL>, i.e. pvc-<uuid>) so the static PV's volumeHandle in Step 3 binds to it.
 kubectl apply -f - <<'EOF'
 apiVersion: longhorn.io/v1beta2
 kind: Volume
