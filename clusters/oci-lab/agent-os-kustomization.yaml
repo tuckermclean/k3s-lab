@@ -1,0 +1,30 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: agent-os
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/agent-os
+  prune: true
+  wait: true
+  timeout: 5m
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  dependsOn:
+    - name: cert-manager-config
+    - name: longhorn
+    # authentik/authentik forwardAuth Middleware referenced by the IngressRoute
+    - name: authentik
+  # Base apps/agent-os/deployment.yaml pins :0.2.2 (amd64-only, still what the
+  # live OVH pod runs — do not change the base, that would roll the live
+  # session). OCI's nodes are arm64, so pin the multi-arch :0.2.4 image here
+  # instead, via Flux's native image transformer.
+  images:
+    - name: ghcr.io/tuckermclean/agent-os
+      newTag: "0.2.4"

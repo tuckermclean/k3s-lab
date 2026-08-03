@@ -46,8 +46,16 @@ resources:
   #   deluge-kustomization.yaml                  — depends on the excluded JuiceFS
   #                                                 (media/juicefs-media-bucket PVC); returns
   #                                                 with JuiceFS during the OCI-primary migration
-  #   agent-os-kustomization.yaml                 — excluded until its arm64 image PR
-  #                                                 (#141) is confirmed working
+  #   agent-os-kustomization.yaml                 — staged, not yet active: the manifest
+  #                                                 exists (pins the multi-arch :0.2.4 image)
+  #                                                 but must not be added here until its
+  #                                                 agent-os-home PVC has been restored from
+  #                                                 OVH's Longhorn backup on OCI — adding it
+  #                                                 first would make Flux/Longhorn create an
+  #                                                 EMPTY PVC and start agent-os stateless.
+  #                                                 Enabling this line is the FINAL step of
+  #                                                 docs/runbooks/agent-os-oci-migration.md,
+  #                                                 done only after that restore is verified.
   #   minecraft-bedrock                           — not wired on OVH either, no file exists
   #   longhorn-backup-kustomization.yaml          — no working backup target on OCI
   #   longhorn-backup-target-kustomization.yaml   — activates OVH's live shared S3 backup
