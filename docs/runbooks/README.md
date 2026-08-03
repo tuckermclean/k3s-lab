@@ -24,6 +24,7 @@ subsystems must come back, because several of them depend on each other.
 | WordPress DB data-level restore (mysqldump) | [`dr.md` §6.3](dr.md#2-total-cluster-loss--recovery-order) |
 | SOPS / age key lost, SSH key rotation | [`dr.md` §3 "age key loss"](dr.md#3-single-scenario-runbooks) |
 | Terraform state backend cutover (local → S3) | [`ovh-terraform-state-migration.md`](ovh-terraform-state-migration.md) |
+| Moving `agent-os` (and its PVC state) from OVH to OCI without killing the live session | [`agent-os-oci-migration.md`](agent-os-oci-migration.md) |
 
 If more than one row matches, recover in the **§3 order** — not in the order you noticed the
 alarms.
