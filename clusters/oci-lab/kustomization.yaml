@@ -15,6 +15,15 @@ resources:
   - cert-manager-config-kustomization.yaml
   - local-path-kustomization.yaml
   - longhorn-kustomization.yaml
+  # Longhorn S3 backupstore: connect OCI's Longhorn to the shared backup target
+  # so migration restores (agent-os, then the datastores) can read OVH's
+  # backups. longhorn-backup deploys the S3 creds + target-URL secret and the
+  # RecurringJobs (OCI now also protects its own volumes on the shared store —
+  # harmless to OVH's backups, which are pruned per-volume); longhorn-backup-
+  # target creates the BackupTarget CR (polls S3 every 5m). Enabled for the
+  # OVH→OCI migration — the prior "standby must not touch it" caveat is retired.
+  - longhorn-backup-kustomization.yaml
+  - longhorn-backup-target-kustomization.yaml
   - cloudnative-pg-kustomization.yaml
   - postgres-kustomization.yaml
   - redis-kustomization.yaml
@@ -57,6 +66,3 @@ resources:
   #                                                 docs/runbooks/agent-os-oci-migration.md,
   #                                                 done only after that restore is verified.
   #   minecraft-bedrock                           — not wired on OVH either, no file exists
-  #   longhorn-backup-kustomization.yaml          — no working backup target on OCI
-  #   longhorn-backup-target-kustomization.yaml   — activates OVH's live shared S3 backup
-  #                                                 target; standby must not touch it
