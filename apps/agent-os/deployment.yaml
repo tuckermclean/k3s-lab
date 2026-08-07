@@ -26,7 +26,7 @@ spec:
       containers:
         - name: agent-os
           # Digest pinned after the first CI build publishes the image.
-          image: ghcr.io/tuckermclean/agent-os:0.2.2
+          image: ghcr.io/tuckermclean/agent-os:0.2.4@sha256:aa5c925006321983ac73e09ad64033b8d57d0fa711795dbc4a49ecb5cbec7965
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -97,7 +97,7 @@ spec:
         # (juggler/openhands have no such pod-level override, so their dind
         # sidecars run as the image's default root user without needing one).
         - name: dind
-          image: docker:29-dind@sha256:bfec1f5159c63a81ca6fdedbd81404d2c0e16378ed0feec3bb3fbf3998847659
+          image: docker:29-dind@sha256:e8faad5a8dc5279dff929afc5449f2791736912fff9f99351d742db2fad01b4c
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

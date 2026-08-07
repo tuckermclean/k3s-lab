@@ -48,7 +48,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: backup
-              image: amazon/aws-cli:2.36.4@sha256:7cbd2e4d2c469c5c448dc249c7c8109ada7fa6ae57a1dc3f348fa39d19b6c689
+              image: amazon/aws-cli:2.36.19@sha256:7e78b80fc653b9f6bdacc54709458910374da3213e3a19abdaf395680831a5da
               command:
                 - /bin/sh
                 - -c

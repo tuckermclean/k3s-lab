@@ -20,7 +20,7 @@ spec:
       # Restart the pod to refresh content: kubectl -n hero rollout restart deploy/hero
       initContainers:
         - name: clone
-          image: alpine/git:v2.54.0@sha256:77418e6e7c7f434c4a98eaff04ef16840cf03649c881c03948e3e213923e3136
+          image: alpine/git:v2.54.0@sha256:729da2347ce652f30476b064198577fe12e1147e58499be9f343039343ef2cee
           command:
             - sh
             - -c
