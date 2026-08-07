@@ -1,6 +1,6 @@
 # agent-os web UI + Claude Code harness.
 # Built by .github/workflows/build-agent-os.yaml -> ghcr.io/tuckermclean/agent-os
-FROM node:24-bookworm-slim@sha256:235600a8101ab264e117b1768e925532262668dc9b581ef1dd7d96ced463b8e7
+FROM node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03
 
 # BuildKit-provided; differ only when cross-building (e.g. the arm64 leg of
 # a linux/amd64,linux/arm64 buildx build running under QEMU on an amd64
