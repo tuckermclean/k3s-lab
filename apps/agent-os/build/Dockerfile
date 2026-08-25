@@ -145,6 +145,27 @@ RUN set -eux; \
     rm -rf /tmp/awscliv2.zip /tmp/awscli-install; \
     if [ "$BUILDARCH" = "$TARGETARCH" ]; then aws --version; else echo "skip aws smoke-test under emulation ($BUILDARCH->$TARGETARCH)"; fi
 
+# GitHub CLI (gh) — lets the agent open PRs and talk to GitHub from inside the
+# container. Release binary, checksum-verified against the published
+# gh_<ver>_checksums.txt (same pattern as sops/grype/trivy above). gh is a plain
+# tool, not an account-versioned self-updating CLI like claude/codex, so it lives
+# root-owned in /usr/local/bin rather than the PVC-backed ~/.local.
+ARG GH_VERSION=2.98.0
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) sha="3b8ac6b30336802fc1a858d7c084e11cdf24ac1a761ca90b68022d7d729208de" ;; \
+      arm64) sha="cf689084f3a3618f7eae4a2420d335d74626d65f5e594b9828d125d69f800d86" ;; \
+      *) echo "unsupported arch: $arch" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/gh.tar.gz \
+      "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${arch}.tar.gz"; \
+    echo "${sha}  /tmp/gh.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/gh.tar.gz -C /tmp; \
+    install -m 0755 "/tmp/gh_${GH_VERSION}_linux_${arch}/bin/gh" /usr/local/bin/gh; \
+    rm -rf /tmp/gh.tar.gz "/tmp/gh_${GH_VERSION}_linux_${arch}"; \
+    if [ "$BUILDARCH" = "$TARGETARCH" ]; then gh --version; else echo "skip gh smoke-test under emulation ($BUILDARCH->$TARGETARCH)"; fi
+
 # Claude Code is intentionally NOT installed at build time: entrypoint.sh
 # seeds it via the native installer into the PVC-backed ~/.local at first
 # boot (see CLAUDE_CODE_VERSION above), so it can self-update in place as
