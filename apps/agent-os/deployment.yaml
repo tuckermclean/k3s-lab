@@ -23,10 +23,15 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        # Without this, kubelet recursively chowns the entire Longhorn home PVC
+        # (hundreds of thousands of files) to fsGroup on every pod start, adding
+        # minutes to each Recreate roll. OnRootMismatch chowns only when the
+        # volume root's ownership differs, so steady-state rolls skip the walk.
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: agent-os
           # Digest pinned after the first CI build publishes the image.
-          image: ghcr.io/tuckermclean/agent-os:0.2.5
+          image: ghcr.io/tuckermclean/agent-os:0.2.6
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

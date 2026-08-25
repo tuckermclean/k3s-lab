@@ -50,6 +50,7 @@ fi
 #    session regardless of how it was spawned (covers tmux agent sessions)
 cat > "$HOME/.bashrc.agent-os" <<EOF
 export CLAUDE_CODE_SUBAGENT_MODEL="${CLAUDE_CODE_SUBAGENT_MODEL:-}"
+export DOCKER_HOST="${DOCKER_HOST:-tcp://localhost:2375}"
 EOF
 chmod 600 "$HOME/.bashrc.agent-os"
 grep -q 'bashrc.agent-os' "$HOME/.bashrc" 2>/dev/null \
@@ -60,7 +61,11 @@ const fs = require("fs");
 const p = process.env.HOME + "/.claude/settings.json";
 let s = {}; try { s = JSON.parse(fs.readFileSync(p, "utf8")); } catch {}
 s.env = { ...s.env,
-  CLAUDE_CODE_SUBAGENT_MODEL: process.env.CLAUDE_CODE_SUBAGENT_MODEL || "" };
+  CLAUDE_CODE_SUBAGENT_MODEL: process.env.CLAUDE_CODE_SUBAGENT_MODEL || "",
+  // DOCKER_HOST reaches the DinD sidecar; agent-os strips it from spawned
+  // shells, so re-expose it here (and in ~/.bashrc.agent-os) or `docker`
+  // falls back to a nonexistent /var/run/docker.sock.
+  DOCKER_HOST: process.env.DOCKER_HOST || "tcp://localhost:2375" };
 // Full-scope login mode: no CLAUDE_CODE_OAUTH_TOKEN is set anywhere in this
 // container (a long-lived setup-token overrides the interactive full-scope
 // login and breaks Remote Control), so enable Remote Control at startup here
