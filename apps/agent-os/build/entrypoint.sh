@@ -14,6 +14,18 @@ if [ ! -x "$HOME/.local/bin/claude" ]; then
 fi
 export PATH="$HOME/.local/bin:$PATH"
 
+# Codex CLI isn't baked into the image either: install the standalone native
+# binary via the official installer into the PVC-backed ~/.local on first boot,
+# so the non-root node user can self-update it in place (`codex update` /
+# startup self-update). A build-time `npm i -g` would be root-owned and
+# un-updatable, and /home/node is a PVC so anything baked into it at build time
+# is masked by the mount anyway. Mirrors the Claude Code install above.
+if [ ! -x "$HOME/.local/bin/codex" ]; then
+  curl -fsSL https://chatgpt.com/codex/install.sh \
+    | CODEX_RELEASE="${CODEX_VERSION:-0.149.1}" CODEX_NON_INTERACTIVE=1 sh \
+    || echo "WARN: codex standalone install failed" >&2
+fi
+
 # agency-agents division dirs -> flat ~/.claude/agents/ (non-agent dirs skipped)
 for dir in /opt/agency-agents/*/; do
   case "$(basename "$dir")" in
