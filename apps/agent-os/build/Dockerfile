@@ -13,9 +13,12 @@ ARG TARGETARCH
 ARG AGENT_OS_REF=v0.2.1
 # Seed version installed by entrypoint.sh via the native installer at first
 # boot; Claude Code then self-updates in place on the PVC-backed ~/.local.
-ARG CLAUDE_CODE_VERSION=2.1.220
+ARG CLAUDE_CODE_VERSION=2.1.245
 # msitarzewski/agency-agents commit providing the 220+ agent definitions
 ARG AGENCY_AGENTS_REF=c89557f78509868c6d4cc08e5cbc79bc8625fe1c
+# Seed version installed by entrypoint.sh via the official standalone installer
+# at first boot; Codex then self-updates in place on the PVC-backed ~/.local.
+ARG CODEX_VERSION=0.149.1
 
 # jq/unzip/python3-pexpect: SBOM validation + the boot-test harness (pexpect).
 # qemu-system-x86 provides both qemu-system-x86_64 and qemu-system-i386
@@ -147,9 +150,12 @@ RUN set -eux; \
 # boot (see CLAUDE_CODE_VERSION above), so it can self-update in place as
 # the non-root node user.
 
-# Install Codex CLI globally
-RUN npm install -g @openai/codex@0.146.0 \
-    && npm cache clean --force
+# Codex CLI is intentionally NOT installed at build time either: entrypoint.sh
+# installs the standalone native binary via the official installer into the
+# PVC-backed ~/.local at first boot (see CODEX_VERSION above), so the non-root
+# node user can self-update it in place (`codex update` / startup self-update),
+# exactly like Claude Code. A build-time `npm i -g` is root-owned and
+# un-updatable, and /home/node is a PVC that masks anything baked into it.
 
 # Bake the app itself: the npm package's `agent-os` bin is an installer that
 # clones into $HOME at runtime; we want an immutable, prebuilt copy instead.
@@ -173,6 +179,10 @@ ENV PORT=3011 \
 # installer if ~/.local/bin/claude is missing, then Claude Code self-updates
 # from there, so bumping this ARG/ENV only matters for fresh PVCs.
 ENV CLAUDE_CODE_VERSION=${CLAUDE_CODE_VERSION}
+# First-boot seed version only (same idea as CLAUDE_CODE_VERSION): entrypoint.sh
+# installs this via the standalone installer if ~/.local/bin/codex is missing,
+# then Codex self-updates from there, so bumping this only matters for fresh PVCs.
+ENV CODEX_VERSION=${CODEX_VERSION}
 # Native-installer location for Claude Code (installed at first boot by
 # entrypoint.sh into the PVC-backed home dir).
 ENV PATH="/home/node/.local/bin:${PATH}"
