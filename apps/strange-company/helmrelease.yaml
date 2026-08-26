@@ -109,17 +109,11 @@ spec:
         tls:
           - hosts: [hermes.dcxxiv.com]
             secretName: hermes-tls
-    # ── Control plane: the real image
-    # (ghcr.io/tuckermclean/strange-company-control-plane:0.1.0) is published but
-    # PRIVATE — the cluster pulls ghcr anonymously and gets HTTP 403, so it would
-    # ImagePullBackOff. Until that package is made public (or a ghcr
-    # imagePullSecret is wired via global.imagePullSecrets), run the CI fixture
-    # (traefik/whoami answers 200 on /healthz + /readyz). Nothing routes to it —
-    # the control plane has no ingress. TO SWITCH TO THE REAL IMAGE: set
-    # repository/tag to the control-plane image and delete the `args` line.
+    # ── Control plane: the real image (now public on ghcr). Pinned to the
+    # immutable commit tag rather than a floating :main. It serves /healthz and
+    # /readyz on 8080 (the chart's probe contract), so no args are needed.
     controlPlane:
       image:
-        repository: traefik/whoami
-        tag: "v1.12.0"
+        repository: ghcr.io/tuckermclean/strange-company-control-plane
+        tag: "sha-bd7292e"
         pullPolicy: IfNotPresent
-      args: ["--port", "8080"]
