@@ -107,6 +107,11 @@ spec:
         # the old Traefik forward-auth gate (no middleware annotation now).
         HERMES_DASHBOARD_OIDC_ISSUER: https://auth.dcxxiv.com/application/o/hermes/
         HERMES_DASHBOARD_OIDC_CLIENT_ID: hermes-dashboard
+        # Required: behind Traefik (TLS-terminating) the dashboard otherwise
+        # builds an http:// OIDC callback, which Authentik rejects as an invalid
+        # redirect_uri → "auth provider unreachable" (503). This pins the public
+        # HTTPS origin so the callback is https://hermes.dcxxiv.com/auth/callback.
+        HERMES_DASHBOARD_PUBLIC_URL: https://hermes.dcxxiv.com
       ingress:
         enabled: true
         className: traefik
