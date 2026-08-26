@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: strange-company-hermes-auth
+    namespace: strange-company
+type: Opaque
+stringData:
+    HERMES_DASHBOARD_BASIC_AUTH_USERNAME: ENC[AES256_GCM,data:I8BRkijc,iv:kKN+7ws8pcxc32YGzaPBn1CVQEndy41I6Y+5BX7TkLs=,tag:nm8wdNWACNMuQNCp5VxnlQ==,type:str]
+    HERMES_DASHBOARD_BASIC_AUTH_PASSWORD: ENC[AES256_GCM,data:n0zSXqcQpxsIPL3jWInqy+x0iwilPHDEbAAYl/nBleU=,iv:k0AlbllRLaZQCqbrt30U25c5TdCynu9Hnix/BrzfUKA=,tag:iAOZj6GDNnjmoTa1p2I6/Q==,type:str]
+    HERMES_API_KEY: ENC[AES256_GCM,data:mXcDfp95K2ics2gHqxdqusxd0kKpWldCNyx9ibaDl/mox8nGZj3Y2i3rkzABKIhJ,iv:vREtCDS6/qrH3Y88wXBdkabzv+7+me+yW9Fmk2DMOcs=,tag:xG0uNiC4oY1XxI26/vvbNw==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBVamxEaVc5VzZJd1dvQjgz
+            OFRNdFZxNlpITjlQeUtEcTJsQmhvU0VwelRJCllNL2thOG11WldGSjB0R2FZN3lO
+            enZLVjNjeE1JVnNMOU5Zek45VXVXVmsKLS0tIFpxM1VRNDdZTUZCVWFSMEQvVnUr
+            b3BUTlpGR0xPTUljdnpyQXZaNXE5MFUKSpffbBVKas1/DJc0/+ZrIJPEHRJ+E+wS
+            cfZ/x19RLcoGj74mEeYF6ILbc/iIyjlaytkNnLzZxwJ3bwhqrZLI5A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-08-26T04:23:57Z"
+    mac: ENC[AES256_GCM,data:c/YIHjcpnTm/vX/MTzUJJ1SVzfRwOvtIci0LRhoDwP9jWkt2HuOcnY+P1v1PveONsSSbu+c+fYZvtwkLm/FVjuhkqRbChDNUIUbmvUCTqaa5yHudbpWcX2tdaKZ7L1k1qPx3hfG4SHVd6G7IAc6uKI4Xgb8IJKy0C9sl81k6blE=,iv:YCV/Xlc40iILNBZtEq+bNzmeZcawW0caOe1EM67134I=,tag:z/7mF/WFwVrAHt9vpR4iwg==,type:str]
+    version: 3.13.3
