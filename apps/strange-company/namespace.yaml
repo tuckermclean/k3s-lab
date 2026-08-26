@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: strange-company
+  labels:
+    app.kubernetes.io/part-of: gitops
+    # Hermes' s6-overlay init starts as root, chowns /opt/data, then drops the
+    # app to uid 10000 — it needs CHOWN/DAC_OVERRIDE/FOWNER/SETGID/SETUID, which
+    # a 'restricted' PodSecurity policy forbids. 'baseline' admits it.
+    pod-security.kubernetes.io/enforce: baseline

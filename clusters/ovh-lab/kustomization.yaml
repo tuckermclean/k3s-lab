@@ -38,6 +38,8 @@ resources:
   - wordpress-kustomization.yaml
   - orchestrator-kustomization.yaml
   - deluge-kustomization.yaml
-  - nodecast-tv-kustomization.yaml
   - agent-os-kustomization.yaml
-  - juggler-kustomization.yaml
+  - strange-company-kustomization.yaml
+  # nodecast-tv and juggler intentionally disabled here: removing their Flux
+  # Kustomizations lets flux-system prune the workloads (and their Longhorn
+  # PVCs). The app manifests are retained under apps/ for later re-enable.

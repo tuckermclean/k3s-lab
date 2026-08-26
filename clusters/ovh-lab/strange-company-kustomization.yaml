@@ -1,0 +1,26 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: strange-company
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./apps/strange-company
+  prune: true
+  wait: true
+  # Hermes' first image pull is slow (~900MB/38 layers).
+  timeout: 20m
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  dependsOn:
+    # letsencrypt-prod ClusterIssuer for the kanban/hermes TLS certs
+    - name: cert-manager-config
+    # Longhorn StorageClass for the Hermes + Vikunja PVCs
+    - name: longhorn
+    # CloudNativePG role + strange-company/vikunja databases must exist first
+    - name: postgres
