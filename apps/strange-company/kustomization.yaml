@@ -12,9 +12,8 @@ resources:
   - vikunja-db-secret.sops.yaml
   # Authentik integration (SOPS-encrypted):
   #  - vikunja-oidc-config: config.yml (OIDC → Authentik) mounted into Vikunja
-  #  - hermes-auth: mandatory dashboard basic-auth + API key (envFrom into Hermes);
-  #    Hermes signs in via native OIDC (see helmrelease hermes.env), so basic-auth
-  #    is only the required bind credential + break-glass fallback
+  #  - hermes-auth: ONLY the Hermes API key (envFrom). No basic-auth creds, so
+  #    the dashboard is OIDC-only (see helmrelease hermes.env)
   - vikunja-oidc-config.sops.yaml
   - hermes-auth.sops.yaml
 labels:
