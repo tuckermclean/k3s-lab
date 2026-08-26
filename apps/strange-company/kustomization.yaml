@@ -4,6 +4,12 @@ resources:
   - namespace.yaml
   - helmrepository.yaml
   - helmrelease.yaml
+  # Postgres credentials for the external CNPG `pg` cluster (SOPS-encrypted).
+  # strange-company-db backs the control plane's DATABASE_USER/PASSWORD and the
+  # chart's postgresql.external.existingSecret; vikunja-db backs Vikunja. Both
+  # carry the same password as postgres/strange-company-role-secret.
+  - db-secret.sops.yaml
+  - vikunja-db-secret.sops.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: gitops
