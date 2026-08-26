@@ -20,6 +20,11 @@ resource "authentik_provider_oauth2" "vikunja" {
     data.authentik_property_mapping_provider_scope.profile.id,
   ]
 
+  # grant_types is optional+computed: a Terraform-created provider defaults to
+  # an EMPTY list, which makes Authentik reject every authorization-code request
+  # as invalid_request ("the request is otherwise malformed"). Set it explicitly.
+  grant_types = ["authorization_code", "refresh_token"]
+
   sub_mode                   = "hashed_user_id"
   access_token_validity      = "hours=1"
   refresh_token_validity     = "days=30"
