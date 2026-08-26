@@ -307,6 +307,10 @@ apply-authentik: recover-age-key ## Apply Authentik config via Terraform (all se
 	export TF_VAR_grafana_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/monitoring/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='grafana-oidc-secret'); print(d['stringData']['GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET'])"); \
 	export TF_VAR_weave_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/weave-gitops/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='oidc-auth'); print(d['stringData']['clientSecret'])"); \
 	export TF_VAR_nodecast_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d apps/nodecast-tv/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='nodecast-tv-env'); print(d['stringData']['OIDC_CLIENT_SECRET'])"); \
+	export TF_VAR_vikunja_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d apps/strange-company/vikunja-oidc-config.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='strange-company-vikunja-oidc'); print(d['stringData']['OIDC_CLIENT_SECRET'])"); \
+	export AWS_ACCESS_KEY_ID=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_ACCESS_KEY_ID'])"); \
+	export AWS_SECRET_ACCESS_KEY=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_SECRET_ACCESS_KEY'])"); \
+	export AWS_DEFAULT_REGION=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_DEFAULT_REGION'])"); \
 	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade -input=false; \
 	terraform -chdir="$(AUTHENTIK_TF_DIR)" apply -input=false -auto-approve
 	$(MAKE) clean-age-key
@@ -320,8 +324,23 @@ plan-authentik: recover-age-key ## Preview Authentik Terraform changes without a
 	export TF_VAR_grafana_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/monitoring/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='grafana-oidc-secret'); print(d['stringData']['GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET'])"); \
 	export TF_VAR_weave_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/weave-gitops/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='oidc-auth'); print(d['stringData']['clientSecret'])"); \
 	export TF_VAR_nodecast_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d apps/nodecast-tv/secret.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x['metadata']['name']=='nodecast-tv-env'); print(d['stringData']['OIDC_CLIENT_SECRET'])"); \
+	export TF_VAR_vikunja_client_secret=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d apps/strange-company/vikunja-oidc-config.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='strange-company-vikunja-oidc'); print(d['stringData']['OIDC_CLIENT_SECRET'])"); \
+	export AWS_ACCESS_KEY_ID=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_ACCESS_KEY_ID'])"); \
+	export AWS_SECRET_ACCESS_KEY=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_SECRET_ACCESS_KEY'])"); \
+	export AWS_DEFAULT_REGION=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_DEFAULT_REGION'])"); \
 	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -upgrade -input=false; \
 	terraform -chdir="$(AUTHENTIK_TF_DIR)" plan -input=false
+	$(MAKE) clean-age-key
+
+.PHONY: migrate-authentik-state
+migrate-authentik-state: recover-age-key ## One-time: migrate Authentik TF state from local backend to S3 (run where the old local terraform.tfstate lives)
+	@test -f "$(AUTHENTIK_TF_DIR)/terraform.tfstate" || \
+	  (echo "ERROR: no local $(AUTHENTIK_TF_DIR)/terraform.tfstate to migrate. Run this from the machine that holds the current state."; exit 1)
+	@set -e; \
+	export AWS_ACCESS_KEY_ID=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_ACCESS_KEY_ID'])"); \
+	export AWS_SECRET_ACCESS_KEY=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_SECRET_ACCESS_KEY'])"); \
+	export AWS_DEFAULT_REGION=$$(SOPS_AGE_KEY_FILE="$(AGE_KEY_TMP)" sops -d infrastructure/database/postgres/s3-backup-creds.sops.yaml | python3 -c "import sys,yaml; docs=list(yaml.safe_load_all(sys.stdin)); d=next(x for x in docs if x and x.get('metadata',{}).get('name')=='s3-backup-creds'); print(d['stringData']['AWS_DEFAULT_REGION'])"); \
+	terraform -chdir="$(AUTHENTIK_TF_DIR)" init -migrate-state
 	$(MAKE) clean-age-key
 
 .PHONY: dr-authentik

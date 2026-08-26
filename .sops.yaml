@@ -2,6 +2,12 @@ creation_rules:
   # Fully-encrypted credential files (Terraform tokens + bootstrap secrets)
   - path_regex: (token|secrets)\.sops\.yaml$
     age: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+  # Traefik Middleware that injects a static Authorization header — encrypt only
+  # that header value, leaving apiVersion/kind/spec plaintext so `kustomize
+  # build` still parses it (Flux decrypts the value at apply time).
+  - path_regex: hermes-basicauth\.sops\.yaml$
+    encrypted_regex: ^(Authorization)$
+    age: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
   # Kubernetes Secrets — only data/stringData keys are encrypted
   - path_regex: \.sops\.yaml$
     encrypted_regex: ^(data|stringData)$

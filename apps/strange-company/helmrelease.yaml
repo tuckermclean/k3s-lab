@@ -60,6 +60,18 @@ spec:
               secretKeyRef:
                 name: vikunja-db
                 key: password
+          VIKUNJA_SERVICE_PUBLICURL: 'https://kanban.dcxxiv.com'
+        # OIDC config carries the client secret, so it must NOT be a plaintext
+        # ConfigMap — disable the chart's config ConfigMap and mount config.yml
+        # from a SOPS secret instead (mountPath/subPath inherited from the
+        # subchart's hardcoded persistence.config).
+        configMaps:
+          config:
+            enabled: false
+        persistence:
+          config:
+            type: secret
+            name: strange-company-vikunja-oidc
         ingress:
           main:
             enabled: true
@@ -80,11 +92,19 @@ spec:
     # ── Hermes dashboard at hermes.dcxxiv.com (port 9119). Gateway (8642) stays
     # ClusterIP. Basic-auth password + API key are chart-generated.
     hermes:
+      # Dashboard basic-auth + API key come from a SOPS secret (known values) so
+      # a Traefik middleware can inject the basic-auth downstream. apiKeyKey is a
+      # valid env-var name because the secret is also loaded via envFrom.
+      existingSecret: strange-company-hermes-auth
+      apiKeyKey: HERMES_API_KEY
       ingress:
         enabled: true
         className: traefik
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-prod
+          # Chain: Authentik forwardAuth gate, then inject Hermes' mandatory
+          # basic-auth so the user only ever sees the Authentik login.
+          traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik@kubernetescrd,strange-company-hermes-basicauth@kubernetescrd
         host: hermes.dcxxiv.com
         tls:
           - hosts: [hermes.dcxxiv.com]
