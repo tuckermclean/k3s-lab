@@ -92,19 +92,26 @@ spec:
     # ── Hermes dashboard at hermes.dcxxiv.com (port 9119). Gateway (8642) stays
     # ClusterIP. Basic-auth password + API key are chart-generated.
     hermes:
-      # Dashboard basic-auth + API key come from a SOPS secret (known values) so
-      # a Traefik middleware can inject the basic-auth downstream. apiKeyKey is a
-      # valid env-var name because the secret is also loaded via envFrom.
+      # API key + the mandatory dashboard basic-auth credential come from a SOPS
+      # secret (envFrom). apiKeyKey is a valid env-var name (also read by the
+      # control plane). Basic-auth stays as the required bind credential and a
+      # break-glass fallback; native OIDC below is the primary sign-in.
       existingSecret: strange-company-hermes-auth
       apiKeyKey: HERMES_API_KEY
+      env:
+        # Native OIDC SSO against Authentik — a PUBLIC PKCE client (no secret).
+        # The dashboard discovers endpoints from
+        # {issuer}/.well-known/openid-configuration and calls back to
+        # https://hermes.dcxxiv.com/auth/callback. The matching Authentik OIDC
+        # provider is in bootstrap/terraform/authentik/hermes.tf. This replaces
+        # the old Traefik forward-auth gate (no middleware annotation now).
+        HERMES_DASHBOARD_OIDC_ISSUER: https://auth.dcxxiv.com/application/o/hermes/
+        HERMES_DASHBOARD_OIDC_CLIENT_ID: hermes-dashboard
       ingress:
         enabled: true
         className: traefik
         annotations:
           cert-manager.io/cluster-issuer: letsencrypt-prod
-          # Chain: Authentik forwardAuth gate, then inject Hermes' mandatory
-          # basic-auth so the user only ever sees the Authentik login.
-          traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik@kubernetescrd,strange-company-hermes-basicauth@kubernetescrd
         host: hermes.dcxxiv.com
         tls:
           - hosts: [hermes.dcxxiv.com]
