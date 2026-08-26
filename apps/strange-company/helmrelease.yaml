@@ -1,0 +1,105 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: strange-company
+  namespace: strange-company
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  interval: 5m
+  install:
+    crds: Skip
+    remediation:
+      retries: 3
+  upgrade:
+    crds: Skip
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+  # Hermes' image is ~900MB across 38 layers; the first pull is slow.
+  timeout: 20m
+  chart:
+    spec:
+      chart: strange-company
+      version: "0.1.0"
+      sourceRef:
+        kind: HelmRepository
+        name: tuckermclean-charts
+        namespace: flux-system
+  values:
+    # ── PostgreSQL: use the cluster's shared CloudNativePG `pg` cluster, not a
+    # chart-owned StatefulSet. The `strange-company` role and the
+    # `strange-company` + `vikunja` databases are provisioned on `pg` (see
+    # infrastructure/database/postgres/cluster.yaml). Credentials come from the
+    # `strange-company-db` Secret (created out-of-band, SOPS).
+    postgresql:
+      enabled: false
+      external:
+        host: pg-rw.postgres.svc.cluster.local
+        port: 5432
+        database: strange-company
+        existingSecret: strange-company-db
+        usernameKey: username
+        passwordKey: password
+    # ── Vikunja (Kanban) at kanban.dcxxiv.com. `vikunja.*` keys below the
+    # doubled `vikunja.vikunja` are THIS chart's; `vikunja.vikunja.*` passes to
+    # the upstream Vikunja subchart. With external Postgres we point Vikunja's DB
+    # env at `pg-rw` and supply the password via the `vikunja-db` Secret
+    # (SOPS, out-of-band). databaseSecretName MUST match the secretKeyRef name.
+    vikunja:
+      databaseSecretName: vikunja-db
+      vikunja:
+        env:
+          VIKUNJA_DATABASE_TYPE: postgres
+          VIKUNJA_DATABASE_HOST: 'pg-rw.postgres.svc.cluster.local:5432'
+          VIKUNJA_DATABASE_USER: strange-company
+          VIKUNJA_DATABASE_DATABASE: vikunja
+          VIKUNJA_DATABASE_SSLMODE: disable
+          VIKUNJA_DATABASE_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: vikunja-db
+                key: password
+        ingress:
+          main:
+            enabled: true
+            # The upstream Vikunja subchart does not map `className` to
+            # ingressClassName, so we select Traefik the way the rest of this
+            # repo does — via the legacy ingress.class annotation.
+            annotations:
+              kubernetes.io/ingress.class: traefik
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+            hosts:
+              - host: kanban.dcxxiv.com
+                paths:
+                  - path: /
+                    pathType: Prefix
+            tls:
+              - hosts: [kanban.dcxxiv.com]
+                secretName: kanban-tls
+    # ── Hermes dashboard at hermes.dcxxiv.com (port 9119). Gateway (8642) stays
+    # ClusterIP. Basic-auth password + API key are chart-generated.
+    hermes:
+      ingress:
+        enabled: true
+        className: traefik
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-prod
+        host: hermes.dcxxiv.com
+        tls:
+          - hosts: [hermes.dcxxiv.com]
+            secretName: hermes-tls
+    # ── Control plane: the real image
+    # (ghcr.io/tuckermclean/strange-company-control-plane:0.1.0) is published but
+    # PRIVATE — the cluster pulls ghcr anonymously and gets HTTP 403, so it would
+    # ImagePullBackOff. Until that package is made public (or a ghcr
+    # imagePullSecret is wired via global.imagePullSecrets), run the CI fixture
+    # (traefik/whoami answers 200 on /healthz + /readyz). Nothing routes to it —
+    # the control plane has no ingress. TO SWITCH TO THE REAL IMAGE: set
+    # repository/tag to the control-plane image and delete the `args` line.
+    controlPlane:
+      image:
+        repository: traefik/whoami
+        tag: "v1.12.0"
+        pullPolicy: IfNotPresent
+      args: ["--port", "8080"]

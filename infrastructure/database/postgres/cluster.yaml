@@ -60,6 +60,12 @@ spec:
         login: true
         passwordSecret:
           name: authentik-role-secret
+      - name: strange-company
+        login: true
+        # Password sourced from the same SOPS secret the app duplicates, so a
+        # cutover changes only the host — no credential rotation.
+        passwordSecret:
+          name: strange-company-role-secret
 
 ---
 apiVersion: postgresql.cnpg.io/v1
@@ -82,6 +88,30 @@ metadata:
 spec:
   name: authentik
   owner: authentik
+  cluster:
+    name: pg
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: strange-company
+  namespace: postgres
+spec:
+  name: strange-company
+  owner: strange-company
+  cluster:
+    name: pg
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: vikunja
+  namespace: postgres
+spec:
+  name: vikunja
+  owner: strange-company
   cluster:
     name: pg
 
