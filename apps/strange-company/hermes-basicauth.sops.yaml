@@ -1,26 +1,29 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-    name: strange-company-hermes-basicauth
+    # Traefik registers CRD middlewares as `<namespace>-<name>`, so this resolves
+    # to `strange-company-hermes-basicauth@kubernetescrd` — the value the Hermes
+    # Ingress annotation references. (Do not prefix the name with the namespace.)
+    name: hermes-basicauth
     namespace: strange-company
     labels:
         app.kubernetes.io/part-of: gitops
 spec:
     headers:
         customRequestHeaders:
-            Authorization: ENC[AES256_GCM,data:i44rVu1kpMn8O8p+cbrNb9Nqlk3JC48cOtFkRQy1qIUGtfFNp+3wfJXCg8xRRqmC7ca3SD7uZQdFUQ==,iv:xWdGqoX+uCDG3sICkS9Y8D9sg3Pos+jWfDUXbgvhxlQ=,tag:p1SKHM8Ec6FsPm8BUbcs8w==,type:str]
+            Authorization: ENC[AES256_GCM,data:FOfC9Lfu7ymrinD6JbUxUbi6JJT8QJyPt7tOyFtU201qMMa4atvnDHRYk+1+RH4pMXdjDf4aAPdq0Q==,iv:RnUJgHqmr3HuzLQNsCZDh29eYO72um6aIfjmuyQALuU=,tag:QfKkxtVYg0pNJ2LgEhyh/A==,type:str]
 sops:
     age:
         - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAyZ3VXMEw4MlR3aUZId0Rq
-            V3hBZkN5Ym4vU2lSZHhMUDZSRE5qVlp5RDJrCjcxUmttWVd5dmQ2VVFCOGNvc3JE
-            UEhkVDJoeWo1Slp3K1oxVDRFSnVDeUUKLS0tIDN0U3RKNzVWYWI4ZDBFRWJlMjZN
-            WFFnM29GZ1lDYzI2NGFBWEJ2cTdWM0kKLpaa5b2Fc4E5i4RExNTcF78OmoPMedHi
-            9Or61TKG/lxinjD1j5mawxo849Q3Fp7w9D3MMI3gH61LfWZud2UwjQ==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA2aEZMa2c1dStha0VpVENu
+            bkZuekZWbmxUUFgxZWRvNHpvRlhwZi9TQ1UwClc5S1dnT3VUbFBPRE03SGYrVVkw
+            ZkVqc05YWGJUWUhLU2NVSnBLR2NBS1UKLS0tIGUvZmxqakg1V3hjenpONkJtMTJV
+            R2RSYnVvMU5wOFhJRTBxK0lWVEw4SEUKUvFWrQh3OEtRgX7B1YUfu2I4VAKjXoAd
+            nTSxpmk9G0XzGebErOjFLAVApnmI2nbAWAJ3IlafnKPsn+/yoq4GiQ==
             -----END AGE ENCRYPTED FILE-----
           recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
     encrypted_regex: ^(Authorization)$
-    lastmodified: "2026-08-26T04:23:57Z"
-    mac: ENC[AES256_GCM,data:Lwgb8Zqq00w2BOOk9QEoG375WZ/SBQyub4swo1mZjGyQz9fUX7JU1vkqCvwqrEXSy3C/9Ax6Bzp/pNTRxFGBJF3u5fMPfr2dpvxswruZOE6/WVEVCEtJefEhCQoWkJX4kDNGV3HmHZRlu6145mwFnJbfbOgatSVP9n4f8wDgTx8=,iv:turhqV3iAFl4z1BfN4kuqs+hC/l1o6pe1F8CQL+gstk=,tag:EDV/zZhH6G5VIh0UsymdeQ==,type:str]
+    lastmodified: "2026-08-26T05:39:03Z"
+    mac: ENC[AES256_GCM,data:c5DbwMXiaA7vSfd4PjiilK4Ac61mqDZHBHuSeFxgZlFHuzw5zMlz4kqZhn5Xr6LzfLrw2+nQk4re8rJzyXPFRmMMtXIh9XUiD0nHw5lu5yWwJ5iQueG870lQ85Y/VkMesBauHKcVDJG3lPj/EeFx/hmJajGy+1m6Va4TWJFQ4sc=,iv:alnMbTMiC3A8ZcoSb9rELsMou8v44ga/wVsrdY9Z8X0=,tag:HPTBMG5Jt6v+N2v8LoTk9Q==,type:str]
     version: 3.13.3
