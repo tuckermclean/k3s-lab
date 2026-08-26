@@ -45,3 +45,15 @@ variable "nodecast_client_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "vikunja_client_id" {
+  description = "OAuth2 client ID for Vikunja. Must match clientid in apps/strange-company/vikunja-oidc-config.sops.yaml"
+  type        = string
+  default     = "vikunja"
+}
+
+variable "vikunja_client_secret" {
+  description = "OAuth2 client secret for Vikunja. Must match clientsecret in apps/strange-company/vikunja-oidc-config.sops.yaml"
+  type        = string
+  sensitive   = true
+}
