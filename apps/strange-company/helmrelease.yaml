@@ -90,12 +90,16 @@ spec:
               - hosts: [kanban.dcxxiv.com]
                 secretName: kanban-tls
     # ── Hermes dashboard at hermes.dcxxiv.com (port 9119). Gateway (8642) stays
-    # ClusterIP. Basic-auth password + API key are chart-generated.
+    # ClusterIP. Sign-in is OIDC-only (see env below).
     hermes:
-      # API key + the mandatory dashboard basic-auth credential come from a SOPS
-      # secret (envFrom). apiKeyKey is a valid env-var name (also read by the
-      # control plane). Basic-auth stays as the required bind credential and a
-      # break-glass fallback; native OIDC below is the primary sign-in.
+      # OIDC-ONLY: the existingSecret intentionally carries ONLY HERMES_API_KEY
+      # (no HERMES_DASHBOARD_BASIC_AUTH_*), so the 'basic' username/password
+      # provider does not register — the dashboard offers only "Self-Hosted
+      # OIDC". This removes the basic form (nothing for a browser to autofill)
+      # and the stale-basic-session 503 (basic's HMAC session key rotates every
+      # restart). The dashboard still binds: OIDC is a valid auth provider.
+      # apiKeyKey is a valid env-var name, read by Hermes (API_SERVER_KEY) and
+      # the control plane (HERMES_API_KEY).
       existingSecret: strange-company-hermes-auth
       apiKeyKey: HERMES_API_KEY
       env:
