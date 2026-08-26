@@ -109,11 +109,12 @@ spec:
         tls:
           - hosts: [hermes.dcxxiv.com]
             secretName: hermes-tls
-    # ── Control plane: the real image (now public on ghcr). Pinned to the
-    # immutable commit tag rather than a floating :main. It serves /healthz and
+    # ── Control plane: the real image (public on ghcr). It serves /healthz and
     # /readyz on 8080 (the chart's probe contract), so no args are needed.
+    # Tag is pinned via ${SC_CONTROL_PLANE_VERSION} (Flux postBuild.substitute in
+    # clusters/ovh-lab/strange-company-kustomization.yaml) — bump it there.
     controlPlane:
       image:
         repository: ghcr.io/tuckermclean/strange-company-control-plane
-        tag: "sha-bd7292e"
+        tag: "${SC_CONTROL_PLANE_VERSION}"
         pullPolicy: IfNotPresent
