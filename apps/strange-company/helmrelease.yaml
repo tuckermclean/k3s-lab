@@ -102,6 +102,18 @@ spec:
       # the control plane (HERMES_API_KEY).
       existingSecret: strange-company-hermes-auth
       apiKeyKey: HERMES_API_KEY
+      # Hermes is cgroup-aware: with NO memory limit it reads the (shared,
+      # ~83%-full) host and its dashboard warns "agent running low on memory"
+      # + throttles workers. A limit gives it a real budget to size against.
+      # A request also lifts it out of BestEffort so node memory pressure
+      # doesn't evict/OOM-kill it first (it had been SIGKILLed before).
+      resources:
+        requests:
+          cpu: 250m
+          memory: 1Gi
+        limits:
+          cpu: "2"
+          memory: 3Gi
       env:
         # Native OIDC SSO against Authentik — a PUBLIC PKCE client (no secret).
         # The dashboard discovers endpoints from
