@@ -26,6 +26,13 @@ spec:
         kind: HelmRepository
         name: tuckermclean-charts
         namespace: flux-system
+  # GitHub PAT for issue ingestion, injected at github.token from a SOPS Secret
+  # so the token never lives in plaintext git. See strange-company-github.sops.yaml.
+  valuesFrom:
+    - kind: Secret
+      name: strange-company-github
+      valuesKey: github-token
+      targetPath: github.token
   values:
     # ── PostgreSQL: use the cluster's shared CloudNativePG `pg` cluster, not a
     # chart-owned StatefulSet. The `strange-company` role and the
@@ -47,6 +54,14 @@ spec:
     # env at `pg-rw` and supply the password via the `vikunja-db` Secret
     # (SOPS, out-of-band). databaseSecretName MUST match the secretKeyRef name.
     vikunja:
+      # Share the control-plane's Kanban board with the human operator's Vikunja
+      # username so cards are visible after OIDC login (Vikunja shareWith takes
+      # usernames, not "all authenticated"). permission 1 = read & write, since
+      # a human moving a card is a real signal the control plane reconciles back.
+      board:
+        shareWith:
+          - akadmin
+        permission: 1
       databaseSecretName: vikunja-db
       vikunja:
         env:
@@ -222,3 +237,10 @@ spec:
           review:
             - model: review
               max_attempts: 1
+    # ── Work intake (0.4.0): GitHub issues labeled `agent-ready` in these repos
+    # become board cards → foreman screening → spec conversation → DeepSeek
+    # coding ladder. `github.token` is injected via spec.valuesFrom (SOPS above);
+    # `label` defaults to `agent-ready`, `apiUrl` to api.github.com.
+    github:
+      repositories:
+        - tuckermclean/sandbox-derp
