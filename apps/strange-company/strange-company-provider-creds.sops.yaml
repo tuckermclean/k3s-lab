@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: strange-company-provider-creds
+    namespace: strange-company
+type: Opaque
+data:
+    deepseek-api-key: ENC[AES256_GCM,data:xfV+WihwwhFnpxIV9hFlw/1RNPKxGjSkC5/3VpZPIaXOls0uSPxeTb0ySSGMNMA6,iv:3Vyz2DDoVZy9l3YH71leja+wKb28CzoOTO4n2mawZDo=,tag:lWRqCK+ZcrVt2+KQpGsHuA==,type:str]
+    anthropic-oauth-token: ENC[AES256_GCM,data:U+rZHi/K60L4Z4+NE4JMvmiN/oXHxkifIafCX/S4WiU/4rdu3IhlJuyHHNxkx5i0qvlCCNwe7IWTPGMUxS8BaLBU0U1mwpLWkZakNict8tZLvkUYQQ6JtCeEhqlkJ50zIzuHcszKBZIf4HOAghHEtJxM30ac8Gbni7SyLNHmsuQ1A8LCTndh8iQT1zh7ow6Z,iv:fOSirwASvmDzwuNi3V3vCWqeIBsWqpPIv6vFB9FvQKU=,tag:JRB1msAkji7fqNZoo0AKBA==,type:str]
+    github-token: ENC[AES256_GCM,data:lusGQegyNRXZKvnFNWfmFZYV+DDDAId1AHJE6Msmrmocag7EiqFWF7MCV2lDeEM23E5UT+CdltY=,iv:L00oqB8JiGDCAZ7ggCOswAgGXOQIE1WNb0dI9qVcHgQ=,tag:aZsR4MmtVaYg74+Q2Vkjjg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAzQ003NzlPZDJRUDNNN3k3
+            S0NKRm9nb3VSd0NuWTkycE9QRitnNU5LamdVCklFQk9EYlFJSCtSdVFiNUluc0NK
+            dDFxbURxZHhNNWllaHQwdVlkOVBuT28KLS0tIFZ2bHRNTHFXZlk4WnVxSmk1eEI0
+            Q1BHUGtPNWsvK2JoRVV5VzRzREZvNVUKMU0rWM7OwN4JK+wtlruLq/mqkCR596+v
+            LrHaKCySvNIrK+m8KQd2BB5fXwkuyoss/tdW1trqSaq2J8/7752X/A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-08-27T21:24:26Z"
+    mac: ENC[AES256_GCM,data:eEAOuTewgmVr9Qnra2uD0HY5xJsnQsgI0DBUfRk38fy75W98+XYL0UzpRagzOJHAPKxgezPApL97RXh8fu02IYLPG5Cc4zHkivQQptPYgJSj1HP9TaNa9nyzB4LsiHrViKAsq9axn4TU8fkpvlAUQLRjWt0UzgkIQjLkH5fA4rE=,iv:9o6R9Z7pWvTULr8X8be83oBUhLy3CUHGfK6hs/9uuOU=,tag:cA2HMoWPfIKJVP0N6tbwXg==,type:str]
+    version: 3.13.3

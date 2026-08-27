@@ -16,18 +16,14 @@ resources:
   #    the dashboard is OIDC-only (see helmrelease hermes.env)
   - vikunja-oidc-config.sops.yaml
   - hermes-auth.sops.yaml
-  # AI provider credentials (SOPS-encrypted), consumed by the control plane's
-  # policy (providers.yaml → secret name/key) and by Hermes' managed scope:
-  #  - deepseek-credentials: DeepSeek api-key (foreman + coding ladder)
-  #  - anthropic-oauth-credentials: Claude subscription OAuth token (spec convo)
-  #  - strange-company-hermes-managed: .env pinning both of the above into
-  #    Hermes' dashboard-immutable managed scope (helmrelease hermes.managed)
-  - deepseek-credentials.sops.yaml
-  - anthropic-oauth-credentials.sops.yaml
-  - strange-company-hermes-managed.sops.yaml
-  # GitHub PAT for issue ingestion (0.4.0 work intake). Injected into the
-  # HelmRelease at github.token via spec.valuesFrom (targetPath).
-  - strange-company-github.sops.yaml
+  # All AI provider credentials + the GitHub PAT in ONE SOPS Secret. The
+  # HelmRelease's spec.valuesFrom injects each key into the chart's
+  # single-source `credentials` block and github.token (0.4.0 credential model):
+  # the chart then creates + projects deepseek-credentials/anthropic-oauth-
+  # credentials to the control plane (/credentials) and pins them into Hermes
+  # (hermes.managed.fromCredentials). Keys: deepseek-api-key,
+  # anthropic-oauth-token, github-token.
+  - strange-company-provider-creds.sops.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: gitops
