@@ -16,6 +16,15 @@ resources:
   #    the dashboard is OIDC-only (see helmrelease hermes.env)
   - vikunja-oidc-config.sops.yaml
   - hermes-auth.sops.yaml
+  # AI provider credentials (SOPS-encrypted), consumed by the control plane's
+  # policy (providers.yaml → secret name/key) and by Hermes' managed scope:
+  #  - deepseek-credentials: DeepSeek api-key (foreman + coding ladder)
+  #  - anthropic-oauth-credentials: Claude subscription OAuth token (spec convo)
+  #  - strange-company-hermes-managed: .env pinning both of the above into
+  #    Hermes' dashboard-immutable managed scope (helmrelease hermes.managed)
+  - deepseek-credentials.sops.yaml
+  - anthropic-oauth-credentials.sops.yaml
+  - strange-company-hermes-managed.sops.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: gitops
