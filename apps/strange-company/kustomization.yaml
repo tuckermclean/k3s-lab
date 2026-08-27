@@ -16,14 +16,16 @@ resources:
   #    the dashboard is OIDC-only (see helmrelease hermes.env)
   - vikunja-oidc-config.sops.yaml
   - hermes-auth.sops.yaml
-  # All AI provider credentials + the GitHub PAT in ONE SOPS Secret. The
-  # HelmRelease's spec.valuesFrom injects each key into the chart's
-  # single-source `credentials` block and github.token (0.4.0 credential model):
-  # the chart then creates + projects deepseek-credentials/anthropic-oauth-
-  # credentials to the control plane (/credentials) and pins them into Hermes
-  # (hermes.managed.fromCredentials). Keys: deepseek-api-key,
-  # anthropic-oauth-token, github-token.
+  # AI provider credentials. spec.valuesFrom injects these into the chart's
+  # single-source `credentials` block (0.4.0 model): the chart creates +
+  # projects deepseek-credentials/anthropic-oauth-credentials to the control
+  # plane (/credentials) and pins them into Hermes (hermes.managed
+  # .fromCredentials). Keys: deepseek-api-key, anthropic-oauth-token.
   - strange-company-provider-creds.sops.yaml
+  # GitHub PAT as GITHUB_TOKEN, envFrom'd into the control plane via
+  # controlPlane.existingSecret — the chart won't emit its own github-token key
+  # when hermes uses an existingSecret (that key is gated behind $needApiKey).
+  - strange-company-github-env.sops.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: gitops

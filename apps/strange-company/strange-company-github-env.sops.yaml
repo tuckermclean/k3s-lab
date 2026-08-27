@@ -1,0 +1,22 @@
+apiVersion: v1
+data:
+    GITHUB_TOKEN: ENC[AES256_GCM,data:KRDo+wvVs9888yXTAOGx+usdXNJkf0yGDiA3kk1jNWc6x8Gf/P3Ah46wy6fYibDzzj3cFsQ4KAY=,iv:/+LZVuZAMx8koGPogMO8+vVWfAPivJ4MBAyJCtj58Lo=,tag:D4gux26wVwvjVK0e6ncpXA==,type:str]
+kind: Secret
+metadata:
+    name: strange-company-github-env
+    namespace: strange-company
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBiQk9aVDFxK0dzdk5sVnd0
+            alYvZnRibEVkWFFNaHd3VUVRQzFhQkZsbDJzCmE0Q2VZaUdGN2tpS2tnMWlDRksv
+            WnRPRUZqVGZPc0JWNGdIdVc4cEZhdVkKLS0tIHYyaGlOQUxBVTA0SG84d1RJSDl2
+            SWF1ZVFwdmZ1ZldUYThQeExPN1IrQWcKdeWVX4PXIB6OzLcTFix0YCv2PAlJRbgK
+            7/ltQvobK87HYAKqSKFFZr+ZXt2ij0fwtrzJRQAO6ES1EXfxcmh4wQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-08-27T21:54:52Z"
+    mac: ENC[AES256_GCM,data:IqBUtQbKL5orwAsJLi0sZWy9l5QUWRHyFuQiqTTZasvXVtwQbmMamh8jWzWcuvJ76P+h6o3QBD4iE+1N24T8S86ciDAIGvUleeKCF7DAH0bBjBreAmJqDmGA3G7bAFtksugjxh2fBTN/PTgcFI4f9rjqqp/5SViLHRYMkqdcr5I=,iv:SebO8LVt8hGJxYxsK5ky/P6311IZUo8WmNZQhAtIjNQ=,tag:OV8SPh/JnEht5hkqQfJSEg==,type:str]
+    version: 3.13.3
