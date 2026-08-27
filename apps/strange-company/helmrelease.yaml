@@ -26,11 +26,22 @@ spec:
         kind: HelmRepository
         name: tuckermclean-charts
         namespace: flux-system
-  # GitHub PAT for issue ingestion, injected at github.token from a SOPS Secret
-  # so the token never lives in plaintext git. See strange-company-github.sops.yaml.
+  # All provider credentials come from ONE SOPS Secret, injected via targetPath
+  # so no token ever lives in plaintext git. They land in the chart's
+  # single-source `credentials` block — 0.4.0 projects those to the control
+  # plane as files at /credentials/<secret>/<key> AND (via hermes.managed
+  # .fromCredentials below) pins them into Hermes — plus github.token.
   valuesFrom:
     - kind: Secret
-      name: strange-company-github
+      name: strange-company-provider-creds
+      valuesKey: deepseek-api-key
+      targetPath: credentials.deepseek-credentials.api-key
+    - kind: Secret
+      name: strange-company-provider-creds
+      valuesKey: anthropic-oauth-token
+      targetPath: credentials.anthropic-oauth-credentials.oauth-token
+    - kind: Secret
+      name: strange-company-provider-creds
       valuesKey: github-token
       targetPath: github.token
   values:
@@ -122,8 +133,13 @@ spec:
       # specification conversation (Claude OAuth). The referenced Secret holds a
       # `.env` and is created out-of-band (SOPS / kubectl), never by the chart.
       managed:
+        # Pin the SAME provider credentials into Hermes' dashboard-immutable
+        # managed scope, resolved from the `credentials` block above — one
+        # source of truth, so the gateway and the control plane can't drift.
         enabled: true
-        existingSecret: strange-company-hermes-managed
+        fromCredentials:
+          DEEPSEEK_API_KEY: deepseek-credentials.api-key
+          CLAUDE_CODE_OAUTH_TOKEN: anthropic-oauth-credentials.oauth-token
       # Hermes is cgroup-aware: with NO memory limit it reads the (shared,
       # ~83%-full) host and its dashboard warns "agent running low on memory"
       # + throttles workers. A limit gives it a real budget to size against.
