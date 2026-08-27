@@ -102,6 +102,13 @@ spec:
       # the control plane (HERMES_API_KEY).
       existingSecret: strange-company-hermes-auth
       apiKeyKey: HERMES_API_KEY
+      # Managed scope: an IT-pushed, dashboard-immutable layer that pins the
+      # provider credentials Hermes uses for the foreman (DeepSeek) and the
+      # specification conversation (Claude OAuth). The referenced Secret holds a
+      # `.env` and is created out-of-band (SOPS / kubectl), never by the chart.
+      managed:
+        enabled: true
+        existingSecret: strange-company-hermes-managed
       # Hermes is cgroup-aware: with NO memory limit it reads the (shared,
       # ~83%-full) host and its dashboard warns "agent running low on memory"
       # + throttles workers. A limit gives it a real budget to size against.
@@ -144,3 +151,74 @@ spec:
     # defaults and breaks `.Values.controlPlane.enabled` at render time.)
     controlPlane:
       enabled: true
+    # ── Model & provider policy, overriding the control plane's built-in
+    # defaults. The coding ladder runs entirely on DeepSeek (cheap v4-flash →
+    # less-cheap v4-pro) through the Hermes harness; the specification
+    # conversation runs on Claude via subscription OAuth. No metered Anthropic
+    # API key is used. providers.yaml/models.yaml schema:
+    # control-plane/internal/policy/defaults/ in the strange-company repo.
+    policy:
+      providers: |
+        providers:
+          deepseek:
+            harness: hermes
+            baseUrl: https://api.deepseek.com
+            env:
+              DEEPSEEK_API_KEY:
+                secret: deepseek-credentials
+                key: api-key
+          anthropic-oauth:
+            harness: claude-code
+            env:
+              CLAUDE_CODE_OAUTH_TOKEN:
+                secret: anthropic-oauth-credentials
+                key: oauth-token
+      models: |
+        aliases:
+          foreman-cheap:
+            provider: deepseek
+            model: deepseek-v4-flash
+          spec-frontier:
+            provider: anthropic-oauth
+            model: claude-fable-5
+          plan:
+            provider: deepseek
+            model: deepseek-v4-pro
+          tests:
+            provider: deepseek
+            model: deepseek-v4-flash
+          implement-cheap:
+            provider: deepseek
+            model: deepseek-v4-flash
+          implement-mid:
+            provider: deepseek
+            model: deepseek-v4-pro
+          implement-frontier:
+            provider: deepseek
+            model: deepseek-v4-pro
+          review:
+            provider: deepseek
+            model: deepseek-v4-pro
+        phases:
+          foreman:
+            - model: foreman-cheap
+              max_attempts: 1
+          specification:
+            - model: spec-frontier
+              max_attempts: 1
+          planning:
+            - model: plan
+              max_attempts: 1
+          tests:
+            - model: tests
+              max_attempts: 2
+          implementation:
+            - model: implement-cheap
+              max_attempts: 3
+            - model: implement-mid
+              max_attempts: 3
+            - model: implement-frontier
+              max_attempts: 1
+          review:
+            - model: review
+              max_attempts: 1
