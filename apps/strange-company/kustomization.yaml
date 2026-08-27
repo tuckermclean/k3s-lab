@@ -25,6 +25,9 @@ resources:
   - deepseek-credentials.sops.yaml
   - anthropic-oauth-credentials.sops.yaml
   - strange-company-hermes-managed.sops.yaml
+  # GitHub PAT for issue ingestion (0.4.0 work intake). Injected into the
+  # HelmRelease at github.token via spec.valuesFrom (targetPath).
+  - strange-company-github.sops.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: gitops
