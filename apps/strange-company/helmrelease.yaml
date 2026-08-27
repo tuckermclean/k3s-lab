@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: strange-company
-      version: "0.1.0"
+      version: "0.2.0"
       sourceRef:
         kind: HelmRepository
         name: tuckermclean-charts
@@ -137,12 +137,6 @@ spec:
         tls:
           - hosts: [hermes.dcxxiv.com]
             secretName: hermes-tls
-    # ── Control plane: the real image (public on ghcr). It serves /healthz and
-    # /readyz on 8080 (the chart's probe contract), so no args are needed.
-    # Tag is pinned via ${SC_CONTROL_PLANE_VERSION} (Flux postBuild.substitute in
-    # clusters/ovh-lab/strange-company-kustomization.yaml) — bump it there.
-    controlPlane:
-      image:
-        repository: ghcr.io/tuckermclean/strange-company-control-plane
-        tag: "${SC_CONTROL_PLANE_VERSION}"
-        pullPolicy: IfNotPresent
+    # ── Control plane: image is chart-owned. As of chart 0.2.0 the control-plane
+    # image tag defaults to .Chart.appVersion (0.2.0 → the matching control-plane
+    # image), so no image override or external version pin is needed here.

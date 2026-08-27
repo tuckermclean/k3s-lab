@@ -13,15 +13,6 @@ spec:
   wait: true
   # Hermes' first image pull is slow (~900MB/38 layers).
   timeout: 20m
-  # ─────────────────────────────────────────────────────────────────────────
-  # SINGLE SOURCE OF TRUTH for the control-plane image tag. Bump ONLY this line.
-  # ${SC_CONTROL_PLANE_VERSION} is substituted into controlPlane.image.tag in
-  # apps/strange-company/helmrelease.yaml. The build tags the image :main and
-  # :sha-<short> (no semver), so use the immutable sha-<short> tag.
-  # ─────────────────────────────────────────────────────────────────────────
-  postBuild:
-    substitute:
-      SC_CONTROL_PLANE_VERSION: "sha-bd7292e"
   decryption:
     provider: sops
     secretRef:
