@@ -138,6 +138,9 @@ spec:
           - hosts: [hermes.dcxxiv.com]
             secretName: hermes-tls
     # Control plane is chart-owned. As of chart 0.2.0 its image tag defaults to
-    # .Chart.appVersion, so this release intentionally sets no controlPlane
-    # image override and no external version pin.
-    controlPlane: {}
+    # .Chart.appVersion, so we set no image override and no external version pin
+    # here — only the explicit `enabled: true`. (An empty map `{}` is stored as
+    # null in the HelmRelease .spec.values, which nulls the chart's controlPlane
+    # defaults and breaks `.Values.controlPlane.enabled` at render time.)
+    controlPlane:
+      enabled: true
