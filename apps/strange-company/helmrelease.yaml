@@ -137,6 +137,7 @@ spec:
         tls:
           - hosts: [hermes.dcxxiv.com]
             secretName: hermes-tls
-    # ── Control plane: image is chart-owned. As of chart 0.2.0 the control-plane
-    # image tag defaults to .Chart.appVersion (0.2.0 → the matching control-plane
-    # image), so no image override or external version pin is needed here.
+    # Control plane is chart-owned. As of chart 0.2.0 its image tag defaults to
+    # .Chart.appVersion, so this release intentionally sets no controlPlane
+    # image override and no external version pin.
+    controlPlane: {}
