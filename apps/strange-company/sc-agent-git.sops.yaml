@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: sc-agent-git
+    namespace: strange-company
+type: Opaque
+data:
+    token: ENC[AES256_GCM,data:FgfY8HUBU4aDSujBibmI2oQyDyFBs7VNgO7WmHEJjDrCg595dwiIWRklvxjn9SLv8rxGXGk/lYA=,iv:22FSbdGgLIsBj6Ejn7zeqb9Pc7ZrdUuADk+LvaAfqz0=,tag:oaWagAKVRDvrVM6W/PUWCg==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBCQkdOOVRTQzBvSFU1ZDRo
+            cHFKOUxKRUNIZFg0V0VjeTFpRmR6cFYraFdZClU0cEVnUXVMZlV6YWJZeHQ1eXNP
+            ZEtkZkNTNzJQSDRNb0xNWHpTVHVkVjgKLS0tIFNvTmhybWZrREV4c1U2OHhpSlVy
+            N0pnK2d3bEwveVBKcGFYRXY0b2xjbnMKDcWQGV2yC3jmG5xlx7/Hp2Qyv5/0v3zI
+            KTa2iODwmnY29u8Kc4EhoUuArX/vMYKAXUxmBZLT2+bbky2wjEtZVQ==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12fnp5hs8jywqvcd6u8tzne8np64h2xucqlfr98gj8r0lw5zmjeyqqw8dhg
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-08-28T23:06:30Z"
+    mac: ENC[AES256_GCM,data:L21NXZqH7fEyEXVvwn4OYopW6UD1iSM6A8J2nDQZ35Irdtiixv1nfDh8A6hbMnHtFhX6+bV3KKKon14zeD6Y3VlWZiNNLINDfZbX2wY/634gRKyj9iY+aalZGlUxw3zMJrg8eXKBFlEtuaAu2tq5ZSnGGHY7jajZQu7sk/rRLjY=,iv:czzHe/FVsd0JG6nbaR4PiJxNQKHY1yEmPzpsiBnygPU=,tag:19zpoOfyl+csyLH6t2XTMA==,type:str]
+    version: 3.13.3
