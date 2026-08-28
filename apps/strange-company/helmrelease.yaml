@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: strange-company
-      version: "0.5.0"
+      version: "0.6.0"
       sourceRef:
         kind: HelmRepository
         name: tuckermclean-charts
@@ -69,6 +69,10 @@ spec:
         shareWith:
           - akadmin
         permission: 1
+        # Apply this Vikunja label to a card to approve its specification
+        # (0.6.0, spec 10.2). The control plane applies the approval and then
+        # removes the label, so it never approves a later unconsented edit.
+        approvalLabel: spec-approved
       databaseSecretName: vikunja-db
       vikunja:
         env:
