@@ -210,6 +210,19 @@ spec:
               DEEPSEEK_API_KEY:
                 secret: deepseek-credentials
                 key: api-key
+          # Same DeepSeek endpoint, the opencode CODING harness (0.7.0 runner
+          # ships opencode). Used by the implementation + tests rungs; foreman/
+          # plan/review stay on `deepseek` (hermes) chat completions. Two
+          # providers over one endpoint = the providers.yaml naming convention:
+          # same vendor, distinguished by harness. Key arrives via the injected
+          # env (never argv); permissions come from the runner's opencode.json.
+          deepseek-coding:
+            harness: opencode
+            baseUrl: https://api.deepseek.com
+            env:
+              DEEPSEEK_API_KEY:
+                secret: deepseek-credentials
+                key: api-key
           anthropic-oauth:
             harness: claude-code
             env:
@@ -228,16 +241,16 @@ spec:
             provider: deepseek
             model: deepseek-v4-pro
           tests:
-            provider: deepseek
+            provider: deepseek-coding
             model: deepseek-v4-flash
           implement-cheap:
-            provider: deepseek
+            provider: deepseek-coding
             model: deepseek-v4-flash
           implement-mid:
-            provider: deepseek
+            provider: deepseek-coding
             model: deepseek-v4-pro
           implement-frontier:
-            provider: deepseek
+            provider: deepseek-coding
             model: deepseek-v4-pro
           review:
             provider: deepseek
