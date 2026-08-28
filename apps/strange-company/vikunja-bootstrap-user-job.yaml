@@ -12,6 +12,7 @@
 # substituted into args by the kubelet via $(VAR), no shell required.
 apiVersion: batch/v1
 kind: Job
+metadata:
   annotations:
     # Jobs are immutable; let Flux delete+recreate on spec changes.
     kustomize.toolkit.fluxcd.io/force: "true"
