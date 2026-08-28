@@ -12,7 +12,9 @@
 # substituted into args by the kubelet via $(VAR), no shell required.
 apiVersion: batch/v1
 kind: Job
-metadata:
+  annotations:
+    # Jobs are immutable; let Flux delete+recreate on spec changes.
+    kustomize.toolkit.fluxcd.io/force: "true"
   name: vikunja-bootstrap-user
   namespace: strange-company
   labels:
@@ -26,6 +28,12 @@ spec:
         app.kubernetes.io/part-of: gitops
     spec:
       restartPolicy: OnFailure
+      # Vikunja boots the full app even for `user create` and validates its
+      # file-storage dir. Match the Vikunja Deployment: fsGroup 1000 + a
+      # writable volume at /app/vikunja/files (an emptyDir here — the Job
+      # writes no real files, it just needs the init to pass).
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: create-user
           image: vikunja/vikunja:2.5.0
@@ -69,7 +77,12 @@ spec:
               mountPath: /etc/vikunja/config.yml
               subPath: config.yml
               readOnly: true
+            # Writable files dir so the storage handler init passes.
+            - name: files
+              mountPath: /app/vikunja/files
       volumes:
         - name: config
           secret:
             secretName: strange-company-vikunja-oidc
+        - name: files
+          emptyDir: {}
