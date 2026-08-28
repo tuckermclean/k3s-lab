@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: strange-company
-      version: "0.7.0"
+      version: "0.8.0"
       sourceRef:
         kind: HelmRepository
         name: tuckermclean-charts
@@ -194,6 +194,19 @@ spec:
         enabled: true
         namespace: agent-runs
         createNamespace: true
+      # Git credential the coding Jobs push their agent branch with — a
+      # SEPARATE, scoped token (contents:write, NOT workflows:write) so an
+      # agent can't rewrite the CI that judges it. Deliberately NOT the
+      # operator's github token. Secret created out-of-band (SOPS).
+      gitCredential:
+        secret: sc-agent-git
+        key: token
+      # Red/green gates read the repository's own GitHub Actions checks
+      # (default). sandbox-derp's workflow must trigger on `agent/**` or the
+      # agent branch produces no checks, which the control plane refuses rather
+      # than reading as a pass.
+      verification:
+        mode: github-actions
     # ── Model & provider policy, overriding the control plane's built-in
     # defaults. The coding ladder runs entirely on DeepSeek (cheap v4-flash →
     # less-cheap v4-pro) through the Hermes harness; the specification
@@ -242,7 +255,7 @@ spec:
             model: deepseek-v4-pro
           tests:
             provider: deepseek-coding
-            model: deepseek-v4-flash
+            model: deepseek-v4-pro
           implement-cheap:
             provider: deepseek-coding
             model: deepseek-v4-flash

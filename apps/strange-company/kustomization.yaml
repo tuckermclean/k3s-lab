@@ -37,6 +37,11 @@ resources:
   # controlPlane.existingSecret — the chart won't emit its own github-token key
   # when hermes uses an existingSecret (that key is gated behind $needApiKey).
   - strange-company-github-env.sops.yaml
+  # Git credential the 0.8.0 coding Jobs push their agent branch with
+  # (controlPlane.gitCredential). Same classic PAT as github-env — it has
+  # repo/contents:write but NO workflow scope, so the coding agent can't rewrite
+  # the CI that judges it (§6). key: token.
+  - sc-agent-git.sops.yaml
 labels:
   - pairs:
       app.kubernetes.io/part-of: gitops
