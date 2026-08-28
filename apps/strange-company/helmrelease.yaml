@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: strange-company
-      version: "0.6.0"
+      version: "0.6.1"
       sourceRef:
         kind: HelmRepository
         name: tuckermclean-charts
@@ -187,6 +187,13 @@ spec:
       # because hermes uses an existingSecret — so the chart never emits the
       # token. Supply it here instead, from a SOPS Secret holding GITHUB_TOKEN.
       existingSecret: strange-company-github-env
+      # Run coding executions as isolated Kubernetes Jobs in their own
+      # namespace (spec §16), created by this release. RBAC (a namespaced Role
+      # to create Jobs + read pod logs) is rendered by the chart.
+      agentRuns:
+        enabled: true
+        namespace: agent-runs
+        createNamespace: true
     # ── Model & provider policy, overriding the control plane's built-in
     # defaults. The coding ladder runs entirely on DeepSeek (cheap v4-flash →
     # less-cheap v4-pro) through the Hermes harness; the specification
