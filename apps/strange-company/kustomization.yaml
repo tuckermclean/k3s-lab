@@ -4,10 +4,17 @@ resources:
   - namespace.yaml
   - helmrepository.yaml
   - helmrelease.yaml
-  # Creates the Vikunja bootstrap service account the control plane logs in as
-  # (OIDC-only Vikunja can't self-provision it). Replaces the manual
-  # `vikunja user create` step so a clean-slate rebuild self-heals.
-  - vikunja-bootstrap-user-job.yaml
+  # NOTE: the Vikunja `strange-company-bootstrap` service account (which the
+  # control plane logs in as to mint its API token) is created out of band, NOT
+  # by a manifest here. OIDC-only Vikunja can't self-provision it, and the
+  # Vikunja image is distroless (no shell), so a `user create` Job can't be made
+  # idempotent — on any re-run against an existing user it fails and wedges this
+  # Kustomization's health gate. On a clean-slate rebuild, recreate it once with:
+  #   PW=$(kubectl -n strange-company get secret strange-company-secrets \
+  #        -o go-template='{{index .data "vikunja-bootstrap-password"}}' | base64 -d)
+  #   kubectl -n strange-company exec deploy/strange-company-vikunja -- \
+  #     /app/vikunja/vikunja user create -u strange-company-bootstrap \
+  #     -e strange-company-bootstrap@dcxxiv.com -p "$PW"
   # Postgres credentials for the external CNPG `pg` cluster (SOPS-encrypted).
   # strange-company-db backs the control plane's DATABASE_USER/PASSWORD and the
   # chart's postgresql.external.existingSecret; vikunja-db backs Vikunja. Both
