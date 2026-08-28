@@ -1,0 +1,75 @@
+# Creates the `strange-company-bootstrap` Vikunja service account that the
+# control plane logs in as to mint its API token. Vikunja here is OIDC-only
+# (local registration disabled), so the control plane cannot self-provision the
+# account — it must be pre-created out of band. This Job replaces the manual
+# `kubectl exec … vikunja user create` step so a wipe-and-rebuild self-heals.
+#
+# Idempotency: on a fresh database the account does not exist and `user create`
+# succeeds. On a re-apply against an existing account it would exit non-zero,
+# but Flux never re-runs a Completed Job, and every clean-slate rebuild starts
+# from an empty database — so the failure path is not reachable in normal
+# operation. The Vikunja image is distroless (no shell); the password is
+# substituted into args by the kubelet via $(VAR), no shell required.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vikunja-bootstrap-user
+  namespace: strange-company
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  backoffLimit: 30   # retry while Vikunja / the generated secret come up
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: gitops
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-user
+          image: vikunja/vikunja:2.5.0
+          command:
+            - /app/vikunja/vikunja
+            - user
+            - create
+            - --username
+            - strange-company-bootstrap
+            - --email
+            - strange-company-bootstrap@dcxxiv.com
+            - --password
+            - $(BOOTSTRAP_PW)
+          env:
+            - name: BOOTSTRAP_PW
+              valueFrom:
+                secretKeyRef:
+                  name: strange-company-secrets
+                  key: vikunja-bootstrap-password
+            # Same external Postgres the Vikunja Deployment uses (its DB
+            # connection comes from env, not config.yml).
+            - name: VIKUNJA_DATABASE_TYPE
+              value: postgres
+            - name: VIKUNJA_DATABASE_HOST
+              value: pg-rw.postgres.svc.cluster.local:5432
+            - name: VIKUNJA_DATABASE_USER
+              value: strange-company
+            - name: VIKUNJA_DATABASE_DATABASE
+              value: vikunja
+            - name: VIKUNJA_DATABASE_SSLMODE
+              value: disable
+            - name: VIKUNJA_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vikunja-db
+                  key: password
+          volumeMounts:
+            # Vikunja reads DB connection + settings from config.yml; reuse the
+            # same SOPS config the Vikunja Deployment mounts.
+            - name: config
+              mountPath: /etc/vikunja/config.yml
+              subPath: config.yml
+              readOnly: true
+      volumes:
+        - name: config
+          secret:
+            secretName: strange-company-vikunja-oidc

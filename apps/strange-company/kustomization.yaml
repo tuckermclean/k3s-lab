@@ -4,6 +4,10 @@ resources:
   - namespace.yaml
   - helmrepository.yaml
   - helmrelease.yaml
+  # Creates the Vikunja bootstrap service account the control plane logs in as
+  # (OIDC-only Vikunja can't self-provision it). Replaces the manual
+  # `vikunja user create` step so a clean-slate rebuild self-heals.
+  - vikunja-bootstrap-user-job.yaml
   # Postgres credentials for the external CNPG `pg` cluster (SOPS-encrypted).
   # strange-company-db backs the control plane's DATABASE_USER/PASSWORD and the
   # chart's postgresql.external.existingSecret; vikunja-db backs Vikunja. Both
