@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: strange-company
-      version: "0.8.0"
+      version: "0.8.1"
       sourceRef:
         kind: HelmRepository
         name: tuckermclean-charts
@@ -40,6 +40,18 @@ spec:
       name: strange-company-provider-creds
       valuesKey: anthropic-oauth-token
       targetPath: credentials.anthropic-oauth-credentials.oauth-token
+    # The coding Jobs run in their OWN namespace (agentRuns.namespace), and a
+    # Job's secretKeyRef resolves in the pod's namespace — not the release's. As
+    # of 0.8.1 the chart renders every `credentials` entry into agent-runs too,
+    # so the git push credential must live in this block to reach the Jobs (a
+    # bare gitCredential-only Secret stays in the release ns and 404s the Job
+    # with CreateContainerConfigError). We feed it from the existing
+    # `sc-agent-git` SOPS Secret (contents:write, NOT workflows:write) under the
+    # credential name `agent-git`; gitCredential.secret points at that.
+    - kind: Secret
+      name: sc-agent-git
+      valuesKey: token
+      targetPath: credentials.agent-git.token
   values:
     # ── PostgreSQL: use the cluster's shared CloudNativePG `pg` cluster, not a
     # chart-owned StatefulSet. The `strange-company` role and the
@@ -197,9 +209,11 @@ spec:
       # Git credential the coding Jobs push their agent branch with — a
       # SEPARATE, scoped token (contents:write, NOT workflows:write) so an
       # agent can't rewrite the CI that judges it. Deliberately NOT the
-      # operator's github token. Secret created out-of-band (SOPS).
+      # operator's github token. This is the `agent-git` credential injected via
+      # valuesFrom above (sourced from the sc-agent-git SOPS Secret), so 0.8.1
+      # renders it into the agent-runs namespace where the Jobs actually read it.
       gitCredential:
-        secret: sc-agent-git
+        secret: agent-git
         key: token
       # Red/green gates read the repository's own GitHub Actions checks
       # (default). sandbox-derp's workflow must trigger on `agent/**` or the
