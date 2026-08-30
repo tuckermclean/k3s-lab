@@ -112,7 +112,10 @@ spec:
             name: strange-company-vikunja-oidc
         ingress:
           main:
-            enabled: true
+            # Disabled: kanban.dcxxiv.com now serves the control-plane console
+            # (see controlPlane.ingress above). Vikunja keeps running as the
+            # internal board backend, reachable in-cluster only.
+            enabled: false
             # The upstream Vikunja subchart does not map `className` to
             # ingressClassName, so we select Traefik the way the rest of this
             # repo does — via the legacy ingress.class annotation.
@@ -230,6 +233,27 @@ spec:
       # than reading as a pass.
       verification:
         mode: github-actions
+      # ── Operator console ingress (0.14.0). Publishes the control plane and
+      # its /ui console on kanban.dcxxiv.com — the host Vikunja used to serve
+      # (Vikunja's own ingress is now disabled; it keeps running as the
+      # internal board backend). The console authenticates NOTHING itself, so
+      # it is gated at Traefik by the shared Authentik forwardAuth middleware
+      # (the embedded outpost), exactly like deluge/agent-os/orchestrator —
+      # without it every card, artifact and agent transcript would be
+      # world-readable. The matching Authentik proxy provider lives in
+      # bootstrap/terraform/authentik/strange-company-ui.tf (applied
+      # out-of-band via `make apply-authentik`).
+      ingress:
+        enabled: true
+        className: traefik
+        annotations:
+          kubernetes.io/ingress.class: traefik
+          cert-manager.io/cluster-issuer: letsencrypt-prod
+          traefik.ingress.kubernetes.io/router.middlewares: authentik-authentik@kubernetescrd
+        host: kanban.dcxxiv.com
+        tls:
+          - hosts: [kanban.dcxxiv.com]
+            secretName: kanban-tls
     # ── Model & provider policy, overriding the control plane's built-in
     # defaults. The coding ladder runs entirely on DeepSeek (cheap v4-flash →
     # less-cheap v4-pro) through the Hermes harness; the specification
