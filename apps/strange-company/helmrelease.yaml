@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: strange-company
-      version: "0.14.1"
+      version: "0.15.0"
       sourceRef:
         kind: HelmRepository
         name: tuckermclean-charts
@@ -143,6 +143,12 @@ spec:
       # the control plane (HERMES_API_KEY).
       existingSecret: strange-company-hermes-auth
       apiKeyKey: HERMES_API_KEY
+      # Where a BROWSER reaches the Hermes dashboard (0.15.0). The control-plane
+      # console uses this to link a card to its §10.2 specification conversation;
+      # without it the card says a conversation is open but not where. Matches
+      # the hermes ingress host below.
+      dashboard:
+        publicUrl: https://hermes.dcxxiv.com
       # Managed scope: an IT-pushed, dashboard-immutable layer that pins the
       # provider credentials Hermes uses for the foreman (DeepSeek) and the
       # specification conversation (Claude OAuth). The referenced Secret holds a
