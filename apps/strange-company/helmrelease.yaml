@@ -194,6 +194,15 @@ spec:
     # defaults and breaks `.Values.controlPlane.enabled` at render time.)
     controlPlane:
       enabled: true
+      # Autonomy posture (0.13.0). auto-approve-specs = the control plane signs
+      # any specification that would pass the gate if a human signed it, so the
+      # loop no longer needs a manual approve-spec per card. It bypasses NOTHING
+      # else: an incomplete spec, an unverifiable acceptance criterion, or a
+      # missing permitted-actions allowlist still stops the card, and the audit
+      # records the approver as the setting rather than a person. The human
+      # remains the sole final MERGE authority (spec §19) — nothing here can
+      # approve a merge.
+      autonomy: auto-approve-specs
       # GITHUB_TOKEN for issue ingestion via envFrom. The chart gates its own
       # `github-token` secret key behind $needApiKey, which is FALSE for us
       # because hermes uses an existingSecret — so the chart never emits the
