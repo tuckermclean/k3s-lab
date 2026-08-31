@@ -325,6 +325,15 @@ spec:
           foreman:
             - model: foreman-cheap
               max_attempts: 1
+          # Decomposition (0.16.0): the control plane splits an oversized card
+          # into smaller child cards. It's a planning-class reasoning task, so
+          # it runs on the same DeepSeek reasoning model as planning/review.
+          # Our policy override replaces the chart's built-in defaults, so
+          # without this entry the worker fails "resolve policy … phase
+          # decomposition" and the card livelocks in Ready/decomposition.
+          decomposition:
+            - model: plan
+              max_attempts: 1
           specification:
             - model: spec-frontier
               max_attempts: 1
