@@ -21,7 +21,7 @@ spec:
   chart:
     spec:
       chart: strange-company
-      version: "0.21.0"
+      version: "0.22.0"
       sourceRef:
         kind: HelmRepository
         name: tuckermclean-charts
@@ -300,27 +300,153 @@ spec:
           foreman-cheap:
             provider: deepseek
             model: deepseek-v4-flash
+            pricing:
+              # DeepSeek publishes peak and off-peak rates; off-peak is half, and
+              # covers 133 of the week's 168 hours. A single flat rate here would
+              # over-charge four runs in five by 2x and fire max_cost_usd at about
+              # half the authorised spend. Rates per 1M tokens, USD, from
+              # https://api-docs.deepseek.com/quick_start/pricing/
+              inputPerMTok:       0.44   # cache miss
+              cachedInputPerMTok: 0.014  # cache hit
+              outputPerMTok:      1.32
+              cacheWritePerMTok:  0      # not charged separately
+              offPeak:
+                inputPerMTok:       0.22
+                cachedInputPerMTok: 0.007
+                outputPerMTok:      0.66
+                cacheWritePerMTok:  0
+              peakHoursUTC:
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "01:00", to: "04:00"}
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "06:00", to: "10:00"}
           spec-frontier:
             provider: anthropic-oauth
             model: claude-fable-5
           plan:
             provider: deepseek
             model: deepseek-v4-pro
+            pricing:
+              # DeepSeek publishes peak and off-peak rates; off-peak is half, and
+              # covers 133 of the week's 168 hours. A single flat rate here would
+              # over-charge four runs in five by 2x and fire max_cost_usd at about
+              # half the authorised spend. Rates per 1M tokens, USD, from
+              # https://api-docs.deepseek.com/quick_start/pricing/
+              inputPerMTok:       1.32   # cache miss
+              cachedInputPerMTok: 0.044  # cache hit
+              outputPerMTok:      3.96
+              cacheWritePerMTok:  0      # not charged separately
+              offPeak:
+                inputPerMTok:       0.66
+                cachedInputPerMTok: 0.022
+                outputPerMTok:      1.98
+                cacheWritePerMTok:  0
+              peakHoursUTC:
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "01:00", to: "04:00"}
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "06:00", to: "10:00"}
           tests:
             provider: deepseek-coding
             model: deepseek-v4-pro
+            pricing:
+              # DeepSeek publishes peak and off-peak rates; off-peak is half, and
+              # covers 133 of the week's 168 hours. A single flat rate here would
+              # over-charge four runs in five by 2x and fire max_cost_usd at about
+              # half the authorised spend. Rates per 1M tokens, USD, from
+              # https://api-docs.deepseek.com/quick_start/pricing/
+              inputPerMTok:       1.32   # cache miss
+              cachedInputPerMTok: 0.044  # cache hit
+              outputPerMTok:      3.96
+              cacheWritePerMTok:  0      # not charged separately
+              offPeak:
+                inputPerMTok:       0.66
+                cachedInputPerMTok: 0.022
+                outputPerMTok:      1.98
+                cacheWritePerMTok:  0
+              peakHoursUTC:
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "01:00", to: "04:00"}
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "06:00", to: "10:00"}
           implement-cheap:
             provider: deepseek-coding
             model: deepseek-v4-flash
+            pricing:
+              # DeepSeek publishes peak and off-peak rates; off-peak is half, and
+              # covers 133 of the week's 168 hours. A single flat rate here would
+              # over-charge four runs in five by 2x and fire max_cost_usd at about
+              # half the authorised spend. Rates per 1M tokens, USD, from
+              # https://api-docs.deepseek.com/quick_start/pricing/
+              inputPerMTok:       0.44   # cache miss
+              cachedInputPerMTok: 0.014  # cache hit
+              outputPerMTok:      1.32
+              cacheWritePerMTok:  0      # not charged separately
+              offPeak:
+                inputPerMTok:       0.22
+                cachedInputPerMTok: 0.007
+                outputPerMTok:      0.66
+                cacheWritePerMTok:  0
+              peakHoursUTC:
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "01:00", to: "04:00"}
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "06:00", to: "10:00"}
           implement-mid:
             provider: deepseek-coding
             model: deepseek-v4-pro
+            pricing:
+              # DeepSeek publishes peak and off-peak rates; off-peak is half, and
+              # covers 133 of the week's 168 hours. A single flat rate here would
+              # over-charge four runs in five by 2x and fire max_cost_usd at about
+              # half the authorised spend. Rates per 1M tokens, USD, from
+              # https://api-docs.deepseek.com/quick_start/pricing/
+              inputPerMTok:       1.32   # cache miss
+              cachedInputPerMTok: 0.044  # cache hit
+              outputPerMTok:      3.96
+              cacheWritePerMTok:  0      # not charged separately
+              offPeak:
+                inputPerMTok:       0.66
+                cachedInputPerMTok: 0.022
+                outputPerMTok:      1.98
+                cacheWritePerMTok:  0
+              peakHoursUTC:
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "01:00", to: "04:00"}
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "06:00", to: "10:00"}
           implement-frontier:
             provider: deepseek-coding
             model: deepseek-v4-pro
+            pricing:
+              # DeepSeek publishes peak and off-peak rates; off-peak is half, and
+              # covers 133 of the week's 168 hours. A single flat rate here would
+              # over-charge four runs in five by 2x and fire max_cost_usd at about
+              # half the authorised spend. Rates per 1M tokens, USD, from
+              # https://api-docs.deepseek.com/quick_start/pricing/
+              inputPerMTok:       1.32   # cache miss
+              cachedInputPerMTok: 0.044  # cache hit
+              outputPerMTok:      3.96
+              cacheWritePerMTok:  0      # not charged separately
+              offPeak:
+                inputPerMTok:       0.66
+                cachedInputPerMTok: 0.022
+                outputPerMTok:      1.98
+                cacheWritePerMTok:  0
+              peakHoursUTC:
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "01:00", to: "04:00"}
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "06:00", to: "10:00"}
           review:
             provider: deepseek
             model: deepseek-v4-pro
+            pricing:
+              # DeepSeek publishes peak and off-peak rates; off-peak is half, and
+              # covers 133 of the week's 168 hours. A single flat rate here would
+              # over-charge four runs in five by 2x and fire max_cost_usd at about
+              # half the authorised spend. Rates per 1M tokens, USD, from
+              # https://api-docs.deepseek.com/quick_start/pricing/
+              inputPerMTok:       1.32   # cache miss
+              cachedInputPerMTok: 0.044  # cache hit
+              outputPerMTok:      3.96
+              cacheWritePerMTok:  0      # not charged separately
+              offPeak:
+                inputPerMTok:       0.66
+                cachedInputPerMTok: 0.022
+                outputPerMTok:      1.98
+                cacheWritePerMTok:  0
+              peakHoursUTC:
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "01:00", to: "04:00"}
+                - {days: [Mon, Tue, Wed, Thu, Fri], from: "06:00", to: "10:00"}
         phases:
           foreman:
             - model: foreman-cheap
