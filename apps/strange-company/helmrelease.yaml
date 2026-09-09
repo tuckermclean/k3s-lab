@@ -485,3 +485,4 @@ spec:
     github:
       repositories:
         - tuckermclean/sandbox-derp
+        - tuckermclean/mirror
