@@ -74,7 +74,7 @@ spec:
         # strips Origin so Juggler's DNS-rebinding /api gate and /api/ws
         # same-origin check both pass, and reaches Juggler over loopback. ──
         - name: nginx
-          image: nginx:1.31-alpine@sha256:4a73073bd557c65b759505da037898b61f1be6cbcc3c2c3aeac22d2a470c1752
+          image: nginx:1.31-alpine@sha256:72ba65eb42c10344912a84ff42408db7d34f2feb642204570ab8fc5ffd29f1d3
           imagePullPolicy: IfNotPresent
           # Runs as root so the master can bind :80 and manage its cache dirs;
           # it only ever proxies to loopback.
@@ -117,7 +117,7 @@ spec:
         # throwaway test containers. Privileged (dockerd needs it); reachable
         # only within the pod netns at tcp://localhost:2375 (TLS disabled). ──
         - name: dind
-          image: docker:29-dind@sha256:bfec1f5159c63a81ca6fdedbd81404d2c0e16378ed0feec3bb3fbf3998847659
+          image: docker:29-dind@sha256:5efed980cba3fc126cf54e21a5a6ff8849d05b6e0623d6e7612f48e9cd6cd17e
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
