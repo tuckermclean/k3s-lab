@@ -6,4 +6,5 @@ resources:
   - personliness-role-secret.sops.yaml
   - authentik-role-secret.sops.yaml
   - strange-company-role-secret.sops.yaml
+  - paperclip-role-secret.sops.yaml
   - cluster.yaml

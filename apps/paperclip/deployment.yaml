@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperclip
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: paperclip
+  template:
+    metadata:
+      labels:
+        app: paperclip
+    spec:
+      containers:
+        - name: paperclip
+          image: ghcr.io/paperclipai/paperclip:v2026.831.1
+          ports:
+            - containerPort: 3100
+          env:
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "3100"
+            - name: SERVE_UI
+              value: "true"
+            - name: PAPERCLIP_HOME
+              value: /paperclip
+            - name: PAPERCLIP_DEPLOYMENT_MODE
+              value: authenticated
+            - name: PAPERCLIP_DEPLOYMENT_EXPOSURE
+              value: private
+            - name: PAPERCLIP_PUBLIC_URL
+              value: https://paperclip.dcxxiv.com
+            - name: PAPERCLIP_AUTH_PUBLIC_BASE_URL
+              value: https://paperclip.dcxxiv.com
+            - name: PAPERCLIP_ALLOWED_HOSTNAMES
+              value: paperclip.dcxxiv.com
+          envFrom:
+            - secretRef:
+                name: paperclip-secrets
+          volumeMounts:
+            - name: data
+              mountPath: /paperclip
+          startupProbe:
+            tcpSocket:
+              port: 3100
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: 3100
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3100
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperclip-data
