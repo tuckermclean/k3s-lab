@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: paperclip-cert
+  namespace: paperclip
+spec:
+  secretName: paperclip-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  dnsNames:
+    - paperclip.dcxxiv.com
