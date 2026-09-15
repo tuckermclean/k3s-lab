@@ -17,6 +17,7 @@ spec:
       labels:
         app: paperclip
     spec:
+      serviceAccountName: paperclip
       containers:
         - name: paperclip
           image: ghcr.io/paperclipai/paperclip:v2026.831.1
