@@ -1,0 +1,64 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: paperclip-runtime-image-rewrite
+  labels:
+    app.kubernetes.io/part-of: gitops
+  annotations:
+    policies.kyverno.io/title: Rewrite Paperclip agent runtime image to self-host mirror
+    policies.kyverno.io/description: >-
+      The Paperclip k8s-plugin hard-codes the agent runtime image at
+      ghcr.io/paperclipai/agent-runtime-<adapter>:v1, but the public repo only
+      publishes git-<sha> tags (the :v1 tags live in the hosted service's
+      registry). The plugin's imageRegistry override is unusable (the server
+      validates it as a URL but the plugin uses it as a bare registry prefix, so
+      no value works) and imageOverride is not wired through the server. This
+      policy rewrites the org in the image reference from `paperclipai` to
+      `tuckermclean` (the self-hosted mirror pushed as :v1) for pods the plugin
+      creates, so the Jobs pull a real image. Remove once Paperclip fixes the
+      imageRegistry field.
+spec:
+  # Only mutate at admission of new pods — never touch existing workloads.
+  background: false
+  # Never block cluster scheduling if the Kyverno webhook is unavailable.
+  failurePolicy: Ignore
+  rules:
+    - name: rewrite-containers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              selector:
+                matchLabels:
+                  paperclip.io/managed-by: paperclip-k8s-plugin
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - name: "{{ element.name }}"
+                    image: "{{ regex_replace_all_literal('paperclipai', element.image, 'tuckermclean') }}"
+    - name: rewrite-initcontainers
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              selector:
+                matchLabels:
+                  paperclip.io/managed-by: paperclip-k8s-plugin
+      preconditions:
+        all:
+          - key: "{{ request.object.spec.initContainers[] || `[]` | length(@) }}"
+            operator: GreaterThan
+            value: 0
+      mutate:
+        foreach:
+          - list: "request.object.spec.initContainers"
+            patchStrategicMerge:
+              spec:
+                initContainers:
+                  - name: "{{ element.name }}"
+                    image: "{{ regex_replace_all_literal('paperclipai', element.image, 'tuckermclean') }}"

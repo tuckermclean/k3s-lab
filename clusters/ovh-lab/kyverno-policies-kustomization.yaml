@@ -1,0 +1,17 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kyverno-policies
+  namespace: flux-system
+spec:
+  interval: 1h
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./infrastructure/kyverno-policies
+  prune: true
+  wait: true
+  timeout: 5m
+  # Kyverno CRDs must exist before the ClusterPolicy can apply.
+  dependsOn:
+    - name: kyverno
