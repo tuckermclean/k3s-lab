@@ -20,7 +20,14 @@ spec:
       serviceAccountName: paperclip
       containers:
         - name: paperclip
-          image: ghcr.io/paperclipai/paperclip:v2026.831.1
+          # Self-hosted Paperclip publishes a floating `latest` (the version-
+          # pinned tags are `-cloud`, for the hosted service). Pin the immutable
+          # per-commit `sha-<short>` tag instead: it's never overwritten and stays
+          # tagged (so it isn't GC'd like an untagged digest would be). This one is
+          # release v2026.831.1 (commit 65ec059) — currently identical to `latest`.
+          # To upgrade: pick a newer sha- tag and bump this line deliberately.
+          image: ghcr.io/paperclipai/paperclip:sha-65ec059
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3100
           env:
