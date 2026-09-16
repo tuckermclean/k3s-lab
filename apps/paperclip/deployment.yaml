@@ -18,39 +18,6 @@ spec:
         app: paperclip
     spec:
       serviceAccountName: paperclip
-      initContainers:
-        # GitOps-materialize the obra/superpowers skills onto the PVC so they can
-        # be imported into Paperclip via a local_path source. Paperclip refuses
-        # *external* GitHub skill sources that bundle executable scripts (which
-        # superpowers does); a local path is operator-trusted and bypasses that.
-        # Pinned to a commit for reproducibility; the SHA-named marker makes this
-        # a no-op on ordinary restarts and re-clones only on a SHA bump or a fresh
-        # volume. Reuses the data PVC — deliberately no extra Longhorn volume.
-        - name: clone-superpowers
-          image: alpine/git:2.47.2
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              set -e
-              SHA=b36e0829c6d0140e93cfef2ca599b1b07d4a7797
-              DEST=/paperclip/skills-src/superpowers
-              MARK="$DEST/.pinned-$SHA"
-              if [ -f "$MARK" ]; then echo "superpowers already at $SHA"; exit 0; fi
-              rm -rf "$DEST"
-              mkdir -p "$(dirname "$DEST")"
-              git clone --no-checkout https://github.com/obra/superpowers "$DEST"
-              git -C "$DEST" checkout "$SHA"
-              touch "$MARK"
-              echo "cloned superpowers @ $SHA"
-          volumeMounts:
-            - name: data
-              mountPath: /paperclip
-          resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              memory: 256Mi
       containers:
         - name: paperclip
           # Self-hosted Paperclip publishes a floating `latest` (the version-
