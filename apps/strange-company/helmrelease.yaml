@@ -6,6 +6,12 @@ metadata:
   labels:
     app.kubernetes.io/part-of: gitops
 spec:
+  # Suspended to reduce cluster load. hermes/vikunja replicas are hardcoded to 1
+  # in the chart (only controlPlane.replicas is a value), so suspend is the clean
+  # way to stop all three and keep them down; the CNPG databases and Longhorn
+  # PVCs are retained. Unset to re-enable. (The tag-watch/auto-deploy loop is
+  # retired while this is suspended.)
+  suspend: true
   interval: 5m
   install:
     crds: Skip

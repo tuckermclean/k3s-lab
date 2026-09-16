@@ -6,6 +6,9 @@ metadata:
   labels:
     app.kubernetes.io/part-of: gitops
 spec:
+  # Suspended to reduce cluster load (was suspended live-only; codified here so
+  # Flux keeps it down). Unset to re-enable. Data/PVCs retained.
+  suspend: true
   interval: 5m
   chart:
     spec:

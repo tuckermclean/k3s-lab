@@ -10,7 +10,8 @@ metadata:
     app.kubernetes.io/name: deluge
     app.kubernetes.io/part-of: gitops
 spec:
-  replicas: 1
+  # Scaled to 0 to reduce cluster load (idle app; kept for easy re-enable).
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: deluge
