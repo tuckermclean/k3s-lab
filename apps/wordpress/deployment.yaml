@@ -6,7 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: wordpress
 spec:
-  replicas: 1
+  # Scaled to 0 to reduce cluster load (idle app; data PVCs retained).
+  replicas: 0
   strategy:
     type: Recreate
   selector:
