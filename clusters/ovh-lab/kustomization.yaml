@@ -30,6 +30,8 @@ resources:
   # Infrastructure tools
   - headlamp-kustomization.yaml
   - reloader-kustomization.yaml
+  - kyverno-kustomization.yaml
+  - kyverno-policies-kustomization.yaml
 
   # Applications
   - personliness-kustomization.yaml
