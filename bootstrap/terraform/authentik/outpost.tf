@@ -18,6 +18,7 @@ resource "authentik_outpost" "embedded" {
     authentik_provider_proxy.agent_os.id,
     authentik_provider_proxy.juggler.id,
     authentik_provider_proxy.strange_company_ui.id,
+    authentik_provider_proxy.paperclip.id,
   ]
 
   # authentik_host is the URL the browser is redirected to for login.
