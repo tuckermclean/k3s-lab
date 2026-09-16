@@ -32,6 +32,7 @@ resources:
   - reloader-kustomization.yaml
   - kyverno-kustomization.yaml
   - kyverno-policies-kustomization.yaml
+  - agent-sandbox-kustomization.yaml
 
   # Applications
   - personliness-kustomization.yaml

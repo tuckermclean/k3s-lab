@@ -2,6 +2,8 @@ extends: default
 
 ignore: |
   clusters/*/flux-system/
+  # Vendored upstream manifest (kubernetes-sigs/agent-sandbox) — not our style.
+  infrastructure/agent-sandbox/sandbox.yaml
 
 rules:
   document-start: disable

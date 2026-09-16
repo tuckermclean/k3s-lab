@@ -43,6 +43,15 @@ rules:
     # calls readNamespacedJobStatus, which needs get on jobs/status.
     resources: [jobs, jobs/status]
     verbs: [get, list, watch, create, delete]
+  # sandbox-cr backend: the plugin creates a Sandbox CR whose controller
+  # provisions a long-lived pod, then execs individual commands into it (the
+  # multi-command adapter-install pattern the job backend can't do).
+  - apiGroups: [agents.x-k8s.io]
+    resources: [sandboxes, sandboxes/status]
+    verbs: [get, list, watch, create, delete]
+  - apiGroups: [""]
+    resources: [pods/exec]
+    verbs: [create]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
