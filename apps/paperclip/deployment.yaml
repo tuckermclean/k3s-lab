@@ -47,19 +47,20 @@ spec:
               value: https://paperclip.dcxxiv.com
             - name: PAPERCLIP_AUTH_PUBLIC_BASE_URL
               value: https://paperclip.dcxxiv.com
+            # Allow both the public host (for the browser via Authentik) and the
+            # in-cluster Service DNS. The Service DNS is what agents use as the API
+            # base (below); without it here the ALLOWED_HOSTNAMES guard 403s them.
             - name: PAPERCLIP_ALLOWED_HOSTNAMES
-              value: paperclip.dcxxiv.com
+              value: paperclip.dcxxiv.com,paperclip.paperclip.svc.cluster.local
             # The API/auth public URL is the Authentik-gated ingress, so anything
-            # that calls the Paperclip API via the public URL bounces off the
-            # login. Pin the API base agents/tools use to loopback — the only host
-            # exempt from the ALLOWED_HOSTNAMES guard (the in-cluster Service DNS
-            # is rejected too). An explicit PAPERCLIP_API_URL wins over the
-            # derived value. NB: this is correct for the in-pod (native) runtime;
-            # when the k8s sandbox job backend runs agents in separate pods,
-            # they'll need the Service DNS added to ALLOWED_HOSTNAMES + a callback
-            # URL, since loopback won't reach the server from another pod.
+            # calling the API via it bounces off the login. Point the API base
+            # agents/tools use at the in-cluster Service DNS instead: it reaches
+            # the ClusterIP (never Authentik) and works for BOTH the in-pod native
+            # runtime AND the k8s sandbox job backend (separate Job pods, where
+            # loopback would resolve to themselves). An explicit PAPERCLIP_API_URL
+            # wins over the derived value.
             - name: PAPERCLIP_API_URL
-              value: http://localhost:3100
+              value: http://paperclip.paperclip.svc.cluster.local:3100
           envFrom:
             - secretRef:
                 name: paperclip-secrets
@@ -85,7 +86,10 @@ spec:
               cpu: 250m
               memory: 512Mi
             limits:
-              memory: 2Gi
+              # Interim headroom while agents still run in-pod (native runtime).
+              # 6 agents pegged the old 2Gi ceiling → OOM. Once agents run as k8s
+              # Jobs (separate pods), the server alone fits well under 2Gi again.
+              memory: 4Gi
       volumes:
         - name: data
           persistentVolumeClaim:
