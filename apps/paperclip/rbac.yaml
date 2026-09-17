@@ -49,9 +49,16 @@ rules:
   - apiGroups: [agents.x-k8s.io]
     resources: [sandboxes, sandboxes/status]
     verbs: [get, list, watch, create, delete]
+  # pods/exec needs BOTH get and create. kubectl's POST-based exec authorizes as
+  # `create`, but Paperclip execs via @kubernetes/client-node's Exec class, which
+  # opens the stream as an HTTP GET WebSocket upgrade — Kubernetes authorizes that
+  # as `get pods/exec`. With `create` alone the WebSocket handshake 403s ("cannot
+  # get resource pods/exec"), so every sandbox exec (git-context probe, workspace
+  # git scans, adapter commands) fails and runs die with "Could not read
+  # execution-target Git context" / setup_failed. Granting `get` is the fix.
   - apiGroups: [""]
     resources: [pods/exec]
-    verbs: [create]
+    verbs: [get, create]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
