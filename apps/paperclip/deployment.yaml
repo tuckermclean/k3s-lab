@@ -18,6 +18,39 @@ spec:
         app: paperclip
     spec:
       serviceAccountName: paperclip
+      # GitOps hotfix for an upstream bug in @paperclipai/plugin-kubernetes
+      # v2026.916.0: its native file-sync reads the workspace root from the
+      # top-level lease metadata (`lease.metadata.remoteCwd`), but the lease
+      # builders (acquireLease / resume) never set it — realize only records it
+      # nested under `workspaceRealization`. So every sandbox-cr run dies with
+      # "Kubernetes file sync requires a workspace remote dir on the lease
+      # metadata." This initContainer patches the plugin on the shared PVC to
+      # fall back to the nested value, then to the always-present /workspace
+      # emptyDir mount. Idempotent; re-runs and unknown versions are no-ops.
+      # Remove once upstream ships a fix: paperclipai/paperclip#13587.
+      initContainers:
+        - name: patch-k8s-plugin-remotecwd
+          image: ghcr.io/paperclipai/paperclip:sha-dffc2b3
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              F=/paperclip/.paperclip/plugins/node_modules/@paperclipai/plugin-kubernetes/dist/plugin.js
+              if [ ! -f "$F" ]; then
+                echo "[patch] plugin not installed on PVC yet; skipping (applies on next restart after install)"; exit 0
+              fi
+              if grep -qF 'workspaceRealization?.remotePath' "$F"; then
+                echo "[patch] already applied"; exit 0
+              fi
+              if grep -qF 'const remoteCwd = lease.metadata?.remoteCwd;' "$F"; then
+                sed -i 's#const remoteCwd = lease.metadata?.remoteCwd;#const remoteCwd = lease.metadata?.remoteCwd ?? lease.metadata?.workspaceRealization?.remotePath ?? "/workspace";#' "$F"
+                echo "[patch] applied remoteCwd fallback"
+              else
+                echo "[patch] target line not found (plugin version changed?); leaving untouched"
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /paperclip
       containers:
         - name: paperclip
           # Self-hosted Paperclip publishes a floating `latest` (the version-
