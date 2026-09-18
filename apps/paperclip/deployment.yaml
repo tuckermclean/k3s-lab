@@ -32,17 +32,29 @@ spec:
       # This initContainer patches the plugin on the shared PVC to (1) write a
       # top-level remoteCwd onto both leaseMetadata objects and (2) make the
       # reader fall back to the nested value / the always-present /workspace
-      # emptyDir mount. Both sides then agree on /workspace. Idempotent; re-runs
-      # and unknown plugin versions are no-ops.
+      # emptyDir mount. Both sides then agree on /workspace.
+      #
+      # (3) A second, related sandbox bug: the pod runs as UID 1000 but the
+      # /workspace emptyDir mount is owned by root (fsGroup only sets the group),
+      # so git's ownership guard rejects the post-run outbound git-sync with
+      # "fatal: detected dubious ownership in repository at '/workspace'" (exit
+      # 128 → adapter_failed → agent stuck in `error`). The sync runs git with
+      # GIT_CONFIG_GLOBAL=/dev/null, so a ~/.gitconfig safe.directory is ignored;
+      # the only channel is GIT_CONFIG_* env. We inject safe.directory=* into
+      # every sandbox pod's container env via pod-spec-builder (verified: git
+      # 2.34.1 honors it from GIT_CONFIG_COUNT/KEY/VALUE even with GLOBAL nulled).
+      # Idempotent; re-runs and unknown plugin versions are no-ops.
       # Remove once upstream ships a fix: paperclipai/paperclip#13587.
       initContainers:
-        - name: patch-k8s-plugin-remotecwd
+        - name: patch-k8s-plugin
           image: ghcr.io/paperclipai/paperclip:sha-dffc2b3
           imagePullPolicy: IfNotPresent
           command: ["sh", "-c"]
           args:
             - |
-              F=/paperclip/.paperclip/plugins/node_modules/@paperclipai/plugin-kubernetes/dist/plugin.js
+              D=/paperclip/.paperclip/plugins/node_modules/@paperclipai/plugin-kubernetes/dist
+              F="$D/plugin.js"
+              PSB="$D/pod-spec-builder.js"
               if [ ! -f "$F" ]; then
                 echo "[patch] plugin not installed on PVC yet; skipping (applies on next restart after install)"; exit 0
               fi
@@ -58,8 +70,14 @@ spec:
                 sed -i 's#const leaseMetadata = {#const leaseMetadata = { remoteCwd: "/workspace",#g' "$F"
                 changed=1
               fi
+              # (3) Inject safe.directory=* into every sandbox pod's container env so
+              # git trusts the root-owned /workspace mount (fixes dubious-ownership).
+              if [ -f "$PSB" ] && grep -qF 'env: [{ name: "HOME", value: "/home/paperclip" }],' "$PSB" && ! grep -qF 'GIT_CONFIG_KEY_0' "$PSB"; then
+                sed -i 's#env: \[{ name: "HOME", value: "/home/paperclip" }\],#env: [{ name: "HOME", value: "/home/paperclip" }, { name: "GIT_CONFIG_COUNT", value: "1" }, { name: "GIT_CONFIG_KEY_0", value: "safe.directory" }, { name: "GIT_CONFIG_VALUE_0", value: "*" }],#' "$PSB"
+                changed=1
+              fi
               if [ "$changed" = 1 ]; then
-                echo "[patch] applied remoteCwd reader+writer patch"
+                echo "[patch] applied remoteCwd + safe.directory patches"
               else
                 echo "[patch] nothing to do (already patched or plugin version changed)"
               fi
