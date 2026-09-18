@@ -19,14 +19,21 @@ spec:
     spec:
       serviceAccountName: paperclip
       # GitOps hotfix for an upstream bug in @paperclipai/plugin-kubernetes
-      # v2026.916.0: its native file-sync reads the workspace root from the
-      # top-level lease metadata (`lease.metadata.remoteCwd`), but the lease
-      # builders (acquireLease / resume) never set it — realize only records it
-      # nested under `workspaceRealization`. So every sandbox-cr run dies with
-      # "Kubernetes file sync requires a workspace remote dir on the lease
-      # metadata." This initContainer patches the plugin on the shared PVC to
-      # fall back to the nested value, then to the always-present /workspace
-      # emptyDir mount. Idempotent; re-runs and unknown versions are no-ops.
+      # v2026.916.0: the top-level lease metadata field `remoteCwd` is read by
+      # BOTH sides of the sandbox-cr flow — the plugin's file-sync confinement
+      # (resolveSyncRemoteDir) AND the server (heartbeat.ts builds the remote
+      # execution target's remoteCwd from lease.metadata.remoteCwd) — but the
+      # plugin's lease builders (acquireLease / resume) never write it. Realize
+      # only records remoteCwd nested under `workspaceRealization`. With it
+      # unset, each side defaults differently: the server falls back to /tmp
+      # while the workspace lives at /workspace, so file-sync fails with either
+      # "requires a workspace remote dir on the lease metadata" or "sync target
+      # path escapes the workspace remote dir: /tmp/.paperclip-runtime/...".
+      # This initContainer patches the plugin on the shared PVC to (1) write a
+      # top-level remoteCwd onto both leaseMetadata objects and (2) make the
+      # reader fall back to the nested value / the always-present /workspace
+      # emptyDir mount. Both sides then agree on /workspace. Idempotent; re-runs
+      # and unknown plugin versions are no-ops.
       # Remove once upstream ships a fix: paperclipai/paperclip#13587.
       initContainers:
         - name: patch-k8s-plugin-remotecwd
@@ -39,14 +46,22 @@ spec:
               if [ ! -f "$F" ]; then
                 echo "[patch] plugin not installed on PVC yet; skipping (applies on next restart after install)"; exit 0
               fi
-              if grep -qF 'workspaceRealization?.remotePath' "$F"; then
-                echo "[patch] already applied"; exit 0
-              fi
+              changed=0
+              # (1) Reader: fall back to the nested value, then the /workspace mount.
               if grep -qF 'const remoteCwd = lease.metadata?.remoteCwd;' "$F"; then
                 sed -i 's#const remoteCwd = lease.metadata?.remoteCwd;#const remoteCwd = lease.metadata?.remoteCwd ?? lease.metadata?.workspaceRealization?.remotePath ?? "/workspace";#' "$F"
-                echo "[patch] applied remoteCwd fallback"
+                changed=1
+              fi
+              # (2) Writer: put a top-level remoteCwd on both leaseMetadata objects so
+              # the server (heartbeat) and the plugin resolve the same /workspace root.
+              if grep -qF 'const leaseMetadata = {' "$F" && ! grep -qF 'const leaseMetadata = { remoteCwd:' "$F"; then
+                sed -i 's#const leaseMetadata = {#const leaseMetadata = { remoteCwd: "/workspace",#g' "$F"
+                changed=1
+              fi
+              if [ "$changed" = 1 ]; then
+                echo "[patch] applied remoteCwd reader+writer patch"
               else
-                echo "[patch] target line not found (plugin version changed?); leaving untouched"
+                echo "[patch] nothing to do (already patched or plugin version changed)"
               fi
           volumeMounts:
             - name: data
