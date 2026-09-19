@@ -9,3 +9,5 @@ resources:
   - certificate.yaml
   - ingressroute.yaml
   - secret.sops.yaml
+  - workflow-grants.yaml
+  - workflow-grant-reconciler.yaml

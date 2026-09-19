@@ -1,0 +1,32 @@
+# Human-gated source of truth for who may hold the GitHub *workflow* token
+# (`github_workflow_token`: admin/maintain/push, can edit `.github/workflows`).
+#
+# DEFAULT-DENY: an empty list means NO agent holds the workflow token. The
+# reconciler CronJob (workflow-grant-reconciler.yaml) treats this file as the
+# SOLE authority for the `github_workflow_token` binding — anything not listed
+# here (including a binding an agent or operator created out-of-band) is removed
+# within ~1 minute. Routine code/doc landing does NOT belong here; that goes
+# through the Release Engineer's repo-scoped `github_token`. This is break-glass
+# for genuine `.github/workflows` changes only.
+#
+# TO GRANT (board approval = merging this change to main; agents cannot merge
+# k3s-lab, so this is a human-only gate — no LLM agent is in the loop):
+#   add an entry to grants.json, e.g.
+#     [
+#       {"agent": "Tech Lead", "issue": "DCX-123",
+#        "expiresAt": "2026-09-19T22:00:00Z", "reason": "add CI lint workflow"}
+#     ]
+#   The reconciler binds the token to that agent until `expiresAt`, then revokes
+#   it automatically. Keep windows short (hours). Remove the entry to revoke early.
+#
+# `agent` = exact agent name; `expiresAt` = RFC3339 UTC; `issue`/`reason` = audit only.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paperclip-workflow-grants
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+data:
+  grants.json: |
+    []
