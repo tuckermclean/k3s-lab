@@ -1,0 +1,150 @@
+# Deterministic, no-agent-in-the-loop reconciler for the GitHub workflow token.
+# Every minute it makes the `github_workflow_token` bindings in the Paperclip DB
+# match exactly the git-declared, unexpired grants in the paperclip-workflow-grants
+# ConfigMap. Grants are added only by a human merging to main (agents have no
+# access to this repo), so no LLM agent can grant workflow creds — to itself or
+# anyone. Expired/undeclared bindings are deleted on the next tick (self-healing
+# default-deny). Uses the app's own DATABASE_URL (paperclip DB owner); scoped to
+# the one secret key, so it never touches github_token (Release Engineer) etc.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paperclip-workflow-grant-reconciler-sql
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+data:
+  reconcile.sql: |
+    \set ON_ERROR_STOP on
+    BEGIN;
+
+    -- REVOKE: drop any github_workflow_token binding whose agent is not covered
+    -- by an unexpired grant.
+    DELETE FROM company_secret_bindings b
+    USING company_secrets s
+    WHERE s.key = 'github_workflow_token' AND b.secret_id = s.id
+      AND NOT EXISTS (
+        SELECT 1 FROM jsonb_array_elements(:'g'::jsonb) g
+        JOIN agents a ON a.name = (g->>'agent') AND coalesce(a.status,'') <> 'terminated'
+        WHERE (g->>'expiresAt')::timestamptz > now() AND a.id::text = b.target_id
+      );
+
+    -- REVOKE: strip the materialized env secret_ref for uncovered agents.
+    UPDATE agents a
+    SET adapter_config = jsonb_set(a.adapter_config,'{env}',(a.adapter_config->'env') - 'GITHUB_WORKFLOW_TOKEN'),
+        updated_at = now()
+    WHERE a.adapter_config->'env' ? 'GITHUB_WORKFLOW_TOKEN'
+      AND NOT EXISTS (
+        SELECT 1 FROM jsonb_array_elements(:'g'::jsonb) g
+        WHERE g->>'agent' = a.name AND (g->>'expiresAt')::timestamptz > now()
+      );
+
+    -- GRANT: create the binding for covered agents that lack it.
+    INSERT INTO company_secret_bindings
+      (id, company_id, secret_id, target_type, target_id, config_path, version_selector, required, projection_class, created_at, updated_at)
+    SELECT gen_random_uuid(), a.company_id, s.id, 'agent', a.id::text, 'env.GITHUB_WORKFLOW_TOKEN', 'latest', false, 'unclassified', now(), now()
+    FROM jsonb_array_elements(:'g'::jsonb) g
+    JOIN agents a ON a.name = (g->>'agent') AND coalesce(a.status,'') <> 'terminated'
+    CROSS JOIN company_secrets s
+    WHERE s.key = 'github_workflow_token'
+      AND (g->>'expiresAt')::timestamptz > now()
+      AND NOT EXISTS (SELECT 1 FROM company_secret_bindings b WHERE b.secret_id = s.id AND b.target_id = a.id::text);
+
+    -- GRANT: add the materialized env secret_ref for covered agents that lack it.
+    UPDATE agents a
+    SET adapter_config = jsonb_set(a.adapter_config,'{env,GITHUB_WORKFLOW_TOKEN}',
+          jsonb_build_object(
+            'type','secret_ref','version','latest',
+            'secretId',(SELECT id::text FROM company_secrets WHERE key='github_workflow_token'),
+            'projectionClass','unclassified','projectionAllowlistKey', NULL::text), true),
+        updated_at = now()
+    FROM jsonb_array_elements(:'g'::jsonb) g
+    WHERE g->>'agent' = a.name
+      AND (g->>'expiresAt')::timestamptz > now()
+      AND coalesce(a.status,'') <> 'terminated'
+      AND NOT (a.adapter_config->'env' ? 'GITHUB_WORKFLOW_TOKEN');
+
+    COMMIT;
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: paperclip-workflow-grant-reconciler
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 120
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: paperclip-workflow-grant-reconciler
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            fsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: reconcile
+              image: postgres:16-alpine
+              imagePullPolicy: IfNotPresent
+              command: ["sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  psql "$DATABASE_URL" \
+                    -v ON_ERROR_STOP=1 \
+                    -v g="$(cat /grants/grants.json)" \
+                    -f /scripts/reconcile.sql
+                  echo "[workflow-grant-reconciler] reconciled at $(date -u +%FT%TZ)"
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperclip-secrets
+                      key: DATABASE_URL
+                - name: HOME
+                  value: /tmp
+                - name: PSQL_HISTORY
+                  value: /dev/null
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              volumeMounts:
+                - name: grants
+                  mountPath: /grants
+                  readOnly: true
+                - name: sql
+                  mountPath: /scripts
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: grants
+              configMap:
+                name: paperclip-workflow-grants
+            - name: sql
+              configMap:
+                name: paperclip-workflow-grant-reconciler-sql
+            - name: tmp
+              emptyDir: {}
