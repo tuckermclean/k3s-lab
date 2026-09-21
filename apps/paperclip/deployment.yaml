@@ -72,10 +72,16 @@ spec:
               fi
               # (3) Inject safe.directory=* into every sandbox pod's container env so
               # git trusts the root-owned /workspace mount (fixes dubious-ownership).
-              if [ -f "$PSB" ] && grep -qF 'env: [{ name: "HOME", value: "/home/paperclip" }],' "$PSB" && ! grep -qF 'GIT_CONFIG_KEY_0' "$PSB"; then
-                sed -i 's#env: \[{ name: "HOME", value: "/home/paperclip" }\],#env: [{ name: "HOME", value: "/home/paperclip" }, { name: "GIT_CONFIG_COUNT", value: "1" }, { name: "GIT_CONFIG_KEY_0", value: "safe.directory" }, { name: "GIT_CONFIG_VALUE_0", value: "*" }],#' "$PSB"
-                changed=1
-              fi
+              # BOTH builders need it: pod-spec-builder.js (job backend) AND
+              # sandbox-cr-builder.js (the sandbox-cr backend we actually run) — the
+              # latter is a SEPARATE implementation with its own identical env array,
+              # so patching only pod-spec-builder.js left real sandbox-cr runs broken.
+              for B in "$PSB" "$D/sandbox-cr-builder.js"; do
+                if [ -f "$B" ] && grep -qF 'env: [{ name: "HOME", value: "/home/paperclip" }],' "$B" && ! grep -qF 'GIT_CONFIG_KEY_0' "$B"; then
+                  sed -i 's#env: \[{ name: "HOME", value: "/home/paperclip" }\],#env: [{ name: "HOME", value: "/home/paperclip" }, { name: "GIT_CONFIG_COUNT", value: "1" }, { name: "GIT_CONFIG_KEY_0", value: "safe.directory" }, { name: "GIT_CONFIG_VALUE_0", value: "*" }],#' "$B"
+                  changed=1
+                fi
+              done
               if [ "$changed" = 1 ]; then
                 echo "[patch] applied remoteCwd + safe.directory patches"
               else
