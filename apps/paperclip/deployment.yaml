@@ -107,13 +107,13 @@ spec:
               GC=/paperclip/.gitconfig
               if ! grep -qF 'x-access-token' "$GC" 2>/dev/null; then
                 cat >> "$GC" <<'GITCFG'
-[credential]
-helper =
-[credential "https://github.com"]
-helper = "!f() { test \"$1\" = get && echo username=x-access-token && echo \"password=$GH_TOKEN\"; }; f"
-[credential "https://www.github.com"]
-helper = "!f() { test \"$1\" = get && echo username=x-access-token && echo \"password=$GH_TOKEN\"; }; f"
-GITCFG
+              [credential]
+              helper =
+              [credential "https://github.com"]
+              helper = "!f() { test \"$1\" = get && echo username=x-access-token && echo \"password=$GH_TOKEN\"; }; f"
+              [credential "https://www.github.com"]
+              helper = "!f() { test \"$1\" = get && echo username=x-access-token && echo \"password=$GH_TOKEN\"; }; f"
+              GITCFG
                 echo "[patch] installed host-mode github credential helper in .gitconfig"
                 changed=1
               fi
