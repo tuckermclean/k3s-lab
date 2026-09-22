@@ -70,20 +70,27 @@ spec:
                 sed -i 's#const leaseMetadata = {#const leaseMetadata = { remoteCwd: "/workspace",#g' "$F"
                 changed=1
               fi
-              # (3) Inject safe.directory=* into every sandbox pod's container env so
-              # git trusts the root-owned /workspace mount (fixes dubious-ownership).
-              # BOTH builders need it: pod-spec-builder.js (job backend) AND
-              # sandbox-cr-builder.js (the sandbox-cr backend we actually run) — the
-              # latter is a SEPARATE implementation with its own identical env array,
-              # so patching only pod-spec-builder.js left real sandbox-cr runs broken.
+              # (3) Inject into every sandbox pod's container env: (a) safe.directory=*
+              # so git trusts the root-owned /workspace mount (fixes dubious-ownership),
+              # and (b) a github.com credential helper that feeds the run's GH_TOKEN to
+              # git as x-access-token. The sandbox agent's own `git push` otherwise has
+              # NO credential source: the managed broker is a managed-cloud feature that
+              # is absent/unwired in self-hosted, and the company-secret path only covers
+              # server-side clone. Upstream #13588 stopped the managed launcher from
+              # clobbering injected git config, which lets this helper survive. Least-
+              # privilege holds: only agents whose env carries GH_TOKEN (the Release
+              # Engineer) can push. BOTH builders carry the same env (job + sandbox-cr).
+              FULL='env: [{ name: "HOME", value: "/home/paperclip" }, { name: "GIT_CONFIG_COUNT", value: "2" }, { name: "GIT_CONFIG_KEY_0", value: "safe.directory" }, { name: "GIT_CONFIG_VALUE_0", value: "*" }, { name: "GIT_CONFIG_KEY_1", value: "credential.https://github.com.helper" }, { name: "GIT_CONFIG_VALUE_1", value: "!f() { echo username=x-access-token; echo password=$GH_TOKEN; }; f" }],'
               for B in "$PSB" "$D/sandbox-cr-builder.js"; do
-                if [ -f "$B" ] && grep -qF 'env: [{ name: "HOME", value: "/home/paperclip" }],' "$B" && ! grep -qF 'GIT_CONFIG_KEY_0' "$B"; then
-                  sed -i 's#env: \[{ name: "HOME", value: "/home/paperclip" }\],#env: [{ name: "HOME", value: "/home/paperclip" }, { name: "GIT_CONFIG_COUNT", value: "1" }, { name: "GIT_CONFIG_KEY_0", value: "safe.directory" }, { name: "GIT_CONFIG_VALUE_0", value: "*" }],#' "$B"
-                  changed=1
-                fi
+                [ -f "$B" ] || continue
+                grep -qF 'GIT_CONFIG_KEY_1' "$B" && continue
+                # handle a fresh (HOME-only) file OR a previously safe.directory-only one
+                sed -i 's#env: \[{ name: "HOME", value: "/home/paperclip" }\],#'"$FULL"'#' "$B"
+                sed -i 's#env: \[{ name: "HOME", value: "/home/paperclip" }, { name: "GIT_CONFIG_COUNT", value: "1" }, { name: "GIT_CONFIG_KEY_0", value: "safe.directory" }, { name: "GIT_CONFIG_VALUE_0", value: "\*" }\],#'"$FULL"'#' "$B"
+                grep -qF 'GIT_CONFIG_KEY_1' "$B" && changed=1
               done
               if [ "$changed" = 1 ]; then
-                echo "[patch] applied remoteCwd + safe.directory patches"
+                echo "[patch] applied remoteCwd + safe.directory + github-credential patches"
               else
                 echo "[patch] nothing to do (already patched or plugin version changed)"
               fi
