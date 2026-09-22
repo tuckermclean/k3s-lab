@@ -89,8 +89,36 @@ spec:
                 sed -i 's#env: \[{ name: "HOME", value: "/home/paperclip" }, { name: "GIT_CONFIG_COUNT", value: "1" }, { name: "GIT_CONFIG_KEY_0", value: "safe.directory" }, { name: "GIT_CONFIG_VALUE_0", value: "\*" }\],#'"$FULL"'#' "$B"
                 grep -qF 'GIT_CONFIG_KEY_1' "$B" && changed=1
               done
+              # (4) Host-mode GitHub push credential (the ACTUAL fix for agent push).
+              # Self-hosted has no managed GitHub connection, so heartbeat resolves
+              # `useHostGitHub = !githubConfigured && trust=standard && driver=local`
+              # → TRUE for our agents. In host mode the broker launcher is NOT
+              # installed and prepareGitHubExecutionEnvironment leaves GIT_CONFIG_GLOBAL
+              # unset, so the agent's own `git push` reads $HOME/.gitconfig. The native
+              # runner passes HOME through (NATIVE_PROVIDER_HOST_ENV_KEYS), so the
+              # agent's HOME is this server HOME = /paperclip. We install a github.com
+              # credential helper here that answers with the run's GH_TOKEN as
+              # x-access-token. Only the Release Engineer's run carries GH_TOKEN in its
+              # env (adapter_config secret_ref), so ONLY it can authenticate a push —
+              # every other agent's helper emits an empty password and fails closed.
+              # This is the supported host auth mode, not a bypass; the broker path is
+              # connection-only and structurally cannot use company secrets. The server's
+              # own managed clone overrides this via `-c` flags, so no interference.
+              GC=/paperclip/.gitconfig
+              if ! grep -qF 'x-access-token' "$GC" 2>/dev/null; then
+                cat >> "$GC" <<'GITCFG'
+              [credential]
+              helper =
+              [credential "https://github.com"]
+              helper = "!f() { test \"$1\" = get && echo username=x-access-token && echo \"password=$GH_TOKEN\"; }; f"
+              [credential "https://www.github.com"]
+              helper = "!f() { test \"$1\" = get && echo username=x-access-token && echo \"password=$GH_TOKEN\"; }; f"
+              GITCFG
+                echo "[patch] installed host-mode github credential helper in .gitconfig"
+                changed=1
+              fi
               if [ "$changed" = 1 ]; then
-                echo "[patch] applied remoteCwd + safe.directory + github-credential patches"
+                echo "[patch] applied remoteCwd + safe.directory + github-credential + host-gitconfig patches"
               else
                 echo "[patch] nothing to do (already patched or plugin version changed)"
               fi
