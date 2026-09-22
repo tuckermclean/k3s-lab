@@ -1,0 +1,110 @@
+# Run-context backfill — WORKAROUND for upstream paperclipai/paperclip#12118.
+#
+# Bug: a timer-heartbeat run starts with no issue, so heartbeat_runs.context_snapshot
+# has no `issueId`. The cross-issue-influence guard (observeCrossIssueInfluence in
+# services/cross-issue-influence-limit.js) reads the run's source issue ONLY from
+# context_snapshot and throws `cross_issue_influence_run_context_required` when it
+# is absent — before it even reaches the "same issue is allowed" branch. So a worker
+# that picks up an issue in a timer heartbeat cannot PATCH status or comment on that
+# very issue, and every stage hand-off stalls. Upstream fix #13650 ("let a heartbeat
+# run write to the issue it checked out") is OPEN/unmerged, and no tagged build has it.
+#
+# Workaround (same idea as #13650, applied as data): every 20s, set
+# context_snapshot.issueId on any run that a live issue has checked out
+# (issue.checkout_run_id / execution_run_id) but that lacks it. The guard then finds
+# a source issue and permits the run's writes to its own issue. Scoped to non-terminal
+# issues and runs from the last 3h so it never rewrites historical context. A tight
+# loop (not a 1/min CronJob) so a freshly-created run is patched before the agent's
+# end-of-run write attempt. Remove once a build containing #13650 is deployed.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paperclip-runcontext-backfill-sql
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+data:
+  backfill.sql: |
+    \set ON_ERROR_STOP on
+    UPDATE heartbeat_runs h
+    SET context_snapshot = jsonb_set(coalesce(h.context_snapshot, '{}'::jsonb),
+                                     '{issueId}', to_jsonb(i.id::text), true)
+    FROM issues i
+    WHERE h.id IN (i.checkout_run_id, i.execution_run_id)
+      AND (h.context_snapshot->>'issueId') IS NULL
+      AND i.status NOT IN ('done', 'cancelled')
+      AND h.created_at > now() - interval '3 hours';
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperclip-runcontext-backfill
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: paperclip-runcontext-backfill
+  template:
+    metadata:
+      labels:
+        app: paperclip-runcontext-backfill
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backfill
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -u
+              echo "[runcontext-backfill] starting loop (20s) — workaround for upstream #12118"
+              while true; do
+                psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -qtA -f /scripts/backfill.sql \
+                  || echo "[runcontext-backfill] psql error (will retry)"
+                sleep 20
+              done
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: paperclip-secrets
+                  key: DATABASE_URL
+            - name: HOME
+              value: /tmp
+            - name: PSQL_HISTORY
+              value: /dev/null
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: sql
+              mountPath: /scripts
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: sql
+          configMap:
+            name: paperclip-runcontext-backfill-sql
+        - name: tmp
+          emptyDir: {}

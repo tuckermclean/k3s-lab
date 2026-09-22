@@ -10,3 +10,4 @@ resources:
   - ingressroute.yaml
   - secret.sops.yaml
   - landing-gate-reconciler.yaml
+  - runcontext-backfill.yaml
