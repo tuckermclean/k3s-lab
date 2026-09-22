@@ -1,0 +1,133 @@
+# Landing-gate guard — deterministic, no-agent-in-the-loop backstop for the
+# team pipeline's release stage.
+#
+# The pipeline contract (AGENTS.md) is: only the Release Engineer sets an issue
+# to `done`, and only after the branch is landed. Every other role hands off by
+# re-assigning. In practice an LLM worker (seen: the QA Engineer on DCX-122)
+# marks the ISSUE `done` when it means "my STAGE is done" — terminating the card
+# before the release stage, so completed work never ships. Instructions alone are
+# unreliable (the Tech Lead once merged a PR unprompted), so this CronJob enforces
+# the invariant structurally: every minute it finds any issue that a WORKER role
+# (Software Engineer / QA Engineer / Code Reviewer / Documentation Engineer) has
+# left at status `done`, reopens it (`todo`) and re-assigns it to the active
+# Release Engineer for the release stage.
+#
+# Safety: a 15-minute freshness window so it only acts on NEW premature closes and
+# never retroactively reopens the ~20 historically worker-closed `done` issues.
+# Re-assigning to the RE breaks any loop (the worker no longer owns it). If no
+# enabled Release Engineer exists the cross-join yields nothing (no-op). It only
+# ever touches issues wrongly closed by a worker — RE-, Tech-Lead-, and
+# Chief-of-Staff-closed issues (and anything older than the window) are untouched.
+# Uses the app's own DATABASE_URL (paperclip DB owner).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: paperclip-landing-gate-reconciler-sql
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+data:
+  reconcile.sql: |
+    \set ON_ERROR_STOP on
+    BEGIN;
+
+    -- Reopen worker-closed cards and route them to the active Release Engineer.
+    -- The cross-join with `re` means: if there is no enabled Release Engineer,
+    -- nothing is updated (fail-safe no-op).
+    WITH re AS (
+      SELECT id, company_id
+      FROM agents
+      WHERE name = 'Release Engineer'
+        AND (runtime_config->'heartbeat'->>'enabled') = 'true'
+      LIMIT 1
+    )
+    UPDATE issues i
+    SET status = 'todo',
+        assignee_agent_id = re.id,
+        completed_at = NULL,
+        status_version = coalesce(i.status_version, 0) + 1,
+        updated_at = now()
+    FROM agents wa, re
+    WHERE i.assignee_agent_id = wa.id
+      AND i.company_id = re.company_id
+      AND wa.name IN ('Software Engineer', 'QA Engineer', 'Code Reviewer', 'Documentation Engineer')
+      AND i.status = 'done'
+      AND i.completed_at > now() - interval '15 minutes';
+
+    COMMIT;
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: paperclip-landing-gate-reconciler
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 120
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: paperclip-landing-gate-reconciler
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            fsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: reconcile
+              image: postgres:16-alpine
+              imagePullPolicy: IfNotPresent
+              command: ["sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  psql "$DATABASE_URL" \
+                    -v ON_ERROR_STOP=1 \
+                    -f /scripts/reconcile.sql
+                  echo "[landing-gate-reconciler] reconciled at $(date -u +%FT%TZ)"
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperclip-secrets
+                      key: DATABASE_URL
+                - name: HOME
+                  value: /tmp
+                - name: PSQL_HISTORY
+                  value: /dev/null
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              volumeMounts:
+                - name: sql
+                  mountPath: /scripts
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: sql
+              configMap:
+                name: paperclip-landing-gate-reconciler-sql
+            - name: tmp
+              emptyDir: {}
