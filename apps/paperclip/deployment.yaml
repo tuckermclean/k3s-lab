@@ -206,7 +206,66 @@ spec:
               # 6 agents pegged the old 2Gi ceiling → OOM. Once agents run as k8s
               # Jobs (separate pods), the server alone fits well under 2Gi again.
               memory: 4Gi
+        # GitHub App token rotator (sidecar). Mints an installation-wide token
+        # (every repo the app in apps/paperclip/github-app.sops.yaml is installed
+        # on) and rotates it into the GITHUB_TOKEN company secret so the Release
+        # Engineer acts as the app bot (distinct from the human → required-review
+        # merge gate). One rotator for all repos, not one per repo. Lives here (not
+        # a standalone Deployment) because the secrets master key is on this pod's
+        # RWO PVC. Runs as uid 1000 (owns master.key).
+        # Script + rationale: apps/paperclip/gh-app-rotator.yaml.
+        - name: gh-app-token-rotator
+          image: ghcr.io/paperclipai/paperclip:sha-6de50ba
+          imagePullPolicy: IfNotPresent
+          command: ["node", "/scripts/rotate.js"]
+          env:
+            - name: PAPERCLIP_COMPANY_ID
+              value: "5e92e86b-c307-4ed9-a6ee-a9c940e35147"
+            - name: PAPERCLIP_GITHUB_SECRET_KEY
+              value: "GITHUB_TOKEN"
+            - name: ROTATE_INTERVAL_SEC
+              value: "1800"
+            - name: HOME
+              value: /tmp
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: paperclip-secrets
+                  key: DATABASE_URL
+          # GITHUB_APP_ID + GITHUB_APP_PRIVATE_KEY + GITHUB_APP_INSTALLATION_ID
+          # (repo-agnostic: the app installation spans every repo it's added to)
+          envFrom:
+            - secretRef:
+                name: paperclip-github-app
+          volumeMounts:
+            - name: data
+              mountPath: /paperclip
+              readOnly: true
+            - name: gh-app-rotator-script
+              mountPath: /scripts
+              readOnly: true
+            - name: gh-app-rotator-tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 192Mi
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: paperclip-data
+        - name: gh-app-rotator-script
+          configMap:
+            name: paperclip-gh-app-rotator-script
+        - name: gh-app-rotator-tmp
+          emptyDir: {}

@@ -11,3 +11,5 @@ resources:
   - secret.sops.yaml
   - landing-gate-reconciler.yaml
   - runcontext-backfill.yaml
+  - github-app.sops.yaml
+  - gh-app-rotator.yaml
