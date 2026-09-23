@@ -222,8 +222,6 @@ spec:
               value: "5e92e86b-c307-4ed9-a6ee-a9c940e35147"
             - name: PAPERCLIP_GITHUB_SECRET_KEY
               value: "GITHUB_TOKEN"
-            - name: GH_APP_REPO
-              value: "tuckermclean/stele-browser"
             - name: ROTATE_INTERVAL_SEC
               value: "1800"
             - name: HOME
@@ -233,7 +231,8 @@ spec:
                 secretKeyRef:
                   name: paperclip-secrets
                   key: DATABASE_URL
-          # GITHUB_APP_ID + GITHUB_APP_PRIVATE_KEY
+          # GITHUB_APP_ID + GITHUB_APP_PRIVATE_KEY + GITHUB_APP_INSTALLATION_ID
+          # (repo-agnostic: the app installation spans every repo it's added to)
           envFrom:
             - secretRef:
                 name: paperclip-github-app

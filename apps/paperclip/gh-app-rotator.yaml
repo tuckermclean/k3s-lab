@@ -5,11 +5,13 @@
 # bot opens PRs it cannot approve, the human approves + merges.
 #
 # Every ROTATE_INTERVAL_SEC it: signs a GitHub App JWT with the app private key,
-# discovers the stele-browser installation, mints a short-lived installation token
-# scoped to that one repo (contents+pull_requests write), AES-256-GCM-encrypts it
-# with Paperclip's own master key, and writes a new `current` version of the
+# mints a short-lived, INSTALLATION-WIDE token (covers every repo the app is
+# installed on, with the app's own permissions), AES-256-GCM-encrypts it with
+# Paperclip's own master key, and writes a new `current` version of the
 # GITHUB_TOKEN company secret — replicating svc.rotate() exactly (disabled insert,
 # latest_version bump, demote others to previous, promote the new one to current).
+# Repo-agnostic on purpose: one rotator for ALL repos (current and future). Adding
+# a repo is just installing the app on it in GitHub — nothing changes here.
 #
 # Safety: on startup it self-tests by DECRYPTING the current secret version with
 # the master key; if that fails it exits (crashloops) WITHOUT ever writing, so a
@@ -31,7 +33,7 @@ data:
 
     const APP_ID = (process.env.GITHUB_APP_ID || '').trim();
     const PRIVATE_KEY = process.env.GITHUB_APP_PRIVATE_KEY || '';
-    const REPO = process.env.GH_APP_REPO || 'tuckermclean/stele-browser';
+    const INSTALLATION_ID = (process.env.GITHUB_APP_INSTALLATION_ID || '').trim();
     const COMPANY_ID = process.env.PAPERCLIP_COMPANY_ID;
     const SECRET_KEY = process.env.PAPERCLIP_GITHUB_SECRET_KEY || 'GITHUB_TOKEN';
     const MASTER_KEY_FILE = process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE
@@ -100,13 +102,22 @@ data:
         console.log('[gh-app-rotator] self-test OK (master key decrypts current secret, len ' + val.length + ')');
       } finally { await client.end(); }
     }
+    async function installationId(jwt) {
+      if (INSTALLATION_ID) return INSTALLATION_ID;
+      const list = await gh('https://api.github.com/app/installations', { headers: { Authorization: 'Bearer ' + jwt } });
+      if (!Array.isArray(list) || !list.length) throw new Error('app has no installations');
+      if (list.length > 1) console.error('[gh-app-rotator] multiple installations; using the first (set GITHUB_APP_INSTALLATION_ID to pin one)');
+      return String(list[0].id);
+    }
     async function rotateOnce() {
       const jwt = appJwt();
-      const inst = await gh('https://api.github.com/repos/' + REPO + '/installation', { headers: { Authorization: 'Bearer ' + jwt } });
-      const repoName = REPO.split('/')[1];
-      const tok = await gh('https://api.github.com/app/installations/' + inst.id + '/access_tokens', {
-        method: 'POST', headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ repositories: [repoName], permissions: { contents: 'write', pull_requests: 'write', metadata: 'read' } }) });
+      const instId = await installationId(jwt);
+      // Installation-wide token (empty body): ONE token covering EVERY repo the
+      // app is installed on, with the app's own permissions. So a single rotator
+      // serves all current and future repos — adding a repo means only installing
+      // the app on it in GitHub; nothing changes here. No per-repo sidecars.
+      const tok = await gh('https://api.github.com/app/installations/' + instId + '/access_tokens', {
+        method: 'POST', headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' }, body: '{}' });
       const token = tok.token;
       const material = encrypt(loadMasterKey(), token);
       const sha = crypto.createHash('sha256').update(token).digest('hex');
@@ -123,7 +134,7 @@ data:
         await client.query("UPDATE company_secret_versions SET status='previous' WHERE secret_id=$1 AND version<>$2", [sid, next]);
         await client.query("UPDATE company_secret_versions SET status='current' WHERE secret_id=$1 AND version=$2", [sid, next]);
         await client.query('COMMIT');
-        console.log('[gh-app-rotator] rotated ' + SECRET_KEY + ' -> v' + next + ' (installation ' + inst.id + ', token expires ' + tok.expires_at + ')');
+        console.log('[gh-app-rotator] rotated ' + SECRET_KEY + ' -> v' + next + ' (installation ' + instId + ', all-repo token, expires ' + tok.expires_at + ')');
       } catch (e) { await client.query('ROLLBACK').catch(() => {}); throw e; }
       finally { await client.end(); }
     }
