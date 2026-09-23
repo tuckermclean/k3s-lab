@@ -206,12 +206,13 @@ spec:
               # 6 agents pegged the old 2Gi ceiling → OOM. Once agents run as k8s
               # Jobs (separate pods), the server alone fits well under 2Gi again.
               memory: 4Gi
-        # GitHub App token rotator (sidecar). Mints a stele-browser-scoped
-        # installation token from the app in apps/paperclip/github-app.sops.yaml
-        # and rotates it into the GITHUB_TOKEN company secret so the Release
+        # GitHub App token rotator (sidecar). Mints an installation-wide token
+        # (every repo the app in apps/paperclip/github-app.sops.yaml is installed
+        # on) and rotates it into the GITHUB_TOKEN company secret so the Release
         # Engineer acts as the app bot (distinct from the human → required-review
-        # merge gate). Lives here (not a standalone Deployment) because the secrets
-        # master key is on this pod's RWO PVC. Runs as uid 1000 (owns master.key).
+        # merge gate). One rotator for all repos, not one per repo. Lives here (not
+        # a standalone Deployment) because the secrets master key is on this pod's
+        # RWO PVC. Runs as uid 1000 (owns master.key).
         # Script + rationale: apps/paperclip/gh-app-rotator.yaml.
         - name: gh-app-token-rotator
           image: ghcr.io/paperclipai/paperclip:sha-6de50ba
