@@ -112,12 +112,17 @@ data:
     async function rotateOnce() {
       const jwt = appJwt();
       const instId = await installationId(jwt);
-      // Installation-wide token (empty body): ONE token covering EVERY repo the
-      // app is installed on, with the app's own permissions. So a single rotator
-      // serves all current and future repos — adding a repo means only installing
-      // the app on it in GitHub; nothing changes here. No per-repo sidecars.
+      // Installation-wide token (no `repositories` filter) so ONE token covers
+      // EVERY repo the app is installed on — one rotator for all current and
+      // future repos; adding a repo means only installing the app on it. But we
+      // request an explicit permission SUBSET (contents + pull_requests only, the
+      // Release Engineer's job) rather than the app's full set: the app also holds
+      // workflows:write, which is the Tech-Lead-only, board-gated privilege — the
+      // RE must never carry it. GitHub lets an installation token narrow (never
+      // widen) the app's permissions, so this is a hard downscope.
       const tok = await gh('https://api.github.com/app/installations/' + instId + '/access_tokens', {
-        method: 'POST', headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' }, body: '{}' });
+        method: 'POST', headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions: { contents: 'write', pull_requests: 'write', metadata: 'read' } }) });
       const token = tok.token;
       const material = encrypt(loadMasterKey(), token);
       const sha = crypto.createHash('sha256').update(token).digest('hex');
