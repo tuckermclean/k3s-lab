@@ -47,7 +47,7 @@ spec:
       # Remove once upstream ships a fix: paperclipai/paperclip#13587.
       initContainers:
         - name: patch-k8s-plugin
-          image: ghcr.io/paperclipai/paperclip:sha-6de50ba
+          image: ghcr.io/paperclipai/paperclip:sha-794b09f
           imagePullPolicy: IfNotPresent
           command: ["sh", "-c"]
           args:
@@ -131,18 +131,19 @@ spec:
           # pinned tags are `-cloud`, for the hosted service). Pin the immutable
           # per-commit `sha-<short>` tag instead: it's never overwritten and stays
           # tagged (so it isn't GC'd like an untagged digest would be).
-          # This is a MASTER (dev) build (commit 6de50ba), NOT a formal release —
-          # taken deliberately because it carries #13588 "repair managed Git
-          # launchers in sandbox projects" (stops empty managed-identity vars from
-          # clobbering valid git config, which was blocking agent GitHub push) plus
-          # #13515 stranded-sandbox-lease recovery, neither of which is in any
-          # tagged release yet (v2026.916.1 is only v2026.916.0 + a chat fix).
-          # NB: runs migrations 0280-0283 on boot; effectively one-way (rolling back
-          # to sha-dffc2b3 after they apply is unsafe). The k8s plugin is unchanged
-          # from 916.0, so the initContainer patches above still apply.
-          # To upgrade: pick a newer sha- tag and bump this line (and the initContainer
-          # image below) deliberately.
-          image: ghcr.io/paperclipai/paperclip:sha-6de50ba
+          # This is a MASTER (dev) build (commit 794b09f), NOT a formal release —
+          # bumped from 6de50ba deliberately to get Claude Code >= 2.1.280 for the
+          # agents that run Opus 5.5: the coding CLIs ship as claude@latest at image
+          # build time, so 6de50ba carried 2.1.278/2.1.263/2.1.238 (main / agent-sdk
+          # / runtime-fetched harness) — all below the 2.1.280 the API now requires
+          # for `claude-opus-5-5`. 794b09f carries #13838 "refresh shared coding
+          # harness runtimes" (updates the sandbox harness claude) + #13829 "refresh
+          # current coding models" + agent-sdk 0.3.280 (claude 2.1.280), plus ~48
+          # other master fixes since 6de50ba. NB: runs the newer boot migrations;
+          # effectively one-way (rolling back after they apply is unsafe). The k8s
+          # plugin is unchanged, so the initContainer patches above still apply.
+          # To upgrade: pick a newer PUBLISHED sha- tag and bump all three image refs.
+          image: ghcr.io/paperclipai/paperclip:sha-794b09f
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3100
@@ -215,7 +216,7 @@ spec:
         # RWO PVC. Runs as uid 1000 (owns master.key).
         # Script + rationale: apps/paperclip/gh-app-rotator.yaml.
         - name: gh-app-token-rotator
-          image: ghcr.io/paperclipai/paperclip:sha-6de50ba
+          image: ghcr.io/paperclipai/paperclip:sha-794b09f
           imagePullPolicy: IfNotPresent
           command: ["node", "/scripts/rotate.js"]
           env:
