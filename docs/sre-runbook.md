@@ -58,10 +58,9 @@ is proposed as a reconciler/manifest PR or escalated, never hand-written.
 
 ## The stack
 
-- **Cluster:** k3s "ovh-lab" (nodes k3s-ovh-1/2/3). Longhorn for RWO storage.
-  (Historical: mkfs of new Longhorn volumes used to fail on ovh-1/ovh-2 because
-  `multipathd` claimed the `/dev/longhorn/*` devices. Fixed in #273 — see the
-  failure-mode note below. All three nodes are schedulable again.)
+- **Cluster:** k3s "ovh-lab" (nodes k3s-ovh-1/2/3, all schedulable). Longhorn for
+  RWO storage. A `kube-system/disable-multipathd` DaemonSet keeps `multipathd` off
+  every node so it can't claim `/dev/longhorn/*` and break `mkfs` (see storage).
 - **GitOps:** FluxCD. `GitRepository/flux-system` tracks this repo; per-app
   `Kustomization`s (e.g. `paperclip`) apply `apps/<name>/`. Reconcile is operator-
   only (`flux reconcile` / annotate) — you read status, you don't trigger it.
@@ -123,17 +122,16 @@ the version each lane actually runs, not just the image tag.
   real fix (per-card isolation) as a change, don't hand-fix repeatedly.
 - **Pod NotReady after a change:** a sidecar that exits takes the whole pod
   NotReady (it drops from the Service). Sidecars must never exit — idle on failure.
-- **Longhorn mkfs failure (RESOLVED, #273):** new Longhorn volumes failed to
-  format on the OVH bare-metal nodes — `multipathd` grabbed the `/dev/longhorn/*`
-  block devices, so `mkfs`/attach failed. These are single-path nodes; multipath
-  is not used. Codified fix: `infrastructure/storage/multipath-disable/` — a
-  privileged `kube-system/disable-multipathd` DaemonSet that `nsenter`s to pid 1
-  and `systemctl disable --now` + `mask`s `multipathd.service`/`.socket` on every
-  node, re-ensuring every 10m. Verify: DaemonSet pod logs show `service=inactive
-  socket=inactive`; `nodes.longhorn.io` `Multipathd` condition reads `True` (the
-  Longhorn env-check re-evaluates periodically / on longhorn-manager restart). If
-  a node ever regresses, check whether a package update re-enabled/unmasked the
-  unit — the DaemonSet re-masks on its 10m loop, but confirm it's Running there.
+- **Longhorn volume won't `mkfs`/attach on a node:** the usual cause is
+  `multipathd` claiming the `/dev/longhorn/*` block devices (these single-path OVH
+  nodes don't use multipath). The `kube-system/disable-multipathd` DaemonSet
+  (`infrastructure/storage/multipath-disable/`) guards against this — it `nsenter`s
+  to pid 1 and `disable --now` + `mask`s `multipathd.service`/`.socket`, re-ensuring
+  every 10m. Diagnose: DaemonSet pod logs on that node should read `service=inactive
+  socket=inactive`, and `nodes.longhorn.io` `Multipathd` should be `True` (this
+  condition only re-evaluates on longhorn-manager restart, so it can lag a fix).
+  If a node regresses, confirm the DaemonSet pod is Running there and that a
+  package update didn't re-enable/unmask the unit.
 
 ## GitOps change workflow (your main output)
 
