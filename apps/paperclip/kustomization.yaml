@@ -13,3 +13,4 @@ resources:
   - runcontext-backfill.yaml
   - github-app.sops.yaml
   - gh-app-rotator.yaml
+  - sre-diagnostics-rbac.yaml
