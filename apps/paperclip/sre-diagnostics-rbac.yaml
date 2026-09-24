@@ -1,0 +1,99 @@
+# Read-only cluster diagnostics identity for the SRE agent.
+#
+# The SRE agent (Paperclip) investigates live cluster state via the k8s API with
+# curl + this ServiceAccount's token (the runtime has curl + jq but no kubectl).
+# It is strictly READ-ONLY (get/list/watch + pods/log) and deliberately CANNOT
+# read Secrets — so an LLM agent holding this token can diagnose but never exfil
+# credentials or mutate the cluster. Live mutation stays with GitOps (the SRE
+# proposes manifest PRs on k3s-lab; Flux applies after a human merge).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sre-diagnostics
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sre-diagnostics-readonly
+  labels:
+    app.kubernetes.io/part-of: gitops
+rules:
+  # Core read-only (NOTE: 'secrets' is intentionally omitted).
+  - apiGroups: [""]
+    resources:
+      - pods
+      - pods/log
+      - services
+      - endpoints
+      - configmaps
+      - events
+      - namespaces
+      - nodes
+      - persistentvolumeclaims
+      - persistentvolumes
+      - replicationcontrollers
+      - serviceaccounts
+      - resourcequotas
+      - limitranges
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list"]
+  # Platform CRDs the SRE needs to read to diagnose the stack.
+  - apiGroups: ["source.toolkit.fluxcd.io", "kustomize.toolkit.fluxcd.io", "helm.toolkit.fluxcd.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters", "backups", "scheduledbackups", "poolers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["traefik.io", "traefik.containo.us"]
+    resources: ["ingressroutes", "middlewares"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificates", "certificaterequests", "issuers", "clusterissuers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["agents.x-k8s.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sre-diagnostics-readonly
+  labels:
+    app.kubernetes.io/part-of: gitops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sre-diagnostics-readonly
+subjects:
+  - kind: ServiceAccount
+    name: sre-diagnostics
+    namespace: paperclip
+---
+# A long-lived, read-only token for the SA, so the SRE agent can be handed a
+# stable bearer token (mounted as a Paperclip company secret). Read-only by the
+# ClusterRole above; rotate by deleting this Secret (the SA token controller
+# reissues it).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sre-diagnostics-token
+  namespace: paperclip
+  labels:
+    app.kubernetes.io/part-of: gitops
+  annotations:
+    kubernetes.io/service-account.name: sre-diagnostics
+type: kubernetes.io/service-account-token
