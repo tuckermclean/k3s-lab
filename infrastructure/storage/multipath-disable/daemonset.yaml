@@ -1,0 +1,76 @@
+# Node-config: disable+mask multipathd on every node.
+#
+# Longhorn's node environment check flags `Multipathd=False` on all nodes:
+# multipathd claims the /dev/longhorn/* block devices, so mkfs/attach of NEW
+# Longhorn volumes fails ("can't format new volumes"). These are single-path OVH
+# bare-metal nodes — multipath is not used — so the direct fix is to turn it off.
+# https://longhorn.io/kb/troubleshooting-volume-with-multipath
+#
+# This DaemonSet nsenters into the host (pid 1) and `systemctl disable --now`
+# + `mask`s multipathd.service and multipathd.socket, then re-ensures every 10m
+# (survives reboots / package re-enables). Idempotent. To intentionally use
+# multipath again, remove this and `systemctl unmask multipathd` on the nodes.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: disable-multipathd
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/part-of: gitops
+    app: disable-multipathd
+spec:
+  selector:
+    matchLabels:
+      app: disable-multipathd
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: disable-multipathd
+    spec:
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - operator: Exists
+      priorityClassName: system-node-critical
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: disable-multipathd
+          # debian slim ships nsenter (util-linux) — no runtime install needed.
+          image: debian:12-slim
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -u
+              ensure() {
+                nsenter --target 1 --mount --uts --ipc --net --pid -- sh -c '
+                  for u in multipathd.service multipathd.socket; do
+                    systemctl disable --now "$u" >/dev/null 2>&1 || true
+                    systemctl mask "$u" >/dev/null 2>&1 || true
+                  done
+                  printf "service=%s socket=%s" \
+                    "$(systemctl is-active multipathd.service 2>/dev/null || echo inactive)" \
+                    "$(systemctl is-active multipathd.socket 2>/dev/null || echo inactive)"
+                '
+              }
+              echo "[disable-multipathd] node=${NODE_NAME:-?} $(date -u +%FT%TZ): $(ensure)"
+              while true; do
+                sleep 600
+                echo "[disable-multipathd] node=${NODE_NAME:-?} recheck $(date -u +%FT%TZ): $(ensure)"
+              done
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
