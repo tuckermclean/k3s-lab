@@ -13,6 +13,7 @@ resources:
   - cert-manager-config-kustomization.yaml
   - local-path-kustomization.yaml
   - longhorn-kustomization.yaml
+  - multipath-disable-kustomization.yaml
   - longhorn-backup-kustomization.yaml
   - longhorn-backup-target-kustomization.yaml
   - juicefs-kustomization.yaml
