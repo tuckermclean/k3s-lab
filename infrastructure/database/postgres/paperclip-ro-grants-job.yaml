@@ -1,0 +1,79 @@
+# Grants SELECT-only access on the `paperclip` DB to the `paperclip_ro` role.
+#
+# CNPG's managed.roles creates the role + password but does NOT manage object
+# grants, so this Job applies them as the `paperclip` owner (which owns the DB and
+# all app tables). Idempotent and safe to re-run:
+#   - GRANT SELECT ON ALL TABLES  covers every table that exists now
+#   - ALTER DEFAULT PRIVILEGES    covers every table `paperclip` creates later
+#     (app migrations run as `paperclip`), so the RO role stays current with no
+#     re-run needed.
+# It waits for CNPG to create the role first (Flux applies role + Job together).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: paperclip-ro-grants
+  namespace: postgres
+  labels:
+    app.kubernetes.io/part-of: gitops
+spec:
+  backoffLimit: 10
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: paperclip-ro-grants
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 26          # postgres uid in the CNPG image
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: grants
+          image: ghcr.io/cloudnative-pg/postgresql:16
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: PGHOST
+              value: pg-rw.postgres.svc
+            - name: PGDATABASE
+              value: paperclip
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: paperclip-role-secret
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paperclip-role-secret
+                  key: password
+            - name: RO_ROLE
+              value: paperclip_ro
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              echo "waiting for role $RO_ROLE to exist (CNPG reconcile)..."
+              until [ "$(psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$RO_ROLE'")" = "1" ]; do
+                sleep 5
+              done
+              echo "granting SELECT-only to $RO_ROLE"
+              psql -v ON_ERROR_STOP=1 -v ro="$RO_ROLE" <<'SQL'
+              GRANT CONNECT ON DATABASE paperclip TO :"ro";
+              GRANT USAGE ON SCHEMA public TO :"ro";
+              GRANT SELECT ON ALL TABLES IN SCHEMA public TO :"ro";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO :"ro";
+              SQL
+              echo "done."
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
