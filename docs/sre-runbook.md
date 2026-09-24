@@ -58,9 +58,10 @@ is proposed as a reconciler/manifest PR or escalated, never hand-written.
 
 ## The stack
 
-- **Cluster:** k3s "ovh-lab" (nodes k3s-ovh-1/2/…). Longhorn for RWO storage —
-  NOTE: mkfs of new Longhorn volumes fails on ovh-1/ovh-2 (known, see memory);
-  ovh-2 is cordoned. Prefer existing PVCs; don't casually provision new ones.
+- **Cluster:** k3s "ovh-lab" (nodes k3s-ovh-1/2/3). Longhorn for RWO storage.
+  (Historical: mkfs of new Longhorn volumes used to fail on ovh-1/ovh-2 because
+  `multipathd` claimed the `/dev/longhorn/*` devices. Fixed in #273 — see the
+  failure-mode note below. All three nodes are schedulable again.)
 - **GitOps:** FluxCD. `GitRepository/flux-system` tracks this repo; per-app
   `Kustomization`s (e.g. `paperclip`) apply `apps/<name>/`. Reconcile is operator-
   only (`flux reconcile` / annotate) — you read status, you don't trigger it.
@@ -122,8 +123,17 @@ the version each lane actually runs, not just the image tag.
   real fix (per-card isolation) as a change, don't hand-fix repeatedly.
 - **Pod NotReady after a change:** a sidecar that exits takes the whole pod
   NotReady (it drops from the Service). Sidecars must never exit — idle on failure.
-- **Longhorn mkfs failure on ovh-1/ovh-2:** don't provision new Longhorn volumes
-  there.
+- **Longhorn mkfs failure (RESOLVED, #273):** new Longhorn volumes failed to
+  format on the OVH bare-metal nodes — `multipathd` grabbed the `/dev/longhorn/*`
+  block devices, so `mkfs`/attach failed. These are single-path nodes; multipath
+  is not used. Codified fix: `infrastructure/storage/multipath-disable/` — a
+  privileged `kube-system/disable-multipathd` DaemonSet that `nsenter`s to pid 1
+  and `systemctl disable --now` + `mask`s `multipathd.service`/`.socket` on every
+  node, re-ensuring every 10m. Verify: DaemonSet pod logs show `service=inactive
+  socket=inactive`; `nodes.longhorn.io` `Multipathd` condition reads `True` (the
+  Longhorn env-check re-evaluates periodically / on longhorn-manager restart). If
+  a node ever regresses, check whether a package update re-enabled/unmasked the
+  unit — the DaemonSet re-masks on its 10m loop, but confirm it's Running there.
 
 ## GitOps change workflow (your main output)
 
