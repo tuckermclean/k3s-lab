@@ -8,6 +8,16 @@
 #     (app migrations run as `paperclip`), so the RO role stays current with no
 #     re-run needed.
 # It waits for CNPG to create the role first (Flux applies role + Job together).
+#
+# SCOPE (intentional): grants cover the `public` schema only — the paperclip app
+# keeps all its tables there. `paperclip_ro` gets no table grants on any other DB,
+# so it can read no application data outside `paperclip`. It CAN still open a
+# connection to sibling DBs (authentik/personliness/strange-company/vikunja) via
+# Postgres's cluster-wide default PUBLIC CONNECT and see system catalogs there —
+# a pre-existing cluster posture, not introduced here (every role has that today).
+# Truly scoping CONNECT per-DB is a cluster-wide hardening (REVOKE CONNECT ON each
+# DB FROM PUBLIC), which needs an owner/superuser connection per DB and is tracked
+# separately — this paperclip-owned Job cannot revoke on DBs it doesn't own.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -15,8 +25,16 @@ metadata:
   namespace: postgres
   labels:
     app.kubernetes.io/part-of: gitops
+  annotations:
+    # Job.spec.template is immutable — let Flux recreate the Job when this script
+    # changes instead of failing server-side apply on an immutable-field error.
+    kustomize.toolkit.fluxcd.io/force: "true"
 spec:
   backoffLimit: 10
+  # Bound the whole run so a never-created role (typo, degraded cluster) fails the
+  # Job fast instead of looping until the enclosing Flux Kustomization's 15m
+  # `wait` timeout — which would report the entire postgres Kustomization Failed.
+  activeDeadlineSeconds: 600
   ttlSecondsAfterFinished: 86400
   template:
     metadata:
@@ -24,6 +42,7 @@ spec:
         app: paperclip-ro-grants
     spec:
       restartPolicy: OnFailure
+      automountServiceAccountToken: false   # needs no k8s API
       securityContext:
         runAsNonRoot: true
         runAsUser: 26          # postgres uid in the CNPG image
@@ -60,7 +79,13 @@ spec:
             - |
               set -eu
               echo "waiting for role $RO_ROLE to exist (CNPG reconcile)..."
-              until [ "$(psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$RO_ROLE'")" = "1" ]; do
+              n=0
+              until [ "$(psql -v ro="$RO_ROLE" -tAc "SELECT 1 FROM pg_roles WHERE rolname=:'ro'" 2>/dev/null)" = "1" ]; do
+                n=$((n + 1))
+                if [ "$n" -ge 48 ]; then
+                  echo "role $RO_ROLE still absent after ~4m — is CNPG reconciling paperclip-ro-role-secret?" >&2
+                  exit 1
+                fi
                 sleep 5
               done
               echo "granting SELECT-only to $RO_ROLE"
