@@ -70,6 +70,13 @@ spec:
         login: true
         passwordSecret:
           name: paperclip-role-secret
+      # SELECT-only role for the SRE agent's read-only diagnostics lane.
+      # CNPG manages the role + password; object grants (SELECT) are applied by
+      # the paperclip-ro-grants Job (CNPG managed roles don't do table grants).
+      - name: paperclip_ro
+        login: true
+        passwordSecret:
+          name: paperclip-ro-role-secret
 
 ---
 apiVersion: postgresql.cnpg.io/v1
