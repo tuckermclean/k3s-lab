@@ -1,0 +1,63 @@
+# Paseo daemon (evaluation) — the coding-agent control plane / web UI on :6767.
+# Auth is Paseo's own PASEO_PASSWORD (plus TLS at the edge); state lives under
+# PASEO_HOME on the Longhorn PVC. The base image does NOT bundle agent CLIs —
+# a follow-up will extend it with Claude Code / gh. The Hub (GitHub App +
+# webhooks) is a separate, later add-on once the noodlebot OAuth creds are in hand.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paseo
+  namespace: paseo
+  labels:
+    app.kubernetes.io/part-of: gitops
+    app: paseo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # single RWO PVC — don't run two pods against it
+  selector:
+    matchLabels:
+      app: paseo
+  template:
+    metadata:
+      labels:
+        app: paseo
+    spec:
+      containers:
+        - name: paseo
+          image: ghcr.io/getpaseo/paseo:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 6767
+          env:
+            - name: PASEO_HOME
+              value: /home/paseo
+            - name: PASEO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: paseo-secrets
+                  key: PASEO_PASSWORD
+          volumeMounts:
+            - name: home
+              mountPath: /home/paseo
+          readinessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6767
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: home
+          persistentVolumeClaim:
+            claimName: paseo-home
