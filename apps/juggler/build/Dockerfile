@@ -13,7 +13,7 @@
 # ubuntu:24.04: the release binary links libwebkitgtk-6.0.so.4 / libgtk-4.so.1
 # and needs glibc >= 2.34 (README: "Ubuntu 24.04+"); Debian bookworm-slim does
 # not ship libwebkitgtk-6.0-4.
-FROM ubuntu:26.04@sha256:3131b4cc82a783df6c9df078f86e01819a13594b865c2cad47bd1bca2b7063bb
+FROM ubuntu:26.04@sha256:3595d7fc4286a33fad0fd853a4063e654287a9c3787437d7937c94ca3f7a804e
 
 ARG JUGGLER_VERSION=0.3.7
 ARG CLAUDE_CODE_VERSION=2.1.201
