@@ -23,7 +23,7 @@ spec:
               emptyDir: {}
           initContainers:
             - name: juicefs-dump
-              image: juicedata/juicefs-csi-driver:v0.32.0@sha256:856e1c20175331428515b957fbfe3a3aba2ccce3d375d0eddc099cf416d95899
+              image: juicedata/juicefs-csi-driver:v0.33.2@sha256:5af0654d7b51432ab571e95121d9b2586cfa237772ead209496af80ba29a4df5
               command: ["sh", "-c", "juicefs dump \"$METAURL\" /dump/meta.json && wc -c /dump/meta.json"]
               env:
                 - name: METAURL
@@ -33,7 +33,7 @@ spec:
                 - {name: dump, mountPath: /dump}
           containers:
             - name: upload
-              image: amazon/aws-cli:2.36.4@sha256:7cbd2e4d2c469c5c448dc249c7c8109ada7fa6ae57a1dc3f348fa39d19b6c689
+              image: amazon/aws-cli:2.39.3@sha256:d557b3524475d70dd3104cf44d96568ee3188897b73a6ece2b37aa50e1af362f
               command:
                 - sh
                 - -c

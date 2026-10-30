@@ -26,7 +26,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: server
-          image: itzg/minecraft-bedrock-server@sha256:dd94ab16d060d8643f29af58043e0f1a04d94b5219b5132950e57642b59eb304
+          image: itzg/minecraft-bedrock-server@sha256:79cca121b2208f7036885ee07f091f25e3ecfee1f01d644f1ed6d9c559c58951
           imagePullPolicy: IfNotPresent
           # No probes (first boot can take several minutes)
           env:
