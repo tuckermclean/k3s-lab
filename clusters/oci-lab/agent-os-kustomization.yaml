@@ -27,4 +27,4 @@ spec:
   # instead, via Flux's native image transformer.
   images:
     - name: ghcr.io/tuckermclean/agent-os
-      newTag: "0.2.4"
+      newTag: "0.2.6@sha256:eaf80a4afe18bb3b4a21d0b5f5bd3ee793e806d85a204337ba733060162a5295"
